@@ -76,6 +76,9 @@ The policy automatically whitelists your Supabase project URL (https) and its re
 	curl -s -D - http://localhost:3000/ -o /dev/null | grep -i x-powered-by || echo 'No X-Powered-By header'
 	```
 
+### ZAP: Suspicious Comments
+- ZAP may flag strings in `/_next/static/chunks/*.js` as suspicious comments (rule 10027). These are typically vendor/minified bundle strings, not app source comments. See `scripts/security/README.md` for guidance and ZAP configuration options to reduce false positives.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
