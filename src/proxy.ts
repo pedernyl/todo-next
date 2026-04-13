@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { getToken } from 'next-auth/jwt';
+import { isAllowedUserEmail } from './lib/allowedUsers';
 
 function buildBaseCsp(): string {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -43,8 +45,26 @@ function buildCsp(mode: string, nonce: string) {
   return '';
 }
 
-export function proxy(request: NextRequest) {
-  void request;
+export async function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  if (pathname === '/admin' || pathname.startsWith('/admin/')) {
+    const token = await getToken({
+      req: request,
+      secret: process.env.NEXTAUTH_SECRET,
+    });
+
+    const email = typeof token?.email === 'string' ? token.email : null;
+
+    if (!email) {
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
+
+    if (!isAllowedUserEmail(email)) {
+      return NextResponse.redirect(new URL('/', request.url));
+    }
+  }
+
   let mode = (process.env.NEXT_CSP_MODE || 'report-only').toLowerCase();
   if (process.env.NODE_ENV === 'development' && mode !== 'enforce' && mode !== 'off') {
     mode = 'dev';
