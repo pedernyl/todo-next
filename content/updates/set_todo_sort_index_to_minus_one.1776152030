@@ -1,0 +1,27 @@
+-- Update: set_todo_sort_index_to_minus_one
+--
+-- Required inputs before executing this script:
+-- 1) app.nextauth_allowed_users: comma-separated emails from NEXTAUTH_ALLOWED_USERS in your .env file
+-- 2) app.actor_email: the email of the user executing the update
+--
+-- Example (psql):
+--   SET app.nextauth_allowed_users = 'admin@example.com,dev@example.com';
+--   SET app.actor_email = 'admin@example.com';
+--   \i content/updates/set_todo_sort_index_to_minus_one.timestamptz
+
+DO $$
+DECLARE
+  allowed_users text[] := regexp_split_to_array(
+    lower(coalesce(current_setting('app.nextauth_allowed_users', true), '')),
+    '\\s*,\\s*'
+  );
+  actor_email text := lower(trim(coalesce(current_setting('app.actor_email', true), '')));
+BEGIN
+  IF actor_email = '' OR NOT (actor_email = ANY(allowed_users)) THEN
+    RAISE EXCEPTION 'Blocked update: actor email % is not included in NEXTAUTH_ALLOWED_USERS', actor_email;
+  END IF;
+
+  UPDATE todos
+  SET sort_index = -1;
+END
+$$;
