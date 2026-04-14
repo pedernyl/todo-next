@@ -1,5 +1,7 @@
 # Updates
 
-This directory stores update/changelog entries used by the app.
+Put updates here that you want to ship to your installation.
 
-Keep at least one file in this directory so Git tracks it.
+The updates shall have this format:
+
+`name_of_the_update.timestamptz`
