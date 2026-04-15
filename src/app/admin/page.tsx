@@ -32,7 +32,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
 
   return (
     <main className="min-h-screen bg-[#edf0f3] text-slate-800">
-      <div className="grid min-h-screen grid-cols-1 md:grid-cols-[250px_1fr]">
+        <div className="grid min-h-screen grid-cols-1 md:grid-cols-[auto_1fr]">
         <aside className="border-r border-[#1a2734] bg-[#1f2d3b] text-[#d8e0e8]">
           <div className="flex h-14 items-center border-b border-[#2a3a4b] bg-[#1873aa] px-4 text-lg font-semibold">
             Admin
