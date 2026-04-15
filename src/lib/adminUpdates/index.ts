@@ -29,33 +29,30 @@ type UpdateExecutionRow = {
 
 type ParsedAdminUpdateFile = {
   fileName: string;
-  moduleName: string;
   updateKey: string;
   createdUnixTimestamp: number | null;
 };
 
-const updatesDir = path.join(process.cwd(), "src", "lib", "adminUpdates");
+const updatesDir = path.join(process.cwd(), "src", "lib", "adminUpdates", "updates");
 const updatesExecutionTable = process.env.ADMIN_UPDATES_TABLE || "Updates";
 
 function parseAdminUpdateFileName(fileName: string): ParsedAdminUpdateFile {
-  const moduleName = fileName.replace(/\.ts$/, "");
-  const match = /^(.*)_(\d+)$/.exec(moduleName);
+  const moduleNameWithoutExtension = fileName.replace(/\.ts$/, "");
+  const match = /^(.*)_(\d+)$/.exec(moduleNameWithoutExtension);
 
   if (!match) {
     return {
       fileName,
-      moduleName,
-      updateKey: moduleName,
+      updateKey: moduleNameWithoutExtension,
       createdUnixTimestamp: null,
     };
   }
 
-  const updateKey = match[1] ?? moduleName;
+  const updateKey = match[1] ?? moduleNameWithoutExtension;
   const parsedTimestamp = Number.parseInt(match[2] ?? "", 10);
 
   return {
     fileName,
-    moduleName,
     updateKey,
     createdUnixTimestamp: Number.isFinite(parsedTimestamp) ? parsedTimestamp : null,
   };
@@ -76,13 +73,13 @@ async function getAdminUpdateByFileName(fileName: string): Promise<ParsedAdminUp
   return updates.find((update) => update.fileName === fileName);
 }
 
-async function loadAdminUpdateRunner(moduleName: string) {
-  const loadedModule = (await import(`./${moduleName}`)) as AdminUpdateModule;
+async function loadAdminUpdateRunner(fileName: string) {
+  const loadedModule = (await import(`./updates/${fileName}`)) as AdminUpdateModule;
   const runner = loadedModule.runAdminUpdate ?? loadedModule.default;
 
   if (typeof runner !== "function") {
     throw new Error(
-      `Admin update module ${moduleName}.ts must export either \"runAdminUpdate\" or a default async function`
+      `Admin update module ${fileName} must export either \"runAdminUpdate\" or a default async function`
     );
   }
 
@@ -202,7 +199,7 @@ export async function runAdminUpdate(updateKey: string, fileName: string) {
     throw new Error(`Update key mismatch for ${fileName}: expected ${update.updateKey}`);
   }
 
-  const runner = await loadAdminUpdateRunner(update.moduleName);
+  const runner = await loadAdminUpdateRunner(update.fileName);
   return runner();
 }
 

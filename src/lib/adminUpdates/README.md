@@ -1,8 +1,8 @@
 # Admin Updates
 
-This folder contains database update runners.
+This folder contains the admin update loader and documentation.
 
-The app auto-discovers update files in this directory and shows them in the Admin Updates UI. No manual registration is required.
+The app auto-discovers update files in `src/lib/adminUpdates/updates` and shows them in the Admin Updates UI. No manual registration is required.
 
 ## File naming
 
@@ -41,7 +41,7 @@ Write the update in TypeScript using `supabaseAdmin` queries. This replaces raw 
 Example:
 
 ```ts
-import { supabaseAdmin } from "../supabaseAdminClient";
+import { supabaseAdmin } from "../../supabaseAdminClient";
 
 export async function runAdminUpdate() {
   const { error } = await supabaseAdmin
@@ -69,7 +69,7 @@ Execution is protected by:
 
 ## Developer checklist
 
-1. Create a new file in this folder with `<updateName>_<unixTimestamp>.ts`.
+1. Create a new file in `src/lib/adminUpdates/updates` with `<updateName>_<unixTimestamp>.ts`.
 2. Export `runAdminUpdate`.
 3. Use `supabaseAdmin` and throw on errors.
 4. Return a clear `message` for the admin UI.

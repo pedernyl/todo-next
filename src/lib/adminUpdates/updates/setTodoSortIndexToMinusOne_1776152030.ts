@@ -1,4 +1,4 @@
-import { supabaseAdmin } from "../supabaseAdminClient";
+import { supabaseAdmin } from "../../supabaseAdminClient";
 
 export async function runAdminUpdate() {
   const { error } = await supabaseAdmin
