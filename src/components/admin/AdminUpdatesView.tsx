@@ -114,7 +114,7 @@ export default function AdminUpdatesView() {
       <div>
         {isLoading && <p className="px-5 py-4 text-sm text-slate-600">Loading updates...</p>}
         {!isLoading && !hasUpdates && (
-          <p className="px-5 py-4 text-sm text-slate-600">No updates found in content/updates.</p>
+          <p className="px-5 py-4 text-sm text-slate-600">No registered admin updates found.</p>
         )}
         {!isLoading &&
           availableUpdates.map((item) => (

@@ -93,6 +93,12 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 - Unit tests (Vitest): see [src/unit-tests/README.md](src/unit-tests/README.md) for commands and setup. Quick run: `npm test`.
 - E2E tests (Playwright): see [tests/README.md](tests/README.md) for auth setup and commands. CSP-specific notes: [tests/README-CSP.md](tests/README-CSP.md).
 
+## Admin SQL-Style Updates
+
+Admin-triggered database updates are implemented as TypeScript update files (not runtime SQL files) and are auto-discovered from `src/lib/adminUpdates`.
+
+For naming rules, required exports, and coding conventions, see [src/lib/adminUpdates/README.md](src/lib/adminUpdates/README.md).
+
 ## Deploy
 
 Any platform that supports Next.js should work. Ensure you set the required environment variables. For Vercel, configure env vars in the dashboard and set `NEXT_CSP_MODE=enforce` once stable.

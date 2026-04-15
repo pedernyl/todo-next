@@ -1,6 +1,7 @@
 import { readdir } from "fs/promises";
 import path from "path";
-import { hasSupabaseServiceRole, supabaseAdmin } from "./supabaseAdminClient";
+import { isAllowedUserEmail } from "../allowedUsers";
+import { hasSupabaseServiceRole, supabaseAdmin } from "../supabaseAdminClient";
 
 export type AdminUpdate = {
   fileName: string;
@@ -11,8 +12,14 @@ export type AdminUpdate = {
   beenExecutedTimestamp: string | null;
 };
 
-const updatesDir = path.join(process.cwd(), "content", "updates");
-const updatesExecutionTable = process.env.ADMIN_UPDATES_TABLE || "Updates";
+type AdminUpdateExecutorResult = {
+  message: string;
+};
+
+type AdminUpdateModule = {
+  default?: () => Promise<AdminUpdateExecutorResult>;
+  runAdminUpdate?: () => Promise<AdminUpdateExecutorResult>;
+};
 
 type UpdateExecutionRow = {
   id: string;
@@ -20,40 +27,71 @@ type UpdateExecutionRow = {
   been_executed_timestamp: string;
 };
 
-function parseUpdateFilename(fileName: string): AdminUpdate {
-  const match = /^(.*)\.(\d+)$/.exec(fileName);
+type ParsedAdminUpdateFile = {
+  fileName: string;
+  moduleName: string;
+  updateKey: string;
+  createdUnixTimestamp: number | null;
+};
+
+const updatesDir = path.join(process.cwd(), "src", "lib", "adminUpdates");
+const updatesExecutionTable = process.env.ADMIN_UPDATES_TABLE || "Updates";
+
+function parseAdminUpdateFileName(fileName: string): ParsedAdminUpdateFile {
+  const moduleName = fileName.replace(/\.ts$/, "");
+  const match = /^(.*)_(\d+)$/.exec(moduleName);
 
   if (!match) {
     return {
       fileName,
-      updateKey: fileName,
+      moduleName,
+      updateKey: moduleName,
       createdUnixTimestamp: null,
-      hasBeenExecuted: false,
-      beenExecutedBy: null,
-      beenExecutedTimestamp: null,
     };
   }
 
-  const updateKey = match[1] ?? fileName;
+  const updateKey = match[1] ?? moduleName;
   const parsedTimestamp = Number.parseInt(match[2] ?? "", 10);
 
   return {
     fileName,
+    moduleName,
     updateKey,
     createdUnixTimestamp: Number.isFinite(parsedTimestamp) ? parsedTimestamp : null,
-    hasBeenExecuted: false,
-    beenExecutedBy: null,
-    beenExecutedTimestamp: null,
   };
 }
 
-export async function listAdminUpdates(): Promise<AdminUpdate[]> {
+async function listAdminUpdateFiles(): Promise<ParsedAdminUpdateFile[]> {
   const entries = await readdir(updatesDir, { withFileTypes: true });
 
-  const files = entries
+  return entries
     .filter((entry) => entry.isFile())
     .map((entry) => entry.name)
-    .filter((name) => name !== "README.md");
+    .filter((name) => name.endsWith(".ts") && name !== "index.ts")
+    .map(parseAdminUpdateFileName);
+}
+
+async function getAdminUpdateByFileName(fileName: string): Promise<ParsedAdminUpdateFile | undefined> {
+  const updates = await listAdminUpdateFiles();
+  return updates.find((update) => update.fileName === fileName);
+}
+
+async function loadAdminUpdateRunner(moduleName: string) {
+  const loadedModule = (await import(`./${moduleName}`)) as AdminUpdateModule;
+  const runner = loadedModule.runAdminUpdate ?? loadedModule.default;
+
+  if (typeof runner !== "function") {
+    throw new Error(
+      `Admin update module ${moduleName}.ts must export either \"runAdminUpdate\" or a default async function`
+    );
+  }
+
+  return runner;
+}
+
+export async function listAdminUpdates(): Promise<AdminUpdate[]> {
+  const registeredUpdates = await listAdminUpdateFiles();
+  const files = registeredUpdates.map((update) => update.fileName);
 
   let executionRows: UpdateExecutionRow[] = [];
   if (files.length > 0) {
@@ -71,13 +109,14 @@ export async function listAdminUpdates(): Promise<AdminUpdate[]> {
 
   const executionById = new Map(executionRows.map((row) => [row.id, row]));
 
-  return files
-    .map((fileName) => {
-      const parsed = parseUpdateFilename(fileName);
-      const execution = executionById.get(fileName);
+  return registeredUpdates
+    .map((registeredUpdate) => {
+      const execution = executionById.get(registeredUpdate.fileName);
 
       return {
-        ...parsed,
+        fileName: registeredUpdate.fileName,
+        updateKey: registeredUpdate.updateKey,
+        createdUnixTimestamp: registeredUpdate.createdUnixTimestamp,
         hasBeenExecuted: Boolean(execution),
         beenExecutedBy: execution?.been_executed_by ?? null,
         beenExecutedTimestamp: execution?.been_executed_timestamp ?? null,
@@ -105,6 +144,12 @@ function requireServiceRoleKey() {
     throw new Error(
       "Admin updates require SUPABASE_SERVICE_ROLE_KEY on the server to bypass RLS for update execution and logging."
     );
+  }
+}
+
+function requireAllowedActor(actorEmail: string) {
+  if (!isAllowedUserEmail(actorEmail)) {
+    throw new Error(`User ${actorEmail} is not allowed to execute admin updates`);
   }
 }
 
@@ -146,27 +191,19 @@ async function markAsExecutedForce(fileName: string, actorUserId: number) {
   }
 }
 
-async function runSetTodoSortIndexToMinusOne() {
-  const { error } = await supabaseAdmin
-    .from("todos")
-    .update({ sort_index: -1 })
-    .not("id", "is", null);
+export async function runAdminUpdate(updateKey: string, fileName: string) {
+  const update = await getAdminUpdateByFileName(fileName);
 
-  if (error) {
-    throw new Error(`Failed to set sort_index to -1: ${error.message}`);
+  if (!update) {
+    throw new Error(`No admin update file found for ${fileName}`);
   }
 
-  return {
-    message: "Updated todos.sort_index to -1 for all rows.",
-  };
-}
-
-export async function runAdminUpdate(updateKey: string) {
-  if (updateKey === "set_todo_sort_index_to_minus_one") {
-    return runSetTodoSortIndexToMinusOne();
+  if (update.updateKey !== updateKey) {
+    throw new Error(`Update key mismatch for ${fileName}: expected ${update.updateKey}`);
   }
 
-  throw new Error(`No app executor registered for update: ${updateKey}`);
+  const runner = await loadAdminUpdateRunner(update.moduleName);
+  return runner();
 }
 
 export async function runAdminUpdateOnce(
@@ -175,6 +212,7 @@ export async function runAdminUpdateOnce(
   actorEmail: string
 ) {
   requireServiceRoleKey();
+  requireAllowedActor(actorEmail);
 
   const existing = await getExistingExecution(fileName);
   if (existing) {
@@ -184,7 +222,7 @@ export async function runAdminUpdateOnce(
   }
 
   const actorUserId = await getUserIdByEmail(actorEmail);
-  const result = await runAdminUpdate(updateKey);
+  const result = await runAdminUpdate(updateKey, fileName);
   await markAsExecuted(fileName, actorUserId);
 
   return result;
@@ -196,9 +234,10 @@ export async function runAdminUpdateForce(
   actorEmail: string
 ) {
   requireServiceRoleKey();
+  requireAllowedActor(actorEmail);
 
   const actorUserId = await getUserIdByEmail(actorEmail);
-  const result = await runAdminUpdate(updateKey);
+  const result = await runAdminUpdate(updateKey, fileName);
   await markAsExecutedForce(fileName, actorUserId);
 
   return result;
