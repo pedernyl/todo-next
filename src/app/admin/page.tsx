@@ -1,9 +1,10 @@
 import Link from "next/link";
+import AdminAboutView from "@/components/admin/AdminAboutView";
 import AdminHomeView from "@/components/admin/AdminHomeView";
 import AdminUpdatesView from "@/components/admin/AdminUpdatesView";
 import AdminUsersView from "@/components/admin/AdminUsersView";
 
-type AdminView = "home" | "updates" | "users";
+type AdminView = "home" | "updates" | "users" | "about";
 
 type AdminPageProps = {
   searchParams: Promise<{ view?: string | string[] }>;
@@ -13,12 +14,13 @@ const adminViews: Array<{ key: AdminView; label: string }> = [
   { key: "home", label: "Home" },
   { key: "updates", label: "Updates" },
   { key: "users", label: "Users" },
+  { key: "about", label: "About" },
 ];
 
 function getActiveView(view: string | string[] | undefined): AdminView {
   const raw = Array.isArray(view) ? view[0] : view;
 
-  if (raw === "updates" || raw === "users") {
+  if (raw === "updates" || raw === "users" || raw === "about") {
     return raw;
   }
 
@@ -63,6 +65,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
             {activeView === "home" && <AdminHomeView />}
             {activeView === "updates" && <AdminUpdatesView />}
             {activeView === "users" && <AdminUsersView />}
+            {activeView === "about" && <AdminAboutView />}
           </div>
         </section>
       </div>
