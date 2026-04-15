@@ -134,6 +134,18 @@ async function markAsExecuted(fileName: string, actorUserId: number) {
   }
 }
 
+async function markAsExecutedForce(fileName: string, actorUserId: number) {
+  const { error } = await supabaseAdmin.from(updatesExecutionTable).upsert({
+    id: fileName,
+    been_executed_by: actorUserId,
+    been_executed_timestamp: new Date().toISOString(),
+  });
+
+  if (error) {
+    throw new Error(`Failed to write execution state to ${updatesExecutionTable}: ${error.message}`);
+  }
+}
+
 async function runSetTodoSortIndexToMinusOne() {
   const { error } = await supabaseAdmin
     .from("todos")
@@ -174,6 +186,20 @@ export async function runAdminUpdateOnce(
   const actorUserId = await getUserIdByEmail(actorEmail);
   const result = await runAdminUpdate(updateKey);
   await markAsExecuted(fileName, actorUserId);
+
+  return result;
+}
+
+export async function runAdminUpdateForce(
+  updateKey: string,
+  fileName: string,
+  actorEmail: string
+) {
+  requireServiceRoleKey();
+
+  const actorUserId = await getUserIdByEmail(actorEmail);
+  const result = await runAdminUpdate(updateKey);
+  await markAsExecutedForce(fileName, actorUserId);
 
   return result;
 }

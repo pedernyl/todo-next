@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { isAllowedUserEmail } from "@/lib/allowedUsers";
-import { listAdminUpdates, runAdminUpdateOnce } from "@/lib/adminUpdates";
+import { listAdminUpdates, runAdminUpdateOnce, runAdminUpdateForce } from "@/lib/adminUpdates";
 
 type RunUpdateRequest = {
   fileName?: string;
+  force?: boolean;
 };
 
 export async function GET() {
@@ -41,6 +42,7 @@ export async function POST(req: NextRequest) {
   }
 
   const fileName = payload.fileName;
+  const force = payload.force === true;
   if (!fileName) {
     return NextResponse.json({ error: "fileName is required" }, { status: 400 });
   }
@@ -59,12 +61,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Update file not found" }, { status: 404 });
   }
 
-  if (target.hasBeenExecuted) {
+  if (target.hasBeenExecuted && !force) {
     return NextResponse.json({ error: "Update already executed" }, { status: 409 });
   }
 
   try {
-    const result = await runAdminUpdateOnce(target.updateKey, target.fileName, email);
+    const runner = force ? runAdminUpdateForce : runAdminUpdateOnce;
+    const result = await runner(target.updateKey, target.fileName, email);
     return NextResponse.json({
       ok: true,
       fileName: target.fileName,

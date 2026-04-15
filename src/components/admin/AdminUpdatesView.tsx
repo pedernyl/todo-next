@@ -22,6 +22,7 @@ export default function AdminUpdatesView() {
   const [error, setError] = useState<string | null>(null);
   const [runningFileName, setRunningFileName] = useState<string | null>(null);
   const [lastResult, setLastResult] = useState<string | null>(null);
+  const [rerunChecked, setRerunChecked] = useState<Set<string>>(new Set());
 
   async function loadUpdates(showLoadingState = true) {
     if (showLoadingState) {
@@ -52,7 +53,16 @@ export default function AdminUpdatesView() {
     void loadUpdates();
   }, []);
 
-  async function runUpdate(fileName: string) {
+  function toggleRerun(fileName: string, checked: boolean) {
+    setRerunChecked((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(fileName);
+      else next.delete(fileName);
+      return next;
+    });
+  }
+
+  async function runUpdate(fileName: string, force = false) {
     setRunningFileName(fileName);
     setError(null);
     setLastResult(null);
@@ -63,7 +73,7 @@ export default function AdminUpdatesView() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ fileName }),
+        body: JSON.stringify({ fileName, ...(force && { force: true }) }),
       });
 
       const data = (await res.json()) as {
@@ -76,6 +86,11 @@ export default function AdminUpdatesView() {
       }
 
       setLastResult(data.result?.message || "Update executed.");
+      setRerunChecked((prev) => {
+        const next = new Set(prev);
+        next.delete(fileName);
+        return next;
+      });
       await loadUpdates(false);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Update execution failed";
@@ -132,18 +147,33 @@ export default function AdminUpdatesView() {
                       : "No"}
                   </td>
                   <td className="px-5 py-3">
-                    <button
-                      type="button"
-                      onClick={() => void runUpdate(item.fileName)}
-                      disabled={runningFileName === item.fileName || item.hasBeenExecuted}
-                      className="rounded bg-sky-700 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-sky-800 disabled:cursor-not-allowed disabled:bg-slate-400"
-                    >
-                      {item.hasBeenExecuted
-                        ? "Already executed"
-                        : runningFileName === item.fileName
+                    <div className="flex flex-col gap-2">
+                      {item.hasBeenExecuted && (
+                        <label className="flex items-center gap-2 text-xs text-slate-500 select-none">
+                          <input
+                            type="checkbox"
+                            checked={rerunChecked.has(item.fileName)}
+                            onChange={(e) => toggleRerun(item.fileName, e.target.checked)}
+                            disabled={runningFileName === item.fileName}
+                            className="accent-sky-700"
+                          />
+                          Run again
+                        </label>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => void runUpdate(item.fileName, item.hasBeenExecuted)}
+                        disabled={
+                          runningFileName === item.fileName ||
+                          (item.hasBeenExecuted && !rerunChecked.has(item.fileName))
+                        }
+                        className="rounded bg-sky-700 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-sky-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+                      >
+                        {runningFileName === item.fileName
                           ? "Running..."
                           : "Run update"}
-                    </button>
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
