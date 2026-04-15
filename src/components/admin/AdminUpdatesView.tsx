@@ -23,8 +23,10 @@ export default function AdminUpdatesView() {
   const [runningFileName, setRunningFileName] = useState<string | null>(null);
   const [lastResult, setLastResult] = useState<string | null>(null);
 
-  async function loadUpdates() {
-    setIsLoading(true);
+  async function loadUpdates(showLoadingState = true) {
+    if (showLoadingState) {
+      setIsLoading(true);
+    }
     setError(null);
 
     try {
@@ -40,7 +42,9 @@ export default function AdminUpdatesView() {
       const message = err instanceof Error ? err.message : "Failed to load updates";
       setError(message);
     } finally {
-      setIsLoading(false);
+      if (showLoadingState) {
+        setIsLoading(false);
+      }
     }
   }
 
@@ -72,6 +76,7 @@ export default function AdminUpdatesView() {
       }
 
       setLastResult(data.result?.message || "Update executed.");
+      await loadUpdates(false);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Update execution failed";
       setError(message);
