@@ -57,8 +57,11 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         </aside>
 
         <section className="flex min-h-screen flex-col">
-          <header className="flex h-14 items-center border-b border-slate-200 bg-white px-4 sm:px-6">
+          <header className="flex h-14 items-center justify-between border-b border-slate-200 bg-white px-4 sm:px-6">
             <h1 className="text-2xl font-semibold text-slate-700">{activeLabel}</h1>
+            <Link href="/" className="text-sm font-semibold text-blue-700 hover:underline">
+              Todos
+            </Link>
           </header>
 
           <div className="p-4 sm:p-6">
