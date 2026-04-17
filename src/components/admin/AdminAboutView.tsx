@@ -6,7 +6,8 @@ export default async function AdminAboutView() {
   let html: string;
 
   try {
-    const raw = await readFile(path.join(process.cwd(), "src", "lib", "adminUpdates", "README.md"), "utf-8");
+    const readmePath = path.join(process.cwd(), "src", "lib", "adminUpdates", "README.md");
+    const raw = await readFile(readmePath, "utf-8");
     html = await marked(raw);
   } catch {
     html = "<p>Could not load README.md.</p>";
