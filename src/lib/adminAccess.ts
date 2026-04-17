@@ -6,6 +6,10 @@ export type AdminAccessCheckResult =
   | { ok: true; email: string }
   | { ok: false; reason: "unauthenticated" | "forbidden" };
 
+export function isAdminEmail(email?: string | null): boolean {
+  return isAllowedUserEmail(email);
+}
+
 export async function getAdminAccessCheckResult(): Promise<AdminAccessCheckResult> {
   const session = await getServerSession(authOptions);
   const email = session?.user?.email;
@@ -14,7 +18,7 @@ export async function getAdminAccessCheckResult(): Promise<AdminAccessCheckResul
     return { ok: false, reason: "unauthenticated" };
   }
 
-  if (!isAllowedUserEmail(email)) {
+  if (!isAdminEmail(email)) {
     return { ok: false, reason: "forbidden" };
   }
 

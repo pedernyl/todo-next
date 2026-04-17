@@ -14,10 +14,34 @@ vi.mock("../lib/allowedUsers", () => ({
 
 import { getServerSession } from "next-auth";
 import { isAllowedUserEmail } from "../lib/allowedUsers";
-import { getAdminAccessCheckResult } from "../lib/adminAccess";
+import { getAdminAccessCheckResult, isAdminEmail } from "../lib/adminAccess";
 
 const mockedGetServerSession = vi.mocked(getServerSession);
 const mockedIsAllowedUserEmail = vi.mocked(isAllowedUserEmail);
+
+describe("isAdminEmail", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("returns false when email is not allowed", () => {
+    mockedIsAllowedUserEmail.mockReturnValueOnce(false);
+
+    const result = isAdminEmail("denied@example.com");
+
+    expect(result).toBe(false);
+    expect(mockedIsAllowedUserEmail).toHaveBeenCalledWith("denied@example.com");
+  });
+
+  it("returns true when email is allowed", () => {
+    mockedIsAllowedUserEmail.mockReturnValueOnce(true);
+
+    const result = isAdminEmail("admin@example.com");
+
+    expect(result).toBe(true);
+    expect(mockedIsAllowedUserEmail).toHaveBeenCalledWith("admin@example.com");
+  });
+});
 
 describe("getAdminAccessCheckResult", () => {
   beforeEach(() => {

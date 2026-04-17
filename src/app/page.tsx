@@ -6,7 +6,7 @@ import AuthButtons from '../components/AuthButtons';
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../lib/authOptions";
-import { isAllowedUserEmail } from "../lib/allowedUsers";
+import { isAdminEmail } from "../lib/adminAccess";
 import Link from "next/link";
 import TodoPageClient from "./TodoPageClient";
 
@@ -17,7 +17,7 @@ export default async function Home() {
     redirect("/login");
   }
 
-  const canAccessAdmin = isAllowedUserEmail(session.user?.email);
+  const canAccessAdmin = isAdminEmail(session.user?.email);
 
   const todos = await getTodos();
 
