@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/authOptions";
-import { isAllowedUserEmail } from "@/lib/allowedUsers";
+import { getAdminAccessCheckResult } from "@/lib/adminAccess";
 import { listAdminUpdates, runAdminUpdateOnce, runAdminUpdateForce } from "@/lib/adminUpdates";
 
 type RunUpdateRequest = {
@@ -11,10 +9,8 @@ type RunUpdateRequest = {
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
-    const email = session?.user?.email;
-
-    if (!session || !isAllowedUserEmail(email)) {
+    const access = await getAdminAccessCheckResult();
+    if (!access.ok) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -27,12 +23,12 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  const email = session?.user?.email;
-
-  if (!session || !email || !isAllowedUserEmail(email)) {
+  const access = await getAdminAccessCheckResult();
+  if (!access.ok) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
+
+  const email = access.email;
 
   let payload: RunUpdateRequest;
   try {

@@ -1,8 +1,10 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import AdminAboutView from "@/components/admin/AdminAboutView";
 import AdminHomeView from "@/components/admin/AdminHomeView";
 import AdminUpdatesView from "@/components/admin/AdminUpdatesView";
 import AdminUsersView from "@/components/admin/AdminUsersView";
+import { getAdminAccessCheckResult } from "@/lib/adminAccess";
 
 type AdminView = "home" | "updates" | "users" | "about";
 
@@ -28,6 +30,15 @@ function getActiveView(view: string | string[] | undefined): AdminView {
 }
 
 export default async function AdminPage({ searchParams }: AdminPageProps) {
+  // Proxy enforces /admin access too; keep this server-side guard as defense in depth.
+  const access = await getAdminAccessCheckResult();
+  if (!access.ok && access.reason === "unauthenticated") {
+    redirect("/login");
+  }
+  if (!access.ok) {
+    redirect("/");
+  }
+
   const resolvedSearchParams = await searchParams;
   const activeView = getActiveView(resolvedSearchParams.view);
   const activeLabel = adminViews.find((item) => item.key === activeView)?.label ?? "Admin";
