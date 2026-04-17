@@ -30,7 +30,8 @@ function getActiveView(view: string | string[] | undefined): AdminView {
 }
 
 export default async function AdminPage({ searchParams }: AdminPageProps) {
-  // Proxy enforces /admin access too; keep this server-side guard as defense in depth.
+  // Authorization boundary for all Admin views: keep checks here (and in admin APIs).
+  // Proxy also enforces /admin access as an additional layer.
   const access = await getAdminAccessCheckResult();
   if (!access.ok && access.reason === "unauthenticated") {
     redirect("/login");

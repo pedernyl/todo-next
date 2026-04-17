@@ -1,18 +1,8 @@
 import { readFile } from "fs/promises";
 import path from "path";
 import { marked } from "marked";
-import { redirect } from "next/navigation";
-import { getAdminAccessCheckResult } from "@/lib/adminAccess";
 
 export default async function AdminAboutView() {
-  const access = await getAdminAccessCheckResult();
-  if (!access.ok && access.reason === "unauthenticated") {
-    redirect("/login");
-  }
-  if (!access.ok) {
-    redirect("/");
-  }
-
   let html: string;
 
   try {
