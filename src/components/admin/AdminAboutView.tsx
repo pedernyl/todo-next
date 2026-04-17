@@ -1,12 +1,11 @@
 import { readFile } from "fs/promises";
-import path from "path";
 import { marked } from "marked";
 
 export default async function AdminAboutView() {
   let html: string;
 
   try {
-    const raw = await readFile(path.join(process.cwd(), "src", "lib", "adminUpdates", "README.md"), "utf-8");
+    const raw = await readFile(new URL("../../lib/adminUpdates/README.md", import.meta.url), "utf-8");
     html = await marked(raw);
   } catch {
     html = "<p>Could not load README.md.</p>";
