@@ -41,6 +41,9 @@ vi.mock('../lib/supabaseAdminClient', () => {
               })
             }),
             insert: () => Promise.resolve({ error: null }),
+            delete: () => ({
+              eq: () => Promise.resolve({ error: null })
+            }),
             upsert: () => Promise.resolve({ error: null })
           };
         }

@@ -42,12 +42,12 @@ See `.env.example` (copy to `.env.local`) for a fully documented list. Required 
 In production you typically set `NEXTAUTH_URL` to your site origin.
 
 Additional (optional) hardening / isolation vars:
-- `NEXT_CSP_MODE` (off|dev|report-only|enforce) – controls CSP behavior (middleware enforces; report-only emitted by config).
+- `NEXT_CSP_MODE` (off|dev|report-only|enforce) – controls CSP behavior (proxy enforces; report-only emitted by config).
 - `NEXT_COEP` (require-corp|credentialless) – enables Cross-Origin-Embedder-Policy for isolation; leave unset if unsure.
 
 ## Content Security Policy (CSP)
 
-The CSP is applied via `src/middleware.ts` with a nonce for inline scripts. Modes are controlled by `NEXT_CSP_MODE`:
+The CSP is applied via `src/proxy.ts` with a nonce for inline scripts. Modes are controlled by `NEXT_CSP_MODE`:
 
 - dev: permissive for local development (default when NODE_ENV=development unless you explicitly set enforce)
 - report-only: strict policy that only reports violations
@@ -71,7 +71,7 @@ The policy automatically whitelists your Supabase project URL (https) and its re
 
 - X-Powered-By is disabled at the framework level to avoid disclosing implementation details.
 	- Config: `poweredByHeader: false` in `next.config.ts`
-	- Middleware also deletes any stray `x-powered-by` header as defense-in-depth.
+	- Proxy also deletes any stray `x-powered-by` header as defense-in-depth.
 - Verify locally:
 	```bash
 	curl -s -D - http://localhost:3000/ -o /dev/null | grep -i x-powered-by || echo 'No X-Powered-By header'

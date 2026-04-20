@@ -2,6 +2,9 @@
   "name": "todo-next-supabase",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=20.9.0"
+  },
   "scripts": {
     "generate:admin-updates": "node scripts/generate-admin-updates-registry.mjs",
     "dev": "next dev",
@@ -15,7 +18,6 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.56.0",
-    "@types/sanitize-html": "^2.16.1",
     "marked": "^18.0.0",
     "next": "^16.0.7",
     "next-auth": "^4.24.11",
@@ -32,6 +34,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/sanitize-html": "^2.16.1",
     "@vitest/ui": "^3.2.4",
     "baseline-browser-mapping": "^2.9.19",
     "eslint": "^9",

@@ -1,6 +1,14 @@
 import { readdir } from "node:fs/promises";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("../lib/supabaseAdminClient", () => ({
+  hasSupabaseServiceRole: true,
+  supabaseAdmin: {
+    from: vi.fn(),
+  },
+}));
+
 import { adminUpdateRegistry } from "../lib/adminUpdates/updates/registry";
 
 function normalizeFileList(fileNames: string[]) {
