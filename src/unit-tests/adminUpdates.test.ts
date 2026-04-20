@@ -1,5 +1,16 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
+// Hoisted mocks so they are available inside vi.mock factories
+const {
+  updatesInsertMock,
+  updatesDeleteEqMock,
+  updatesMaybeSingleMock,
+} = vi.hoisted(() => ({
+  updatesInsertMock: vi.fn(() => Promise.resolve({ error: null })),
+  updatesDeleteEqMock: vi.fn(() => Promise.resolve({ error: null })),
+  updatesMaybeSingleMock: vi.fn(() => Promise.resolve({ data: null, error: null })),
+}));
+
 // Mock registry before importing the module under test
 vi.mock('../lib/adminUpdates/updates/registry', () => ({
   adminUpdateRegistry: [
@@ -37,13 +48,11 @@ vi.mock('../lib/supabaseAdminClient', () => {
             select: () => ({
               in: () => Promise.resolve({ data: [], error: null }),
               eq: () => ({
-                maybeSingle: () => Promise.resolve({ data: null, error: null })
+                maybeSingle: updatesMaybeSingleMock
               })
             }),
-            insert: () => Promise.resolve({ error: null }),
-            delete: () => ({
-              eq: () => Promise.resolve({ error: null })
-            }),
+            insert: updatesInsertMock,
+            delete: () => ({ eq: updatesDeleteEqMock }),
             upsert: () => Promise.resolve({ error: null })
           };
         }
@@ -132,6 +141,39 @@ describe('Admin Updates Module', () => {
       const result = await runAdminUpdateOnce('testUpdate', 'testUpdate_1700000000.ts', 'allowed@example.com');
       expect(result).toBeDefined();
       expect(result.message).toBe('Test update executed');
+    });
+
+    it('throws with execution details when update is already claimed (lock conflict)', async () => {
+      updatesInsertMock.mockResolvedValueOnce({ error: { message: 'duplicate key value violates unique constraint' } });
+      updatesMaybeSingleMock.mockResolvedValueOnce({
+        data: { id: 'testUpdate_1700000000.ts', been_executed_by: 99, been_executed_timestamp: '2024-01-01T00:00:00.000Z' },
+        error: null,
+      });
+
+      await expect(
+        runAdminUpdateOnce('testUpdate', 'testUpdate_1700000000.ts', 'allowed@example.com')
+      ).rejects.toThrow('Update already executed at 2024-01-01T00:00:00.000Z by user id 99');
+    });
+
+    it('throws generic lock error when insert fails and no existing execution row is found', async () => {
+      updatesInsertMock.mockResolvedValueOnce({ error: { message: 'connection error' } });
+      updatesMaybeSingleMock.mockResolvedValueOnce({ data: null, error: null });
+
+      await expect(
+        runAdminUpdateOnce('testUpdate', 'testUpdate_1700000000.ts', 'allowed@example.com')
+      ).rejects.toThrow('Failed to acquire execution lock');
+    });
+
+    it('rolls back execution lock and re-throws when update function throws', async () => {
+      const { adminUpdateRegistry } = await import('../lib/adminUpdates/updates/registry');
+      const runnerMock = adminUpdateRegistry[0].module.runAdminUpdate as ReturnType<typeof vi.fn>;
+      runnerMock.mockRejectedValueOnce(new Error('update script failed'));
+
+      await expect(
+        runAdminUpdateOnce('testUpdate', 'testUpdate_1700000000.ts', 'allowed@example.com')
+      ).rejects.toThrow('update script failed');
+
+      expect(updatesDeleteEqMock).toHaveBeenCalled();
     });
   });
 

@@ -153,55 +153,8 @@ async function getExistingExecution(fileName: string): Promise<UpdateExecutionRo
   return (data as UpdateExecutionRow | null) ?? null;
 }
 
-function isUniqueViolationError(error: unknown): error is { code: string; message: string } {
-  return Boolean(
-    error &&
-      typeof error === "object" &&
-      "code" in error &&
-      (error as { code?: unknown }).code === "23505"
-  );
-}
-
-function getErrorMessage(error: unknown): string {
-  return typeof error === "object" &&
-    error !== null &&
-    "message" in error &&
-    typeof (error as { message?: unknown }).message === "string"
-    ? (error as { message: string }).message
-    : "Unknown error";
-}
-
-async function claimExecutionLock(fileName: string, actorUserId: number) {
-  const { error } = await supabaseAdmin.from(updatesExecutionTable).insert({
-    id: fileName,
-    been_executed_by: actorUserId,
-    been_executed_timestamp: new Date().toISOString(),
-  });
-
-  if (!error) {
-    return;
-  }
-
-  if (isUniqueViolationError(error)) {
-    const existing = await getExistingExecution(fileName);
-    if (existing) {
-      throw new Error(
-        `Update already executed at ${existing.been_executed_timestamp} by user id ${existing.been_executed_by}`
-      );
-    }
-
-    throw new Error(`Update ${fileName} is already being executed by another request`);
-  }
-
-  throw new Error(`Failed to write execution state to ${updatesExecutionTable}: ${getErrorMessage(error)}`);
-}
-
-async function releaseExecutionLock(fileName: string) {
-  const { error } = await supabaseAdmin.from(updatesExecutionTable).delete().eq("id", fileName);
-
-  if (error) {
-    throw new Error(`Failed to rollback execution state in ${updatesExecutionTable}: ${error.message}`);
-  }
+async function deleteExecutionLock(fileName: string) {
+  await supabaseAdmin.from(updatesExecutionTable).delete().eq("id", fileName);
 }
 
 async function markAsExecutedForce(fileName: string, actorUserId: number) {
@@ -240,20 +193,34 @@ export async function runAdminUpdateOnce(
   requireAllowedActor(actorEmail);
 
   const actorUserId = await getUserIdByEmail(actorEmail);
-  await claimExecutionLock(fileName, actorUserId);
 
+  // Atomically claim execution by inserting the log row first.
+  // The unique constraint on `id` prevents concurrent requests from both
+  // proceeding, eliminating the check-then-act race window.
+  const { error: lockError } = await supabaseAdmin.from(updatesExecutionTable).insert({
+    id: fileName,
+    been_executed_by: actorUserId,
+    been_executed_timestamp: new Date().toISOString(),
+  });
+
+  if (lockError) {
+    // A unique constraint violation means the update was already claimed.
+    const existing = await getExistingExecution(fileName);
+    if (existing) {
+      throw new Error(
+        `Update already executed at ${existing.been_executed_timestamp} by user id ${existing.been_executed_by}`
+      );
+    }
+    throw new Error(`Failed to acquire execution lock for ${fileName}: ${lockError.message}`);
+  }
+
+  // Lock acquired — run the update. Roll back the log row on failure so the
+  // update can be retried after the error is resolved.
   try {
     return await runAdminUpdate(updateKey, fileName);
-  } catch (runError) {
-    try {
-      await releaseExecutionLock(fileName);
-    } catch (releaseError) {
-      const cleanupMessage =
-        releaseError instanceof Error ? releaseError.message : "Unknown cleanup failure";
-      throw new Error(`Update failed and lock cleanup failed for ${fileName}: ${cleanupMessage}`);
-    }
-
-    throw runError;
+  } catch (err) {
+    await deleteExecutionLock(fileName);
+    throw err;
   }
 }
 
