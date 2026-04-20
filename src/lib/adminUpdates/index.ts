@@ -118,11 +118,13 @@ async function getUserIdByEmail(email: string): Promise<number> {
     .eq("email", email)
     .single();
 
-  if (error || !data || typeof data.id !== "number") {
+  const userRow = data as { id?: number } | null;
+
+  if (error || !userRow || typeof userRow.id !== "number") {
     throw new Error("Could not resolve actor user id for update execution");
   }
 
-  return data.id;
+  return userRow.id;
 }
 
 function requireServiceRoleKey() {
