@@ -153,16 +153,8 @@ async function getExistingExecution(fileName: string): Promise<UpdateExecutionRo
   return (data as UpdateExecutionRow | null) ?? null;
 }
 
-async function markAsExecuted(fileName: string, actorUserId: number) {
-  const { error } = await supabaseAdmin.from(updatesExecutionTable).insert({
-    id: fileName,
-    been_executed_by: actorUserId,
-    been_executed_timestamp: new Date().toISOString(),
-  });
-
-  if (error) {
-    throw new Error(`Failed to write execution state to ${updatesExecutionTable}: ${error.message}`);
-  }
+async function deleteExecutionLock(fileName: string) {
+  await supabaseAdmin.from(updatesExecutionTable).delete().eq("id", fileName);
 }
 
 async function markAsExecutedForce(fileName: string, actorUserId: number) {
@@ -200,18 +192,36 @@ export async function runAdminUpdateOnce(
   requireServiceRoleKey();
   requireAllowedActor(actorEmail);
 
-  const existing = await getExistingExecution(fileName);
-  if (existing) {
-    throw new Error(
-      `Update already executed at ${existing.been_executed_timestamp} by user id ${existing.been_executed_by}`
-    );
+  const actorUserId = await getUserIdByEmail(actorEmail);
+
+  // Atomically claim execution by inserting the log row first.
+  // The unique constraint on `id` prevents concurrent requests from both
+  // proceeding, eliminating the check-then-act race window.
+  const { error: lockError } = await supabaseAdmin.from(updatesExecutionTable).insert({
+    id: fileName,
+    been_executed_by: actorUserId,
+    been_executed_timestamp: new Date().toISOString(),
+  });
+
+  if (lockError) {
+    // A unique constraint violation means the update was already claimed.
+    const existing = await getExistingExecution(fileName);
+    if (existing) {
+      throw new Error(
+        `Update already executed at ${existing.been_executed_timestamp} by user id ${existing.been_executed_by}`
+      );
+    }
+    throw new Error(`Failed to acquire execution lock for ${fileName}: ${lockError.message}`);
   }
 
-  const actorUserId = await getUserIdByEmail(actorEmail);
-  const result = await runAdminUpdate(updateKey, fileName);
-  await markAsExecuted(fileName, actorUserId);
-
-  return result;
+  // Lock acquired — run the update. Roll back the log row on failure so the
+  // update can be retried after the error is resolved.
+  try {
+    return await runAdminUpdate(updateKey, fileName);
+  } catch (err) {
+    await deleteExecutionLock(fileName);
+    throw err;
+  }
 }
 
 export async function runAdminUpdateForce(
