@@ -1,7 +1,6 @@
-import { readdir } from "fs/promises";
-import path from "path";
 import { isAllowedUserEmail } from "../allowedUsers";
 import { hasSupabaseServiceRole, supabaseAdmin } from "../supabaseAdminClient";
+import { adminUpdateRegistry, type AdminUpdateModule } from "./updates/registry";
 
 export type AdminUpdate = {
   fileName: string;
@@ -10,15 +9,6 @@ export type AdminUpdate = {
   hasBeenExecuted: boolean;
   beenExecutedBy: number | null;
   beenExecutedTimestamp: string | null;
-};
-
-type AdminUpdateExecutorResult = {
-  message: string;
-};
-
-type AdminUpdateModule = {
-  default?: () => Promise<AdminUpdateExecutorResult>;
-  runAdminUpdate?: () => Promise<AdminUpdateExecutorResult>;
 };
 
 type UpdateExecutionRow = {
@@ -33,7 +23,6 @@ type ParsedAdminUpdateFile = {
   createdUnixTimestamp: number | null;
 };
 
-const updatesDir = path.join(process.cwd(), "src", "lib", "adminUpdates", "updates");
 const updatesExecutionTable = process.env.ADMIN_UPDATES_TABLE || "Updates";
 
 function parseAdminUpdateFileName(fileName: string): ParsedAdminUpdateFile {
@@ -59,13 +48,7 @@ function parseAdminUpdateFileName(fileName: string): ParsedAdminUpdateFile {
 }
 
 async function listAdminUpdateFiles(): Promise<ParsedAdminUpdateFile[]> {
-  const entries = await readdir(updatesDir, { withFileTypes: true });
-
-  return entries
-    .filter((entry) => entry.isFile())
-    .map((entry) => entry.name)
-    .filter((name) => name.endsWith(".ts") && name !== "index.ts")
-    .map(parseAdminUpdateFileName);
+  return adminUpdateRegistry.map((entry) => parseAdminUpdateFileName(entry.fileName));
 }
 
 async function getAdminUpdateByFileName(fileName: string): Promise<ParsedAdminUpdateFile | undefined> {
@@ -74,7 +57,13 @@ async function getAdminUpdateByFileName(fileName: string): Promise<ParsedAdminUp
 }
 
 async function loadAdminUpdateRunner(fileName: string) {
-  const loadedModule = (await import(`./updates/${fileName}`)) as AdminUpdateModule;
+  const registeredUpdate = adminUpdateRegistry.find((entry) => entry.fileName === fileName);
+
+  if (!registeredUpdate) {
+    throw new Error(`No admin update module registered for ${fileName}`);
+  }
+
+  const loadedModule = registeredUpdate.module as AdminUpdateModule;
   const runner = loadedModule.runAdminUpdate ?? loadedModule.default;
 
   if (typeof runner !== "function") {

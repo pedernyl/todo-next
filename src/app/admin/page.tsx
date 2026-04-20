@@ -41,7 +41,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   }
 
   const resolvedSearchParams = await searchParams;
-  const activeView = getActiveView(resolvedSearchParams.view);
+  const activeView = getActiveView(resolvedSearchParams?.view);
   const activeLabel = adminViews.find((item) => item.key === activeView)?.label ?? "Admin";
 
   return (

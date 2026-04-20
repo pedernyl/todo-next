@@ -34,6 +34,7 @@ See `.env.example` (copy to `.env.local`) for a fully documented list. Required 
 - NEXT_PUBLIC_BASE_URL=http://localhost:3000
 - NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
 - NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+- SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key (required server-side for Admin Updates execution/logging; never expose to client)
 - GITHUB_ID / GITHUB_SECRET for NextAuth GitHub provider
 - NEXTAUTH_SECRET random string
 - Optional: NEXTAUTH_ALLOWED_USERS=comma,separated,emails
@@ -95,7 +96,16 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 
 ## Admin SQL-Style Updates
 
-Admin-triggered database updates are implemented as TypeScript update files (not runtime SQL files) and are auto-discovered from `src/lib/adminUpdates`.
+Admin-triggered database updates are implemented as TypeScript update files (not runtime SQL files) and loaded from an **auto-generated, build-time registry** in `src/lib/adminUpdates/updates/registry.generated.ts`. This approach ensures updates are always bundled and loadable in production, even in serverless deployments where the source tree may not exist at runtime.
+
+The admin update runner requires a server-side `SUPABASE_SERVICE_ROLE_KEY` in the deployment environment. This privileged key is required to bypass RLS where needed and to write execution logs; without it, the Admin Updates UI may load but update execution/listing can fail in production.
+
+### Workflow
+
+1. Create a new update file: `src/lib/adminUpdates/updates/<updateName>_<unixTimestamp>.ts`
+2. Run `npm run generate:admin-updates` to regenerate the registry
+3. Commit both files
+4. Deploy and execute from Admin → Updates UI
 
 For naming rules, required exports, and coding conventions, see [src/lib/adminUpdates/README.md](src/lib/adminUpdates/README.md).
 

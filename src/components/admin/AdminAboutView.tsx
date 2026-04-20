@@ -1,6 +1,6 @@
 import { readFile } from "fs/promises";
 import path from "path";
-import { marked } from "marked";
+import { renderSanitizedMarkdown } from "../../lib/markdown";
 
 export default async function AdminAboutView() {
   let html: string;
@@ -8,7 +8,7 @@ export default async function AdminAboutView() {
   try {
     const readmePath = path.join(process.cwd(), "src", "lib", "adminUpdates", "README.md");
     const raw = await readFile(readmePath, "utf-8");
-    html = await marked(raw);
+    html = await renderSanitizedMarkdown(raw, "docs");
   } catch {
     html = "<p>Could not load README.md.</p>";
   }

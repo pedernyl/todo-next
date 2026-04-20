@@ -2,7 +2,7 @@
 
 This folder contains the admin update loader and documentation.
 
-The app auto-discovers update files in `src/lib/adminUpdates/updates` and shows them in the Admin Updates UI. No manual registration is required.
+The app loads update files through an **auto-generated, build-time-safe registry** in `src/lib/adminUpdates/updates/registry.generated.ts`. This ensures updates are always bundled and discoverable in production, even in serverless environments where the source `.ts` tree may not exist at runtime.
 
 ## File naming
 
@@ -21,12 +21,41 @@ Rules:
 - Use one file per update.
 - Do not rename a file after it has been run in an environment, because execution logs use the file name as the update id.
 
+## Registration
+
+**Registration is automatic.** After creating a new update file, you must regenerate the registry:
+
+```bash
+npm run generate:admin-updates
+```
+
+This script scans the `src/lib/adminUpdates/updates` directory, finds all `.ts` update files, and generates `registry.generated.ts` with static imports and a manifest array.
+
+Registry consistency is enforced by `src/unit-tests/adminUpdatesRegistry.test.ts`, which verifies that every update file is included in the generated registry and that there are no duplicates.
+
+Run the test with:
+
+```bash
+npx vitest run src/unit-tests/adminUpdatesRegistry.test.ts
+```
+
 ## Required export
 
-Each update file must export an async function named `runAdminUpdate`.
+Each update file must export an async function that the loader can execute.
+
+Preferred (named export):
 
 ```ts
 export async function runAdminUpdate() {
+  // perform update
+  return { message: "Updated ..." };
+}
+```
+
+Also supported (default export):
+
+```ts
+export default async function runAdminUpdate() {
   // perform update
   return { message: "Updated ..." };
 }
@@ -70,7 +99,9 @@ Execution is protected by:
 ## Developer checklist
 
 1. Create a new file in `src/lib/adminUpdates/updates` with `<updateName>_<unixTimestamp>.ts`.
-2. Export `runAdminUpdate`.
+2. Export an async update function (prefer named `runAdminUpdate`; default export is also supported).
 3. Use `supabaseAdmin` and throw on errors.
 4. Return a clear `message` for the admin UI.
-5. Deploy and run from Admin -> Updates.
+5. Run `npm run generate:admin-updates` to regenerate the registry.
+6. Commit both the new update file and the updated `registry.generated.ts`.
+7. Deploy and run from Admin -> Updates.
