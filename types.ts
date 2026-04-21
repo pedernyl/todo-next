@@ -4,6 +4,7 @@ export interface Todo {
   title: string;
   description: string;
   completed: boolean;
+  sort_index?: number | null;
   owner_id: number;
   category_id?: string | null;
   parent_todo?: string | null;

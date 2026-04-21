@@ -39,7 +39,38 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const body = await req.json();
-  const { id, completed, title, description } = body;
+  const { id, completed, title, description, reorder } = body;
+
+  if (reorder) {
+    const { updates, parent_todo = null, category_id, completed: completedScope } = body;
+    if (!Array.isArray(updates) || typeof completedScope !== 'boolean') {
+      return NextResponse.json({ error: "Invalid reorder payload" }, { status: 400 });
+    }
+
+    const email = session.user?.email;
+    if (!email) {
+      return NextResponse.json({ error: "User email missing" }, { status: 400 });
+    }
+
+    const { fetchUserIdByEmail, reorderTodoSiblings } = await import('../../../lib/dataService');
+
+    try {
+      const userId = await fetchUserIdByEmail(email);
+      const reorderedTodos = await reorderTodoSiblings(
+        userId,
+        updates,
+        {
+          parent_todo,
+          completed: completedScope,
+          ...(typeof category_id !== 'undefined' ? { category_id } : {}),
+        }
+      );
+      return NextResponse.json({ updated: reorderedTodos });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to reorder todos";
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
+  }
 
   let todo;
   if (typeof completed !== 'undefined' && typeof title === 'undefined' && typeof description === 'undefined') {

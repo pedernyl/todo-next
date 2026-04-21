@@ -3,6 +3,43 @@ import { Todo } from '../../types';
 import { authOptions } from "../lib/authOptions";
 import { getServerSession } from "next-auth";
 
+type ReorderUpdateInput = {
+  id: string;
+  sort_index: number;
+};
+
+type ReorderScope = {
+  parent_todo: string | null;
+  completed: boolean;
+  category_id?: string | null;
+};
+
+export async function fetchUserIdByEmail(email: string): Promise<number> {
+  const userIdRes = await fetch(
+    `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/api/userid?email=${encodeURIComponent(email)}`,
+    { cache: "no-store" }
+  );
+  if (!userIdRes.ok) throw new Error("Could not fetch user id");
+  const { userId } = await userIdRes.json();
+  if (typeof userId !== 'number') throw new Error('userId must be a number');
+  return userId;
+}
+
+async function getAuthenticatedUserId(): Promise<number> {
+  const session = await getServerSession(authOptions);
+  if (!session) throw new Error("User not authenticated");
+  const email = session.user?.email;
+  if (!email) throw new Error("User email missing");
+  return fetchUserIdByEmail(email);
+}
+
+function normalizeSortIndex(value: number | null | undefined): number {
+  if (typeof value !== 'number' || Number.isNaN(value) || value < 0) {
+    return Number.MAX_SAFE_INTEGER;
+  }
+  return value;
+}
+
 // Update a todo's title and description in Supabase
 export async function updateTodoDetails(id: string, title: string, description: string): Promise<Todo> {
   const { data, error } = await supabase
@@ -17,15 +54,7 @@ export async function updateTodoDetails(id: string, title: string, description: 
 
 // Fetch all todos from Supabase
 export async function getTodos(showCompleted: boolean = true, category_id?: string | null): Promise<Todo[]> {
-  const session = await getServerSession(authOptions);
-  if (!session) throw new Error("User not authenticated");
-  // Fetch user id from /api/userid
-  const userIdRes = await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/api/userid?email=${encodeURIComponent(session.user?.email ?? "")}`,
-    { cache: "no-store" }
-  );
-  if (!userIdRes.ok) throw new Error("Could not fetch user id");
-  const { userId } = await userIdRes.json();
+  const userId = await getAuthenticatedUserId();
 
 
   let query = supabase
@@ -33,6 +62,8 @@ export async function getTodos(showCompleted: boolean = true, category_id?: stri
     .select('*')
     .eq('owner_id', userId)
     .is('deleted_timestamp', null)
+    .order('completed', { ascending: true })
+    .order('sort_index', { ascending: true })
     .order('id', { ascending: true });
 
   if (!showCompleted) {
@@ -49,17 +80,40 @@ export async function getTodos(showCompleted: boolean = true, category_id?: stri
 
 // Create a new todo in Supabase
 export async function createTodo(title: string, description: string, parent_todo?: string, category_id?: string): Promise<Todo> {
-  const session = await getServerSession(authOptions);
-  if (!session) throw new Error("User not authenticated");
-  // Fetch user id from /api/userid
-  const userIdRes = await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/api/userid?email=${encodeURIComponent(session.user?.email ?? "")}`,
-    { cache: "no-store" }
-  );
-  if (!userIdRes.ok) throw new Error("Could not fetch user id");
-  const { userId } = await userIdRes.json();
-  if (typeof userId !== 'number') throw new Error('userId must be a number');
-  const insertObj: Partial<Todo> = { title, description, owner_id: userId, completed: false };
+  const userId = await getAuthenticatedUserId();
+  let maxSortIndexQuery = supabase
+    .from('todos')
+    .select('sort_index')
+    .eq('owner_id', userId)
+    .is('deleted_timestamp', null)
+    .eq('completed', false);
+
+  if (parent_todo) {
+    maxSortIndexQuery = maxSortIndexQuery.eq('parent_todo', parent_todo);
+  } else {
+    maxSortIndexQuery = maxSortIndexQuery.is('parent_todo', null);
+  }
+  if (category_id) {
+    maxSortIndexQuery = maxSortIndexQuery.eq('category_id', category_id);
+  } else {
+    maxSortIndexQuery = maxSortIndexQuery.is('category_id', null);
+  }
+
+  const { data: maxSortData, error: maxSortError } = await maxSortIndexQuery
+    .order('sort_index', { ascending: false })
+    .limit(1);
+  if (maxSortError) throw maxSortError;
+  const nextSortIndex = normalizeSortIndex(maxSortData?.[0]?.sort_index) === Number.MAX_SAFE_INTEGER
+    ? 0
+    : normalizeSortIndex(maxSortData?.[0]?.sort_index) + 1;
+
+  const insertObj: Partial<Todo> = {
+    title,
+    description,
+    owner_id: userId,
+    completed: false,
+    sort_index: nextSortIndex,
+  };
   if (parent_todo) insertObj.parent_todo = parent_todo;
   if (category_id) insertObj.category_id = category_id;
   const { data, error } = await supabase
@@ -94,4 +148,61 @@ export async function softDeleteTodo(id: string, userId: string | number): Promi
     .single();
   if (error) throw error;
   return data as Todo;
+}
+
+export async function reorderTodoSiblings(
+  userId: number,
+  updates: ReorderUpdateInput[],
+  scope: ReorderScope
+): Promise<Todo[]> {
+  if (!updates.length) return [];
+
+  const ids = updates.map((item) => item.id);
+  const { data: existing, error: existingError } = await supabase
+    .from('todos')
+    .select('id, owner_id, parent_todo, completed, category_id, deleted_timestamp')
+    .eq('owner_id', userId)
+    .in('id', ids);
+
+  if (existingError) throw existingError;
+  if (!existing || existing.length !== ids.length) {
+    throw new Error('Some todos are missing or unauthorized');
+  }
+
+  const parentValue = scope.parent_todo ?? null;
+  const categoryValue = scope.category_id ?? null;
+  const invalidScopeTodo = existing.find((todo) => {
+    const sameParent = (todo.parent_todo ?? null) === parentValue;
+    const sameCompleted = Boolean(todo.completed) === scope.completed;
+    const sameCategory = typeof scope.category_id === 'undefined'
+      ? true
+      : (todo.category_id ?? null) === categoryValue;
+    return !sameParent || !sameCompleted || !sameCategory || todo.deleted_timestamp !== null;
+  });
+
+  if (invalidScopeTodo) {
+    throw new Error('Invalid reorder scope for one or more todos');
+  }
+
+  await Promise.all(
+    updates.map(async (item) => {
+      const { error } = await supabase
+        .from('todos')
+        .update({ sort_index: item.sort_index })
+        .eq('id', item.id)
+        .eq('owner_id', userId);
+      if (error) throw error;
+    })
+  );
+
+  const { data: updated, error: updatedError } = await supabase
+    .from('todos')
+    .select('*')
+    .eq('owner_id', userId)
+    .in('id', ids)
+    .order('sort_index', { ascending: true })
+    .order('id', { ascending: true });
+
+  if (updatedError) throw updatedError;
+  return (updated ?? []) as Todo[];
 }

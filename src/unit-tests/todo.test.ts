@@ -3,12 +3,19 @@ import { createTodo, softDeleteTodo } from '../lib/dataService';
 
 // Mock supabaseClient with full method chains (must be first)
 vi.mock('../lib/supabaseClient', () => {
+  const maxSortQuery = {
+    eq: () => maxSortQuery,
+    is: () => maxSortQuery,
+    order: () => maxSortQuery,
+    limit: () => Promise.resolve({ data: [{ sort_index: 2 }], error: null }),
+  };
   const insertChain = { select: () => ({ single: () => Promise.resolve({ data: { id: '1', title: 'Test Todo', description: '', completed: false }, error: null }) }) };
   const updateChain = { eq: () => ({ select: () => ({ single: () => Promise.resolve({ data: { id: '1', deleted_timestamp: 1234567890, deleted_by: 'user1' }, error: null }) }) }) };
   return {
     supabase: {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       from: (_table: string) => ({
+        select: () => maxSortQuery,
         insert: () => insertChain,
         update: () => updateChain,
       })
