@@ -34,6 +34,7 @@ See `.env.example` (copy to `.env.local`) for a fully documented list. Required 
 - NEXT_PUBLIC_BASE_URL=http://localhost:3000
 - NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
 - NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+- SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key (required server-side for Admin Updates execution/logging; never expose to client)
 - GITHUB_ID / GITHUB_SECRET for NextAuth GitHub provider
 - NEXTAUTH_SECRET random string
 - Optional: NEXTAUTH_ALLOWED_USERS=comma,separated,emails
@@ -41,12 +42,12 @@ See `.env.example` (copy to `.env.local`) for a fully documented list. Required 
 In production you typically set `NEXTAUTH_URL` to your site origin.
 
 Additional (optional) hardening / isolation vars:
-- `NEXT_CSP_MODE` (off|dev|report-only|enforce) – controls CSP behavior (middleware enforces; report-only emitted by config).
+- `NEXT_CSP_MODE` (off|dev|report-only|enforce) – controls CSP behavior (proxy enforces; report-only emitted by config).
 - `NEXT_COEP` (require-corp|credentialless) – enables Cross-Origin-Embedder-Policy for isolation; leave unset if unsure.
 
 ## Content Security Policy (CSP)
 
-The CSP is applied via `src/middleware.ts` with a nonce for inline scripts. Modes are controlled by `NEXT_CSP_MODE`:
+The CSP is applied via `src/proxy.ts` with a nonce for inline scripts. Modes are controlled by `NEXT_CSP_MODE`:
 
 - dev: permissive for local development (default when NODE_ENV=development unless you explicitly set enforce)
 - report-only: strict policy that only reports violations
@@ -70,7 +71,7 @@ The policy automatically whitelists your Supabase project URL (https) and its re
 
 - X-Powered-By is disabled at the framework level to avoid disclosing implementation details.
 	- Config: `poweredByHeader: false` in `next.config.ts`
-	- Middleware also deletes any stray `x-powered-by` header as defense-in-depth.
+	- Proxy also deletes any stray `x-powered-by` header as defense-in-depth.
 - Verify locally:
 	```bash
 	curl -s -D - http://localhost:3000/ -o /dev/null | grep -i x-powered-by || echo 'No X-Powered-By header'
@@ -92,6 +93,31 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 
 - Unit tests (Vitest): see [src/unit-tests/README.md](src/unit-tests/README.md) for commands and setup. Quick run: `npm test`.
 - E2E tests (Playwright): see [tests/README.md](tests/README.md) for auth setup and commands. CSP-specific notes: [tests/README-CSP.md](tests/README-CSP.md).
+
+## Admin SQL-Style Updates
+
+Admin-triggered database updates are implemented as TypeScript update files (not runtime SQL files) and loaded from an **auto-generated, build-time registry** in `src/lib/adminUpdates/updates/registry.generated.ts`. This approach ensures updates are always bundled and loadable in production, even in serverless deployments where the source tree may not exist at runtime.
+
+The admin update runner requires a server-side `SUPABASE_SERVICE_ROLE_KEY` in the deployment environment. This privileged key is required to bypass RLS where needed and to write execution logs; without it, the Admin Updates UI may load but update execution/listing can fail in production.
+
+### Workflow
+
+1. Create a new update file: `src/lib/adminUpdates/updates/<updateName>_<unixTimestamp>.ts`
+2. Run `npm run generate:admin-updates` if you want to refresh it immediately (the registry is also auto-generated before `npm run dev`, `npm run build`, and `npm test`)
+3. Commit both files
+4. Deploy and execute from Admin → Updates UI
+
+### CI guard for registry freshness
+
+To fail CI when `registry.generated.ts` is stale, run:
+
+```bash
+npm run check:admin-updates-registry
+```
+
+This script regenerates the registry and fails if that changes `src/lib/adminUpdates/updates/registry.generated.ts`, which means the generated file was out of date.
+
+For naming rules, required exports, and coding conventions, see [src/lib/adminUpdates/README.md](src/lib/adminUpdates/README.md).
 
 ## Deploy
 

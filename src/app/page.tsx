@@ -6,6 +6,8 @@ import AuthButtons from '../components/AuthButtons';
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../lib/authOptions";
+import { isAdminEmail } from "../lib/adminAccess";
+import Link from "next/link";
 import TodoPageClient from "./TodoPageClient";
 
 export default async function Home() {
@@ -15,6 +17,8 @@ export default async function Home() {
     redirect("/login");
   }
 
+  const canAccessAdmin = isAdminEmail(session.user?.email);
+
   const todos = await getTodos();
 
   return (
@@ -23,6 +27,13 @@ export default async function Home() {
       <div className="absolute left-10 top-2 z-10">
         <AuthButtons />
       </div>
+      {canAccessAdmin && (
+        <div className="absolute right-10 top-12 z-10">
+          <Link href="/admin" className="text-sm font-semibold text-blue-700 hover:underline">
+            Admin
+          </Link>
+        </div>
+      )}
       <h1 className="text-center text-3xl font-bold mb-8 mt-16">Todo App</h1>
       <TodoPageClient initialTodos={todos} />
     </div>
