@@ -14,6 +14,12 @@ type ReorderScope = {
   category_id?: string | null;
 };
 
+function normalizeComparableId(value: string | number | null | undefined): string | null {
+  if (value === null || typeof value === 'undefined') return null;
+  const normalized = String(value);
+  return normalized.length > 0 ? normalized : null;
+}
+
 export async function fetchUserIdByEmail(email: string): Promise<number> {
   const userIdRes = await fetch(
     `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/api/userid?email=${encodeURIComponent(email)}`,
@@ -157,7 +163,7 @@ export async function reorderTodoSiblings(
 ): Promise<Todo[]> {
   if (!updates.length) return [];
 
-  const ids = updates.map((item) => item.id);
+  const ids = updates.map((item) => String(item.id));
   const { data: existing, error: existingError } = await supabase
     .from('todos')
     .select('id, owner_id, parent_todo, completed, category_id, deleted_timestamp')
@@ -169,14 +175,14 @@ export async function reorderTodoSiblings(
     throw new Error('Some todos are missing or unauthorized');
   }
 
-  const parentValue = scope.parent_todo ?? null;
-  const categoryValue = scope.category_id ?? null;
+  const parentValue = normalizeComparableId(scope.parent_todo);
+  const categoryValue = normalizeComparableId(scope.category_id);
   const invalidScopeTodo = existing.find((todo) => {
-    const sameParent = (todo.parent_todo ?? null) === parentValue;
+    const sameParent = normalizeComparableId(todo.parent_todo) === parentValue;
     const sameCompleted = Boolean(todo.completed) === scope.completed;
     const sameCategory = typeof scope.category_id === 'undefined'
       ? true
-      : (todo.category_id ?? null) === categoryValue;
+      : normalizeComparableId(todo.category_id) === categoryValue;
     return !sameParent || !sameCompleted || !sameCategory || todo.deleted_timestamp !== null;
   });
 
