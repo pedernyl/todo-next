@@ -102,6 +102,6 @@ Execution is protected by:
 2. Export an async update function (prefer named `runAdminUpdate`; default export is also supported).
 3. Use `supabaseAdmin` and throw on errors.
 4. Return a clear `message` for the admin UI.
-5. Run `npm run generate:admin-updates` to regenerate the registry.
+5. Run `npm run generate:admin-updates` if you want to refresh immediately (the registry is also auto-generated before `npm run dev`, `npm run build`, and `npm test`).
 6. Commit both the new update file and the updated `registry.generated.ts`.
 7. Deploy and run from Admin -> Updates.

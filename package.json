@@ -7,8 +7,12 @@
   },
   "scripts": {
     "generate:admin-updates": "node scripts/generate-admin-updates-registry.mjs",
+    "check:admin-updates-registry": "npm run -s generate:admin-updates && git diff --exit-code -- src/lib/adminUpdates/updates/registry.generated.ts",
+    "predev": "npm run generate:admin-updates",
     "dev": "next dev",
+    "prebuild": "npm run generate:admin-updates",
     "build": "next build",
+    "pretest": "npm run generate:admin-updates",
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run",

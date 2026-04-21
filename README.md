@@ -103,9 +103,19 @@ The admin update runner requires a server-side `SUPABASE_SERVICE_ROLE_KEY` in th
 ### Workflow
 
 1. Create a new update file: `src/lib/adminUpdates/updates/<updateName>_<unixTimestamp>.ts`
-2. Run `npm run generate:admin-updates` to regenerate the registry
+2. Run `npm run generate:admin-updates` if you want to refresh it immediately (the registry is also auto-generated before `npm run dev`, `npm run build`, and `npm test`)
 3. Commit both files
 4. Deploy and execute from Admin → Updates UI
+
+### CI guard for registry freshness
+
+To fail CI when `registry.generated.ts` is stale, run:
+
+```bash
+npm run check:admin-updates-registry
+```
+
+This script regenerates the registry and fails if that changes `src/lib/adminUpdates/updates/registry.generated.ts`, which means the generated file was out of date.
 
 For naming rules, required exports, and coding conventions, see [src/lib/adminUpdates/README.md](src/lib/adminUpdates/README.md).
 
