@@ -91,7 +91,7 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ updated: reorderedTodos });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to reorder todos";
-      return NextResponse.json({ error: message }, { status: 400 });
+      return NextResponse.json({ error: message }, { status: 500 });
     }
   }
 
