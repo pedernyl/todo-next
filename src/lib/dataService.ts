@@ -168,7 +168,23 @@ export async function reorderTodoSiblings(
 ): Promise<Todo[]> {
   if (!updates.length) return [];
 
-  const ids = updates.map((item) => String(item.id));
+  const normalizedUpdates = updates.map((item, index) => {
+    const id = String(item.id);
+    const sortIndex = Number(item.sort_index);
+
+    if (!id) {
+      throw new Error(`Invalid reorder update entry at index ${index}: id is required`);
+    }
+    if (!Number.isFinite(sortIndex) || sortIndex < 0) {
+      throw new Error(
+        `Invalid reorder update entry at index ${index}: sort_index must be a finite non-negative number`
+      );
+    }
+
+    return { id, sort_index: sortIndex };
+  });
+
+  const ids = normalizedUpdates.map((item) => item.id);
   const { data: existing, error: existingError } = await supabase
     .from('todos')
     .select('id, owner_id, parent_todo, completed, category_id, deleted_timestamp')
@@ -196,7 +212,7 @@ export async function reorderTodoSiblings(
   }
 
   await Promise.all(
-    updates.map(async (item) => {
+    normalizedUpdates.map(async (item) => {
       const { error } = await supabase
         .from('todos')
         .update({ sort_index: item.sort_index })
