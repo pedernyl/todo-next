@@ -414,6 +414,10 @@ export default function TodoList({ initialTodos, selectedCategory }: TodoListPro
   const [todos, setTodos] = React.useState(initialTodos);
   const [openDescriptions, setOpenDescriptions] = React.useState<{ [id: string]: boolean }>({});
 
+  React.useEffect(() => {
+    setTodos(initialTodos);
+  }, [initialTodos]);
+
   const [showCompleted, setShowCompleted] = React.useState(true);
   const [showAddForm, setShowAddForm] = React.useState(false);
   const [editTodo, setEditTodo] = React.useState<Todo | null>(null);
