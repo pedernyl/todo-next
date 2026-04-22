@@ -7,6 +7,7 @@ import {
   closestCenter,
   DndContext,
   DragEndEvent,
+  DragOverEvent,
   DragOverlay,
   DragStartEvent,
   PointerSensor,
@@ -549,7 +550,7 @@ export default function TodoList({ initialTodos, selectedCategory }: TodoListPro
     setActiveTodoId(String(event.active.id));
   };
 
-  const handleDragOver = (event: { over: { id: string | number } | null }) => {
+  const handleDragOver = (event: DragOverEvent) => {
     const nextOverId = event.over ? String(event.over.id) : null;
     if (nextOverId && nextOverId === activeTodoId) return;
     setOverTodoId(nextOverId);
