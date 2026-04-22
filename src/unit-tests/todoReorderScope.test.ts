@@ -10,6 +10,8 @@ let mockExistingTodos: Array<{
 }> = [];
 let updatedTodosResult: Array<{ id: string; sort_index: number }> = [];
 let updateIdEqValues: unknown[] = [];
+let updateSortIndexPayloads: number[] = [];
+let updateOwnerEqValues: unknown[] = [];
 
 vi.mock("../lib/supabaseClient", () => {
   const supabase = {
@@ -35,12 +37,21 @@ vi.mock("../lib/supabaseClient", () => {
         };
       },
       update: (_payload: { sort_index: number }) => ({
+        ...(() => {
+          updateSortIndexPayloads.push(_payload.sort_index);
+          return {};
+        })(),
         eq: (field: string, value: unknown) => {
           if (field === "id") {
             updateIdEqValues.push(value);
           }
           return {
-          eq: (_ownerField: string, _ownerValue: unknown) => Promise.resolve({ error: null }),
+          eq: (ownerField: string, ownerValue: unknown) => {
+            if (ownerField === "owner_id") {
+              updateOwnerEqValues.push(ownerValue);
+            }
+            return Promise.resolve({ error: null });
+          },
           };
         },
       }),
@@ -57,6 +68,8 @@ describe("reorderTodoSiblings nested scope", () => {
     mockExistingTodos = [];
     updatedTodosResult = [];
     updateIdEqValues = [];
+    updateSortIndexPayloads = [];
+    updateOwnerEqValues = [];
   });
 
   it("rejects nested reorder when category scope does not match siblings", async () => {
@@ -133,6 +146,49 @@ describe("reorderTodoSiblings nested scope", () => {
     );
 
     expect(updateIdEqValues).toEqual(["291", "292"]);
+  });
+
+  it("applies expected sort_index writes for a valid scoped reorder", async () => {
+    mockExistingTodos = [
+      {
+        id: "291",
+        owner_id: 1,
+        parent_todo: "270",
+        completed: false,
+        category_id: "cat-a",
+        deleted_timestamp: null,
+      },
+      {
+        id: "292",
+        owner_id: 1,
+        parent_todo: "270",
+        completed: false,
+        category_id: "cat-a",
+        deleted_timestamp: null,
+      },
+    ];
+    updatedTodosResult = [
+      { id: "292", sort_index: 0 },
+      { id: "291", sort_index: 1 },
+    ];
+
+    const result = await reorderTodoSiblings(
+      1,
+      [
+        { id: 292 as unknown as string, sort_index: 0 },
+        { id: "291", sort_index: 1 },
+      ],
+      {
+        parent_todo: "270",
+        completed: false,
+        category_id: "cat-a",
+      }
+    );
+
+    expect(updateIdEqValues).toEqual(["292", "291"]);
+    expect(updateSortIndexPayloads).toEqual([0, 1]);
+    expect(updateOwnerEqValues).toEqual([1, 1]);
+    expect(result).toEqual(updatedTodosResult);
   });
 
   it("rejects reorder updates with invalid sort_index values", async () => {
