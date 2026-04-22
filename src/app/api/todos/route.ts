@@ -39,7 +39,61 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const body = await req.json();
-  const { id, completed, title, description } = body;
+  const { id, completed, title, description, reorder } = body;
+
+  if (reorder) {
+    const { updates, parent_todo = null, category_id, completed: completedScope } = body;
+    if (!Array.isArray(updates) || typeof completedScope !== 'boolean') {
+      return NextResponse.json({ error: "Invalid reorder payload" }, { status: 400 });
+    }
+
+    // Validate and normalize each update entry
+    for (const update of updates) {
+      if (!update || typeof update !== 'object') {
+        return NextResponse.json({ error: "Invalid update entry: must be an object" }, { status: 400 });
+      }
+      if (typeof update.id === 'undefined') {
+        return NextResponse.json({ error: "Invalid update entry: id is required" }, { status: 400 });
+      }
+      if (typeof update.sort_index !== 'number' || !Number.isFinite(update.sort_index)) {
+        return NextResponse.json({ error: "Invalid update entry: sort_index must be a finite number" }, { status: 400 });
+      }
+      // Normalize id to number if it's a string representation
+      if (typeof update.id === 'string') {
+        const numId = Number(update.id);
+        if (!Number.isFinite(numId)) {
+          return NextResponse.json({ error: "Invalid update entry: id must be a valid number" }, { status: 400 });
+        }
+        update.id = numId;
+      } else if (typeof update.id !== 'number' || !Number.isFinite(update.id)) {
+        return NextResponse.json({ error: "Invalid update entry: id must be a number" }, { status: 400 });
+      }
+    }
+
+    const email = session.user?.email;
+    if (!email) {
+      return NextResponse.json({ error: "User email missing" }, { status: 400 });
+    }
+
+    const { fetchUserIdByEmail, reorderTodoSiblings } = await import('../../../lib/dataService');
+
+    try {
+      const userId = await fetchUserIdByEmail(email);
+      const reorderedTodos = await reorderTodoSiblings(
+        userId,
+        updates,
+        {
+          parent_todo,
+          completed: completedScope,
+          ...(typeof category_id !== 'undefined' ? { category_id } : {}),
+        }
+      );
+      return NextResponse.json({ updated: reorderedTodos });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to reorder todos";
+      return NextResponse.json({ error: message }, { status: 500 });
+    }
+  }
 
   let todo;
   if (typeof completed !== 'undefined' && typeof title === 'undefined' && typeof description === 'undefined') {

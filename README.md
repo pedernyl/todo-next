@@ -31,7 +31,7 @@ This project uses [`next/font`](https://nextjs.org/docs/app/building-your-applic
 
 See `.env.example` (copy to `.env.local`) for a fully documented list. Required for local dev:
 
-- NEXT_PUBLIC_BASE_URL=http://localhost:3000
+- NEXT_PUBLIC_BASE_URL=http://localhost:3000 (**required** — used for server-side self-calls to internal API routes; omitting this will cause a runtime error)
 - NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
 - NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
 - SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key (required server-side for Admin Updates execution/logging; never expose to client)

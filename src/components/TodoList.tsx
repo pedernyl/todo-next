@@ -1,12 +1,26 @@
 "use client";
 import React from "react";
-// Type for tree node used in buildTodoTree and renderTodoTree
-interface TodoTreeNode extends Todo {
-  children: TodoTreeNode[];
-}
 import { useUserId } from "../context/UserIdContext";
 import { Todo } from "../../types";
 import AddTodo from "./AddTodo";
+import {
+  closestCenter,
+  DndContext,
+  DragEndEvent,
+  DragOverEvent,
+  DragOverlay,
+  DragStartEvent,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 
 import type { Category } from "../lib/categoryService";
@@ -14,6 +28,68 @@ import type { Category } from "../lib/categoryService";
 interface TodoListProps {
   initialTodos: Todo[];
   selectedCategory?: Category | null;
+}
+
+interface TodoTreeNode extends Todo {
+  children: TodoTreeNode[];
+}
+
+type ReorderComputation = {
+  nextTodos: Todo[];
+  updates: Array<{ id: string; sort_index: number }>;
+  scope: {
+    parent_todo: string | null;
+    completed: boolean;
+    category_id?: string | null;
+  };
+};
+
+type DropPosition = "before" | "after";
+
+type SortableTodoItemProps = {
+  todo: TodoTreeNode;
+  level: number;
+  openDescriptions: { [id: string]: boolean };
+  toggleDescription: (id: string) => void;
+  toggleTodo: (id: string, completed: boolean) => void;
+  handleCreateSubTodo: (todo: Todo) => void;
+  handleEdit: (todo: Todo) => void;
+  handleDelete: (todo: Todo) => void;
+  userId: number | null;
+  activeTodoId: string | null;
+  overTodoId: string | null;
+};
+
+function getNormalizedSortIndex(todo: Todo): number {
+  if (typeof todo.sort_index !== "number" || Number.isNaN(todo.sort_index) || todo.sort_index < 0) {
+    return Number.MAX_SAFE_INTEGER;
+  }
+  return todo.sort_index;
+}
+
+function normalizeTodoId(id: string | number | null | undefined): string {
+  return id == null ? "" : String(id);
+}
+
+function normalizeNullableId(id: string | number | null | undefined): string | null {
+  const normalized = normalizeTodoId(id);
+  return normalized.length > 0 ? normalized : null;
+}
+
+function compareTodoOrder(a: Todo, b: Todo): number {
+  const completedDiff = Number(a.completed) - Number(b.completed);
+  if (completedDiff !== 0) return completedDiff;
+
+  const sortDiff = getNormalizedSortIndex(a) - getNormalizedSortIndex(b);
+  if (sortDiff !== 0) return sortDiff;
+
+  const aNum = Number(a.id);
+  const bNum = Number(b.id);
+  if (Number.isNaN(aNum) || Number.isNaN(bNum)) {
+    return a.id.localeCompare(b.id);
+  }
+  return aNum - bNum;
+
 }
 
 // Build tree structure from flat todo array
@@ -34,47 +110,205 @@ function buildTodoTree(todos: Todo[]): TodoTreeNode[] {
   });
   // Sort each level
   function sortTree(nodes: TodoTreeNode[]) {
-    nodes.sort((a, b) => Number(a.completed) - Number(b.completed) || Number(b.id) - Number(a.id));
+    nodes.sort(compareTodoOrder);
     nodes.forEach((n) => n.children && sortTree(n.children));
   }
   sortTree(roots);
   return roots;
 }
 
-// Recursive rendering with indentation
-function renderTodoTree(
+// Helper to flatten tree into array
+function flattenTodoTree(tree: TodoTreeNode[]): Todo[] {
+  const result: Todo[] = [];
+  function traverse(nodes: TodoTreeNode[]) {
+    nodes.forEach((node) => {
+      const { children, ...todoData } = node;
+      result.push(todoData as Todo);
+      if (children && children.length > 0) {
+        traverse(children);
+      }
+    });
+  }
+  traverse(tree);
+  return result;
+}
+
+function computeSiblingReorder(
+  todos: Todo[],
+  movedId: string,
+  targetId: string,
+  dropPosition: DropPosition,
+  tree: TodoTreeNode[],
+  categoryId?: string | null
+): ReorderComputation | null {
+  if (movedId === targetId) return null;
+
+  // Flatten tree to get all todos (not just the flat array which may be incomplete)
+  const allTodosFromTree = flattenTodoTree(tree);
+  const movedTodo = allTodosFromTree.find((todo) => normalizeTodoId(todo.id) === movedId);
+  const targetTodo = allTodosFromTree.find((todo) => normalizeTodoId(todo.id) === targetId);
+
+  if (!movedTodo || !targetTodo) {
+    console.error("Todos not found", {
+      movedId,
+      targetId,
+      movedTodoFound: !!movedTodo,
+      targetTodoFound: !!targetTodo,
+      treeFlattened: allTodosFromTree.map((t) => t.id).slice(0, 20),
+    });
+    return null;
+  }
+
+  const movedParent = normalizeTodoId(movedTodo.parent_todo) || null;
+  const targetParent = normalizeTodoId(targetTodo.parent_todo) || null;
+  if (movedParent !== targetParent) return null;
+  if (Boolean(movedTodo.completed) !== Boolean(targetTodo.completed)) return null;
+
+  const siblings = todos
+    .filter((todo) => {
+      if ((normalizeTodoId(todo.parent_todo) || null) !== movedParent) return false;
+      if (typeof categoryId !== "undefined") {
+        if (normalizeNullableId(todo.category_id) !== normalizeNullableId(categoryId)) return false;
+      }
+      return Boolean(todo.completed) === Boolean(movedTodo.completed);
+    })
+    .sort(compareTodoOrder);
+
+  const fromIndex = siblings.findIndex((todo) => normalizeTodoId(todo.id) === movedId);
+  const targetIndex = siblings.findIndex((todo) => normalizeTodoId(todo.id) === targetId);
+  if (fromIndex < 0 || targetIndex < 0) return null;
+
+  let insertionIndex = targetIndex + (dropPosition === "after" ? 1 : 0);
+  if (fromIndex < insertionIndex) {
+    insertionIndex -= 1;
+  }
+  if (fromIndex === insertionIndex) return null;
+
+  const reorderedSiblings = arrayMove(siblings, fromIndex, insertionIndex);
+
+  const updates = reorderedSiblings.map((todo, index) => ({
+    id: normalizeTodoId(todo.id),
+    sort_index: index,
+  }));
+
+  const updatesMap = new Map(updates.map((item) => [item.id, item.sort_index]));
+  const nextTodos = todos.map((todo) => {
+    const nextSortIndex = updatesMap.get(normalizeTodoId(todo.id));
+    if (typeof nextSortIndex !== "number") return todo;
+    return { ...todo, sort_index: nextSortIndex };
+  });
+
+  const scope = {
+    parent_todo: movedParent,
+    completed: Boolean(movedTodo.completed),
+    ...(typeof categoryId !== "undefined" ? { category_id: categoryId } : {}),
+  };
+
+  return { nextTodos, updates, scope };
+}
+
+function renderSortableTodoGroup(
   tree: TodoTreeNode[],
   level: number,
-  toggleDescription: (id: string) => void,
-  openDescriptions: { [id: string]: boolean },
-  toggleTodo: (id: string, completed: boolean) => void,
-  handleCreateSubTodo: (todo: Todo) => void,
-  handleEdit: (todo: Todo) => void,
-  handleDelete: (todo: Todo) => void,
-  userId: number | null
+  sharedProps: Omit<SortableTodoItemProps, "todo" | "level">
 ) {
-  return tree.map((todo: TodoTreeNode) => (
+  if (tree.length === 0) return null;
+
+  const incomplete = tree.filter((todo) => !todo.completed);
+  const completed = tree.filter((todo) => todo.completed);
+  const groups = [incomplete, completed].filter((group) => group.length > 0);
+
+  return groups.map((group) => {
+    const itemIds = group.map((todo) => todo.id);
+    return (
+      <SortableContext
+        key={`${level}-${group[0].completed ? "completed" : "active"}-${group[0].parent_todo ?? "root"}`}
+        items={itemIds}
+        strategy={verticalListSortingStrategy}
+      >
+        {group.map((todo) => (
+          <SortableTodoItem
+            key={todo.id}
+            todo={todo}
+            level={level}
+            {...sharedProps}
+          />
+        ))}
+      </SortableContext>
+    );
+  });
+}
+
+function SortableTodoItem({
+  todo,
+  level,
+  openDescriptions,
+  toggleDescription,
+  toggleTodo,
+  handleCreateSubTodo,
+  handleEdit,
+  handleDelete,
+  userId,
+  activeTodoId,
+  overTodoId,
+}: SortableTodoItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: todo.id });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  const todoId = normalizeTodoId(todo.id);
+  const isDropTarget = overTodoId === todoId && activeTodoId !== todoId;
+
+  return (
     <li
-      key={todo.id}
-      className={`flex flex-col gap-2 p-4 bg-white rounded-xl shadow hover:shadow-md transition ${getIndentClass(
+      ref={setNodeRef}
+      style={style}
+      className={`relative flex flex-col gap-2 p-4 bg-white rounded-xl shadow hover:shadow-md transition ${getIndentClass(
         level
-      )}`}
+      )} ${isDragging ? "opacity-60 ring-2 ring-blue-300 z-20" : ""} ${
+        isDropTarget ? "bg-blue-50 ring-2 ring-blue-400" : ""
+      }`}
     >
+      {isDropTarget && (
+        <div className="absolute left-2 right-2 top-0 h-1 bg-blue-600 rounded-full z-20" />
+      )}
       <div className="flex items-center justify-between">
-        <span className={todo.completed ? "line-through text-gray-400" : ""}>
-          {todo.title}
-        </span>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className="cursor-grab active:cursor-grabbing text-gray-500 hover:text-gray-700 text-sm"
+            aria-label={`Drag todo ${todo.title}`}
+            title="Drag to reorder"
+            {...attributes}
+            {...listeners}
+          >
+            ::
+          </button>
+          <span className={todo.completed ? "line-through text-gray-400" : ""}>
+            {todo.title}
+          </span>
+        </div>
         <div className="flex gap-2">
-          <a
-            href="#"
-            onClick={e => { e.preventDefault(); toggleDescription(todo.id); }}
+          <button
+            type="button"
+            onClick={() => toggleDescription(todo.id)}
             className="text-blue-600 hover:underline text-sm cursor-pointer"
           >
-            {openDescriptions[todo.id] ? "Hide Description" : "Show Description"}
-          </a>
+            {openDescriptions[todoId] ? "Hide Description" : "Show Description"}
+          </button>
         </div>
       </div>
-      {openDescriptions[todo.id] && (
+      {openDescriptions[todoId] && (
         <div className="mt-2 text-gray-700 text-sm border-l-4 border-blue-200 pl-4">
           {todo.description}
           <div className="flex gap-2 mt-2">
@@ -99,39 +333,38 @@ function renderTodoTree(
             {typeof userId === 'undefined' || userId === null ? (
               <span className="text-gray-400 text-xs ml-2">Loading...</span>
             ) : (
-              <a
-                href="#"
+              <button
+                type="button"
                 className="text-red-600 hover:underline text-xs ml-2"
-                onClick={e => {
-                  e.preventDefault();
+                onClick={() => {
                   if (window.confirm("Are you sure you want to delete this todo?")) {
                     handleDelete(todo);
                   }
                 }}
               >
                 Delete
-              </a>
+              </button>
             )}
           </div>
         </div>
       )}
       {todo.children && todo.children.length > 0 && (
         <ul className="space-y-2">
-          {renderTodoTree(
-            todo.children,
-            level + 1,
-            toggleDescription,
+          {renderSortableTodoGroup(todo.children, level + 1, {
             openDescriptions,
+            toggleDescription,
             toggleTodo,
             handleCreateSubTodo,
             handleEdit,
             handleDelete,
-            userId
-          )}
+            userId,
+            activeTodoId,
+            overTodoId,
+          })}
         </ul>
       )}
     </li>
-  ));
+  );
 }
 
 // Map nesting level to Tailwind margin-left classes (32px per level)
@@ -156,6 +389,8 @@ function getIndentClass(level: number): string {
 
 export default function TodoList({ initialTodos, selectedCategory }: TodoListProps) {
   const { userId } = useUserId();
+  const [activeTodoId, setActiveTodoId] = React.useState<string | null>(null);
+  const [overTodoId, setOverTodoId] = React.useState<string | null>(null);
 
   // Soft delete a todo
   const handleDelete = async (todo: Todo) => {
@@ -178,20 +413,31 @@ export default function TodoList({ initialTodos, selectedCategory }: TodoListPro
 
   const [todos, setTodos] = React.useState(initialTodos);
   const [openDescriptions, setOpenDescriptions] = React.useState<{ [id: string]: boolean }>({});
-  // Filter todos by selectedCategory if set
-  const filteredTodos = selectedCategory && selectedCategory.id
-    ? todos.filter(todo => String(todo.category_id) === String(selectedCategory.id))
-    : todos;
+
+  React.useEffect(() => {
+    setTodos(initialTodos);
+  }, [initialTodos]);
 
   const [showCompleted, setShowCompleted] = React.useState(true);
   const [showAddForm, setShowAddForm] = React.useState(false);
   const [editTodo, setEditTodo] = React.useState<Todo | null>(null);
   const [parentTodo, setParentTodo] = React.useState<Todo | null>(null);
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 6,
+      },
+    })
+  );
 
   // Fetch todos from Supabase with filter
   const fetchTodos = async (showCompleted: boolean) => {
     try {
-      const response = await fetch(`/api/todos?showCompleted=${showCompleted}`);
+      const params = new URLSearchParams({ showCompleted: String(showCompleted) });
+      if (selectedCategory?.id) {
+        params.set("category_id", selectedCategory.id);
+      }
+      const response = await fetch(`/api/todos?${params.toString()}`);
       if (!response.ok) throw new Error('Failed to fetch todos');
       const data = await response.json();
       setTodos(data);
@@ -257,6 +503,96 @@ export default function TodoList({ initialTodos, selectedCategory }: TodoListPro
     }));
   };
 
+  const handleReorder = async (movedId: string, targetId: string, dropPosition: DropPosition) => {
+    if (!movedId || !targetId) return;
+
+    const categoryScope = selectedCategory?.id;
+    // Rebuild tree from current todos to avoid stale closure issues
+    const currentTree = buildTodoTree([...todos]);
+    const result = computeSiblingReorder(todos, movedId, targetId, dropPosition, currentTree, categoryScope);
+
+    if (!result) {
+      return;
+    }
+
+    const previousTodos = todos;
+    setTodos(result.nextTodos);
+
+    try {
+      const response = await fetch("/api/todos", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          reorder: true,
+          updates: result.updates,
+          parent_todo: result.scope.parent_todo,
+          completed: result.scope.completed,
+          ...(typeof result.scope.category_id !== "undefined" ? { category_id: result.scope.category_id } : {}),
+        }),
+      });
+
+      if (!response.ok) {
+        let details = "";
+        try {
+          const body = await response.json();
+          details = body?.error ? `: ${body.error}` : "";
+        } catch {
+          // ignore parse failure
+        }
+        throw new Error(`Failed to persist todo order (${response.status})${details}`);
+      }
+    } catch (error) {
+      console.error("Failed to persist reorder", error);
+      setTodos(previousTodos);
+      alert("Failed to save new todo order. Reverted changes.");
+    }
+  };
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveTodoId(String(event.active.id));
+  };
+
+  const handleDragOver = (event: DragOverEvent) => {
+    const nextOverId = event.over ? String(event.over.id) : null;
+    if (nextOverId && nextOverId === activeTodoId) return;
+    setOverTodoId(nextOverId);
+  };
+
+  const handleDragCancel = () => {
+    setActiveTodoId(null);
+    setOverTodoId(null);
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const movedId = String(event.active.id);
+    const rawTargetId = event.over ? String(event.over.id) : "";
+    const fallbackTargetId = overTodoId && overTodoId !== movedId ? overTodoId : "";
+    const targetId = rawTargetId && rawTargetId !== movedId ? rawTargetId : fallbackTargetId;
+
+    const overMiddleY = event.over
+      ? event.over.rect.top + event.over.rect.height / 2
+      : null;
+    const activeMiddleY = event.active.rect.current.translated
+      ? event.active.rect.current.translated.top + event.active.rect.current.translated.height / 2
+      : null;
+    const dropPosition: DropPosition =
+      overMiddleY !== null && activeMiddleY !== null && activeMiddleY > overMiddleY
+        ? "after"
+        : (event.delta.y > 0 ? "after" : "before");
+
+    setActiveTodoId(null);
+    setOverTodoId(null);
+    if (!targetId) return;
+    await handleReorder(movedId, targetId, dropPosition);
+  };
+
+  const todoTree = buildTodoTree([...todos]);
+  const activeTodo = activeTodoId
+    ? todos.find((todo) => normalizeTodoId(todo.id) === activeTodoId)
+    : null;
+
   return (
     <div className="space-y-4">
       {/* Toggle show/hide completed todos, placed above and right */}
@@ -297,19 +633,35 @@ export default function TodoList({ initialTodos, selectedCategory }: TodoListPro
       )}
 
       {/* Nested Todo list with indented sub-todos */}
-      <ul className="space-y-2">
-        {renderTodoTree(
-          buildTodoTree([...filteredTodos]),
-          0,
-          toggleDescription,
-          openDescriptions,
-          toggleTodo,
-          handleCreateSubTodo,
-          handleEdit,
-          handleDelete,
-          userId
-        )}
-      </ul>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragCancel={handleDragCancel}
+        onDragEnd={handleDragEnd}
+      >
+        <ul className="space-y-2">
+          {renderSortableTodoGroup(todoTree, 0, {
+            openDescriptions,
+            toggleDescription,
+            toggleTodo,
+            handleCreateSubTodo,
+            handleEdit,
+            handleDelete,
+            userId,
+            activeTodoId,
+            overTodoId,
+          })}
+        </ul>
+        <DragOverlay>
+          {activeTodo ? (
+            <div className="p-3 rounded-lg bg-white shadow-lg ring-2 ring-blue-300 text-sm">
+              {activeTodo.title}
+            </div>
+          ) : null}
+        </DragOverlay>
+      </DndContext>
     </div>
   );
 }
