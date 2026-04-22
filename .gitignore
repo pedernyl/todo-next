@@ -51,3 +51,4 @@ scripts/security/zap-results.json
 scripts/security/zap.yaml
 docs/
 test-results/
+bugs/
