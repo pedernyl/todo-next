@@ -85,9 +85,10 @@ function compareTodoOrder(a: Todo, b: Todo): number {
   const aNum = Number(a.id);
   const bNum = Number(b.id);
   if (Number.isNaN(aNum) || Number.isNaN(bNum)) {
-    return b.id.localeCompare(a.id);
+    return a.id.localeCompare(b.id);
   }
-  return bNum - aNum;
+  return aNum - bNum;
+
 }
 
 // Build tree structure from flat todo array
