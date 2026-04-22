@@ -21,8 +21,12 @@ function normalizeComparableId(value: string | number | null | undefined): strin
 }
 
 export async function fetchUserIdByEmail(email: string): Promise<number> {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+  if (!baseUrl) {
+    throw new Error("NEXT_PUBLIC_BASE_URL environment variable is not set");
+  }
   const userIdRes = await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/api/userid?email=${encodeURIComponent(email)}`,
+    `${baseUrl}/api/userid?email=${encodeURIComponent(email)}`,
     { cache: "no-store" }
   );
   if (!userIdRes.ok) throw new Error("Could not fetch user id");
