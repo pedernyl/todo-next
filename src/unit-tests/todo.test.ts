@@ -1,14 +1,16 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { createTodo, softDeleteTodo } from '../lib/dataService';
 
+const maxSortQuery = {
+  eq: vi.fn(() => maxSortQuery),
+  is: vi.fn(() => maxSortQuery),
+  not: vi.fn(() => maxSortQuery),
+  order: vi.fn(() => maxSortQuery),
+  limit: vi.fn(() => Promise.resolve({ data: [{ sort_index: 2 }], error: null })),
+};
+
 // Mock supabaseClient with full method chains (must be first)
 vi.mock('../lib/supabaseClient', () => {
-  const maxSortQuery = {
-    eq: () => maxSortQuery,
-    is: () => maxSortQuery,
-    order: () => maxSortQuery,
-    limit: () => Promise.resolve({ data: [{ sort_index: 2 }], error: null }),
-  };
   const insertChain = { select: () => ({ single: () => Promise.resolve({ data: { id: '1', title: 'Test Todo', description: '', completed: false }, error: null }) }) };
   const updateChain = { eq: () => ({ select: () => ({ single: () => Promise.resolve({ data: { id: '1', deleted_timestamp: 1234567890, deleted_by: 'user1' }, error: null }) }) }) };
   return {
@@ -44,12 +46,19 @@ global.fetch = vi.fn(async (url: unknown): Promise<SimpleResponse> => {
 describe('Todo API', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    maxSortQuery.limit.mockResolvedValue({ data: [{ sort_index: 2 }], error: null });
   });
 
   it('creates a todo', async () => {
     const todo = await createTodo('Test Todo', '', undefined, undefined);
     expect(todo).toBeDefined();
     expect(todo.title).toBe('Test Todo');
+  });
+
+  it('filters out null sort_index values when computing the next sort index', async () => {
+    await createTodo('Test Todo', '', undefined, undefined);
+
+    expect(maxSortQuery.not).toHaveBeenCalledWith('sort_index', 'is', null);
   });
 
   it('soft deletes a todo', async () => {

@@ -96,7 +96,8 @@ export async function createTodo(title: string, description: string, parent_todo
     .select('sort_index')
     .eq('owner_id', userId)
     .is('deleted_timestamp', null)
-    .eq('completed', false);
+    .eq('completed', false)
+    .not('sort_index', 'is', null);
 
   if (parent_todo) {
     maxSortIndexQuery = maxSortIndexQuery.eq('parent_todo', parent_todo);
