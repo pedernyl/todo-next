@@ -3,6 +3,7 @@ export interface Todo {
   id: string;
   title: string;
   description: string;
+  description_html?: string;
   completed: boolean;
   sort_index?: number | null;
   owner_id: number;

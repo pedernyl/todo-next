@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { renderSanitizedMarkdown } from "./markdown";
+import { renderSanitizedMarkdown } from "../lib/markdown";
 
 describe("renderSanitizedMarkdown", () => {
   it("strips scripts and event handlers", async () => {

@@ -7,6 +7,23 @@ test.use({ storageState: 'storageState.json' });
 const BASE_URL = 'http://localhost:3000';
 
 test.describe('Todo App E2E', () => {
+  test('should render markdown line breaks in description', async ({ page }) => {
+    const title = `Playwright Line Break ${Date.now()}`;
+    await page.goto(BASE_URL);
+    await page.click('text=Add Todo');
+    await page.fill('input[name="title"]', title);
+    await page.fill('textarea[name="description"]', 'first line\nsecond line');
+    await page.click('button:has-text("Save Todo")');
+
+    const todoItem = page.locator(`li:has-text("${title}")`).first();
+    await expect(todoItem).toBeVisible();
+    await todoItem.getByText('Show Description').click();
+
+    await expect(todoItem.locator('.prose br').first()).toBeVisible();
+    await expect(todoItem).toContainText('first line');
+    await expect(todoItem).toContainText('second line');
+  });
+
   test('should create a new todo', async ({ page }) => {
     await page.goto(BASE_URL);
     // Click 'Add Todo' link to reveal the form
