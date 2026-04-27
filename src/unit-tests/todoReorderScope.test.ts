@@ -188,7 +188,10 @@ describe("reorderTodoSiblings nested scope", () => {
     expect(updateIdEqValues).toEqual(["292", "291"]);
     expect(updateSortIndexPayloads).toEqual([0, 1]);
     expect(updateOwnerEqValues).toEqual([1, 1]);
-    expect(result).toMatchObject(updatedTodosResult);
+    expect(result).toHaveLength(updatedTodosResult.length);
+    expect(
+      result.map(({ id, sort_index }) => ({ id, sort_index }))
+    ).toEqual(updatedTodosResult);
   });
 
   it("rejects reorder updates with invalid sort_index values", async () => {
