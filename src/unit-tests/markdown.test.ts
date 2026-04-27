@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { renderSanitizedMarkdown } from "./markdown";
+import { renderSanitizedMarkdown } from "../lib/markdown";
 
 describe("renderSanitizedMarkdown", () => {
   it("strips scripts and event handlers", async () => {
@@ -19,6 +19,16 @@ describe("renderSanitizedMarkdown", () => {
 
     expect(html).not.toContain("<a ");
     expect(html).toContain("example");
+  });
+
+  it("renders single newlines as hard line breaks in todo profile", async () => {
+    const input = "first line\nsecond line";
+
+    const html = await renderSanitizedMarkdown(input, "todo");
+
+    expect(html).toContain("<br />");
+    expect(html).toContain("first line");
+    expect(html).toContain("second line");
   });
 
   it("allows safe links in docs profile", async () => {

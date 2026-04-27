@@ -24,7 +24,6 @@ import { CSS } from "@dnd-kit/utilities";
 
 
 import type { Category } from "../lib/categoryService";
-
 interface TodoListProps {
   initialTodos: Todo[];
   selectedCategory?: Category | null;
@@ -310,7 +309,14 @@ function SortableTodoItem({
       </div>
       {openDescriptions[todoId] && (
         <div className="mt-2 text-gray-700 text-sm border-l-4 border-blue-200 pl-4">
-          {todo.description}
+          {todo.description_html ? (
+            <div
+              className="prose prose-slate max-w-none break-words text-sm"
+              dangerouslySetInnerHTML={{ __html: todo.description_html }}
+            />
+          ) : (
+            <p className="whitespace-pre-wrap">{todo.description}</p>
+          )}
           <div className="flex gap-2 mt-2">
             <button
               onClick={() => toggleTodo(todo.id, !todo.completed)}

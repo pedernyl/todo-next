@@ -54,7 +54,10 @@ export async function renderSanitizedMarkdown(
   markdown: string,
   profile: MarkdownSanitizeProfile = "todo"
 ): Promise<string> {
-  const rendered = await marked(markdown);
+  const rendered = await marked.parse(markdown, {
+    gfm: true,
+    breaks: profile === "todo",
+  });
   const config = profileConfigs[profile];
 
   return sanitizeHtml(rendered, {

@@ -2,6 +2,7 @@ import { supabase } from './supabaseClient';
 import { Todo } from '../../types';
 import { authOptions } from "../lib/authOptions";
 import { getServerSession } from "next-auth";
+import { renderSanitizedMarkdown } from "./markdown";
 
 type ReorderUpdateInput = {
   id: string;
@@ -50,6 +51,17 @@ function normalizeSortIndex(value: number | null | undefined): number {
   return value;
 }
 
+async function mapTodoWithDescriptionHtml(todo: Todo): Promise<Todo> {
+  return {
+    ...todo,
+    description_html: await renderSanitizedMarkdown(todo.description ?? "", "todo"),
+  };
+}
+
+async function mapTodosWithDescriptionHtml(todos: Todo[]): Promise<Todo[]> {
+  return Promise.all(todos.map((todo) => mapTodoWithDescriptionHtml(todo)));
+}
+
 // Update a todo's title and description in Supabase
 export async function updateTodoDetails(id: string, title: string, description: string): Promise<Todo> {
   const { data, error } = await supabase
@@ -59,7 +71,7 @@ export async function updateTodoDetails(id: string, title: string, description: 
     .select()
     .single();
   if (error) throw error;
-  return data as Todo;
+  return mapTodoWithDescriptionHtml(data as Todo);
 }
 
 // Fetch all todos from Supabase
@@ -85,7 +97,7 @@ export async function getTodos(showCompleted: boolean = true, category_id?: stri
 
   const { data, error } = await query;
   if (error) throw error;
-  return data as Todo[];
+  return mapTodosWithDescriptionHtml((data ?? []) as Todo[]);
 }
 
 // Create a new todo in Supabase
@@ -133,7 +145,7 @@ export async function createTodo(title: string, description: string, parent_todo
     .select()
     .single();
   if (error) throw error;
-  return data as Todo;
+  return mapTodoWithDescriptionHtml(data as Todo);
 }
 
 // Update a todo's completed state in Supabase
@@ -145,7 +157,7 @@ export async function updateTodo(id: string, completed: boolean): Promise<Todo> 
     .select()
     .single();
   if (error) throw error;
-  return data as Todo;
+  return mapTodoWithDescriptionHtml(data as Todo);
 }
 
 // Soft delete a todo: set deleted_timestamp and deleted_by (can be user id or email)
@@ -158,7 +170,7 @@ export async function softDeleteTodo(id: string, userId: string | number): Promi
     .select()
     .single();
   if (error) throw error;
-  return data as Todo;
+  return mapTodoWithDescriptionHtml(data as Todo);
 }
 
 export async function reorderTodoSiblings(
@@ -231,5 +243,5 @@ export async function reorderTodoSiblings(
     .order('id', { ascending: true });
 
   if (updatedError) throw updatedError;
-  return (updated ?? []) as Todo[];
+  return mapTodosWithDescriptionHtml((updated ?? []) as Todo[]);
 }
