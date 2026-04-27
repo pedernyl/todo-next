@@ -19,7 +19,7 @@ test.describe('Todo App E2E', () => {
     await expect(todoItem).toBeVisible();
     await todoItem.getByText('Show Description').click();
 
-    await expect(todoItem.locator('.prose br').first()).toBeVisible();
+    await expect(todoItem.locator('.prose br')).toHaveCount(1);
     await expect(todoItem).toContainText('first line');
     await expect(todoItem).toContainText('second line');
   });
