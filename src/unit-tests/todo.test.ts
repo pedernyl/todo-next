@@ -89,7 +89,7 @@ describe('Todo API', () => {
   it('creates a todo', async () => {
     const todo = await createTodo('Test Todo', '', undefined, undefined);
     expect(todo).toBeDefined();
-    expect(todo.title).toBe('Test Todo');
+    expect(todo.title).toBe('I want to fail Test Todo');
     expect(todo.description_html).toBe('<p></p>');
   });
 
