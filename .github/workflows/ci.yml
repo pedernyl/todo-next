@@ -2,6 +2,8 @@ name: CI
 
 on:
   pull_request:
+    branches:
+      - main
   push:
     branches:
       - main
@@ -25,5 +27,5 @@ jobs:
       - name: Verify admin updates registry is up to date
         run: npm run check:admin-updates-registry
 
-      - name: Run unit tests
-        run: npm test
+      - name: Run Vitest
+        run: npx vitest run
