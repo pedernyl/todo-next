@@ -1,3 +1,4 @@
+# Runs Vitest on pull requests to main and on pushes to main
 name: CI
 
 on:
