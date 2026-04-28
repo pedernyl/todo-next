@@ -1,4 +1,4 @@
-import { isAllowedUserEmail } from "../allowedUsers";
+import { isAdminUserEmail } from "../adminUsers";
 import { hasSupabaseServiceRole, supabaseAdmin } from "../supabaseAdminClient";
 import { adminUpdateRegistry, type AdminUpdateModule } from "./updates/registry";
 
@@ -131,8 +131,8 @@ function requireServiceRoleKey() {
   }
 }
 
-function requireAllowedActor(actorEmail: string) {
-  if (!isAllowedUserEmail(actorEmail)) {
+async function requireAllowedActor(actorEmail: string) {
+  if (!(await isAdminUserEmail(actorEmail))) {
     throw new Error(`User ${actorEmail} is not allowed to execute admin updates`);
   }
 }
@@ -188,7 +188,7 @@ export async function runAdminUpdateOnce(
   actorEmail: string
 ) {
   requireServiceRoleKey();
-  requireAllowedActor(actorEmail);
+  await requireAllowedActor(actorEmail);
 
   const actorUserId = await getUserIdByEmail(actorEmail);
 
@@ -228,7 +228,7 @@ export async function runAdminUpdateForce(
   actorEmail: string
 ) {
   requireServiceRoleKey();
-  requireAllowedActor(actorEmail);
+  await requireAllowedActor(actorEmail);
 
   const actorUserId = await getUserIdByEmail(actorEmail);
   const result = await runAdminUpdate(updateKey, fileName);

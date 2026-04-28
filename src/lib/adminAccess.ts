@@ -1,13 +1,13 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "./authOptions";
-import { isAllowedUserEmail } from "./allowedUsers";
+import { isAdminUserEmail } from "./adminUsers";
 
 export type AdminAccessCheckResult =
   | { ok: true; email: string }
   | { ok: false; reason: "unauthenticated" | "forbidden" };
 
-export function isAdminEmail(email?: string | null): boolean {
-  return isAllowedUserEmail(email);
+export async function isAdminEmail(email?: string | null): Promise<boolean> {
+  return isAdminUserEmail(email);
 }
 
 export async function getAdminAccessCheckResult(): Promise<AdminAccessCheckResult> {
@@ -18,7 +18,7 @@ export async function getAdminAccessCheckResult(): Promise<AdminAccessCheckResul
     return { ok: false, reason: "unauthenticated" };
   }
 
-  if (!isAdminEmail(email)) {
+  if (!(await isAdminEmail(email))) {
     return { ok: false, reason: "forbidden" };
   }
 

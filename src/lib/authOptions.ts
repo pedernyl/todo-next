@@ -1,6 +1,6 @@
 import { AuthOptions } from "next-auth";
 import GithubProvider from "next-auth/providers/github";
-import { isAllowedUserEmail } from "./allowedUsers";
+import { isAdminUserEmail } from "./adminUsers";
 
 export const authOptions: AuthOptions = {
   providers: [
@@ -15,8 +15,12 @@ export const authOptions: AuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   callbacks: {
     async signIn({ user }) {
-      // Restrict access to users in the allowedUsers list
-      return isAllowedUserEmail(user.email);
+      // Restrict access to users marked as admins in the Users table.
+      try {
+        return await isAdminUserEmail(user.email);
+      } catch {
+        return false;
+      }
     },
   },
 };

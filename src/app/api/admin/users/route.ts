@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { getAdminAccessCheckResult } from "@/lib/adminAccess";
-import { isAllowedUserEmail } from "@/lib/allowedUsers";
 import { supabaseAdmin } from "@/lib/supabaseAdminClient";
 
 type UserRow = {
   id: number;
   email: string | null;
+  isAdmin: boolean | null;
 };
 
 export async function GET() {
@@ -17,7 +17,7 @@ export async function GET() {
 
     const { data, error } = await supabaseAdmin
       .from("Users")
-      .select("id, email")
+      .select("id, email, isAdmin")
       .order("id", { ascending: true });
 
     if (error) {
@@ -27,7 +27,7 @@ export async function GET() {
     const users = ((data ?? []) as UserRow[]).map((row) => ({
       id: row.id,
       email: row.email ?? "",
-      isAdmin: isAllowedUserEmail(row.email ?? ""),
+      isAdmin: Boolean(row.isAdmin),
     }));
 
     return NextResponse.json({ users });

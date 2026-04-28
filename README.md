@@ -37,7 +37,8 @@ See `.env.example` (copy to `.env.local`) for a fully documented list. Required 
 - SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key (required server-side for Admin Updates execution/logging; never expose to client)
 - GITHUB_ID / GITHUB_SECRET for NextAuth GitHub provider
 - NEXTAUTH_SECRET random string
-- Optional: NEXTAUTH_ALLOWED_USERS=comma,separated,emails
+- Optional: NEXTAUTH_ALLOWED_USERS=comma,separated,emails (used only when legacy fallback is enabled)
+- Optional: ADMIN_AUTH_ALLOW_LEGACY_FALLBACK=true|false (defaults to true; set false after Users.isAdmin migration/update is complete)
 
 In production you typically set `NEXTAUTH_URL` to your site origin.
 
