@@ -35,7 +35,7 @@ declare
 begin
   update public."Users"
   set "isAdmin" = true
-  where lower(email) = any(select lower(unnest(emails)));
+  where lower(email) in (select lower(unnest(emails)));
   get diagnostics seeded = row_count;
   return seeded;
 end;
