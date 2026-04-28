@@ -112,11 +112,7 @@ export async function listAdminUpdates(): Promise<AdminUpdate[]> {
 }
 
 async function getUserIdByEmail(email: string): Promise<number> {
-  // Try new table name first; fall back to old name during rollout.
-  let result = await supabaseAdmin.from("Users").select("id").eq("email", email).single();
-  if (result.error) {
-    result = await supabaseAdmin.from("User").select("id").eq("email", email).single();
-  }
+  const result = await supabaseAdmin.from("Users").select("id").eq("email", email).single();
 
   const userRow = result.data as { id?: number } | null;
 
