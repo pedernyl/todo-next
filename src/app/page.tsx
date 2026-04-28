@@ -17,7 +17,7 @@ export default async function Home() {
     redirect("/login");
   }
 
-  const canAccessAdmin = isAdminEmail(session.user?.email);
+  const canAccessAdmin = await isAdminEmail(session.user?.email);
 
   const todos = await getTodos();
 

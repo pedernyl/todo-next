@@ -8,38 +8,38 @@ vi.mock("../lib/authOptions", () => ({
   authOptions: {},
 }));
 
-vi.mock("../lib/allowedUsers", () => ({
-  isAllowedUserEmail: vi.fn(),
+vi.mock("../lib/adminUsers", () => ({
+  isAdminUserEmail: vi.fn(),
 }));
 
 import { getServerSession } from "next-auth";
-import { isAllowedUserEmail } from "../lib/allowedUsers";
+import { isAdminUserEmail } from "../lib/adminUsers";
 import { getAdminAccessCheckResult, isAdminEmail } from "../lib/adminAccess";
 
 const mockedGetServerSession = vi.mocked(getServerSession);
-const mockedIsAllowedUserEmail = vi.mocked(isAllowedUserEmail);
+const mockedIsAdminUserEmail = vi.mocked(isAdminUserEmail);
 
 describe("isAdminEmail", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("returns false when email is not allowed", () => {
-    mockedIsAllowedUserEmail.mockReturnValueOnce(false);
+  it("returns false when email is not allowed", async () => {
+    mockedIsAdminUserEmail.mockResolvedValueOnce(false);
 
-    const result = isAdminEmail("denied@example.com");
+    const result = await isAdminEmail("denied@example.com");
 
     expect(result).toBe(false);
-    expect(mockedIsAllowedUserEmail).toHaveBeenCalledWith("denied@example.com");
+    expect(mockedIsAdminUserEmail).toHaveBeenCalledWith("denied@example.com");
   });
 
-  it("returns true when email is allowed", () => {
-    mockedIsAllowedUserEmail.mockReturnValueOnce(true);
+  it("returns true when email is allowed", async () => {
+    mockedIsAdminUserEmail.mockResolvedValueOnce(true);
 
-    const result = isAdminEmail("admin@example.com");
+    const result = await isAdminEmail("admin@example.com");
 
     expect(result).toBe(true);
-    expect(mockedIsAllowedUserEmail).toHaveBeenCalledWith("admin@example.com");
+    expect(mockedIsAdminUserEmail).toHaveBeenCalledWith("admin@example.com");
   });
 });
 
@@ -54,7 +54,7 @@ describe("getAdminAccessCheckResult", () => {
     const result = await getAdminAccessCheckResult();
 
     expect(result).toEqual({ ok: false, reason: "unauthenticated" });
-    expect(mockedIsAllowedUserEmail).not.toHaveBeenCalled();
+    expect(mockedIsAdminUserEmail).not.toHaveBeenCalled();
   });
 
   it("returns unauthenticated when session has no email", async () => {
@@ -63,26 +63,26 @@ describe("getAdminAccessCheckResult", () => {
     const result = await getAdminAccessCheckResult();
 
     expect(result).toEqual({ ok: false, reason: "unauthenticated" });
-    expect(mockedIsAllowedUserEmail).not.toHaveBeenCalled();
+    expect(mockedIsAdminUserEmail).not.toHaveBeenCalled();
   });
 
   it("returns forbidden when email is not allowed", async () => {
     mockedGetServerSession.mockResolvedValueOnce({ user: { email: "denied@example.com" } } as never);
-    mockedIsAllowedUserEmail.mockReturnValueOnce(false);
+    mockedIsAdminUserEmail.mockResolvedValueOnce(false);
 
     const result = await getAdminAccessCheckResult();
 
     expect(result).toEqual({ ok: false, reason: "forbidden" });
-    expect(mockedIsAllowedUserEmail).toHaveBeenCalledWith("denied@example.com");
+    expect(mockedIsAdminUserEmail).toHaveBeenCalledWith("denied@example.com");
   });
 
   it("returns ok with email when user is allowed", async () => {
     mockedGetServerSession.mockResolvedValueOnce({ user: { email: "admin@example.com" } } as never);
-    mockedIsAllowedUserEmail.mockReturnValueOnce(true);
+    mockedIsAdminUserEmail.mockResolvedValueOnce(true);
 
     const result = await getAdminAccessCheckResult();
 
     expect(result).toEqual({ ok: true, email: "admin@example.com" });
-    expect(mockedIsAllowedUserEmail).toHaveBeenCalledWith("admin@example.com");
+    expect(mockedIsAdminUserEmail).toHaveBeenCalledWith("admin@example.com");
   });
 });

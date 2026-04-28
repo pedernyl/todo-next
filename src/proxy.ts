@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
-import { isAllowedUserEmail } from './lib/allowedUsers';
+import { isAdminUserEmail } from './lib/adminUsers';
 
 function buildBaseCsp(): string {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -60,7 +60,14 @@ export async function proxy(request: NextRequest) {
       return NextResponse.redirect(new URL('/login', request.url));
     }
 
-    if (!isAllowedUserEmail(email)) {
+    let canAccessAdmin = false;
+    try {
+      canAccessAdmin = await isAdminUserEmail(email);
+    } catch {
+      canAccessAdmin = false;
+    }
+
+    if (!canAccessAdmin) {
       return NextResponse.redirect(new URL('/', request.url));
     }
   }

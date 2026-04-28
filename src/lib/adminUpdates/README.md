@@ -93,7 +93,7 @@ export async function runAdminUpdate() {
 Execution is protected by:
 
 - NextAuth session checks in the admin API route.
-- Allowed-user checks from `NEXTAUTH_ALLOWED_USERS`.
+- Admin-user checks from `Users.isAdmin`.
 - Single-run tracking in the `Updates` table (with optional force re-run from UI).
 
 ## Developer checklist

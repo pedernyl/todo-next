@@ -63,9 +63,9 @@ vi.mock('../lib/supabaseAdminClient', () => {
   };
 });
 
-// Mock allowedUsers
-vi.mock('../lib/allowedUsers', () => ({
-  isAllowedUserEmail: (email: string) => email === 'allowed@example.com'
+// Mock adminUsers
+vi.mock('../lib/adminUsers', () => ({
+  isAdminUserEmail: async (email: string) => email === 'allowed@example.com'
 }));
 
 import {
