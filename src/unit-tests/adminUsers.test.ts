@@ -6,7 +6,7 @@ vi.mock("../lib/supabaseAdminClient", () => ({
   supabaseAdmin: {
     from: vi.fn(() => ({
       select: () => ({
-        ilike: () => ({
+        eq: () => ({
           maybeSingle: maybeSingleMock,
         }),
       }),

@@ -45,7 +45,7 @@ export async function isAdminUserEmail(email?: string | null): Promise<boolean> 
   const { data, error } = await supabaseAdmin
     .from("Users")
     .select("isAdmin")
-    .ilike("email", normalizedEmail)
+    .eq("email", normalizedEmail) 
     .maybeSingle();
 
   if (error) {
