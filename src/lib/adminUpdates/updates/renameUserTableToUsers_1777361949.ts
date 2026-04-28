@@ -1,6 +1,13 @@
+import { supabaseAdmin } from "../../supabaseAdminClient";
+
 export async function runAdminUpdate() {
+  const { error } = await supabaseAdmin.rpc("rename_user_table_to_users");
+
+  if (error) {
+    throw new Error(`Failed to rename User table to Users: ${error.message}`);
+  }
+
   return {
-    message:
-      'No-op update: rename from "User" to "Users" is intentionally deferred. Safe to deploy fallback code first.',
+    message: 'Renamed database table "User" to "Users".',
   };
 }
