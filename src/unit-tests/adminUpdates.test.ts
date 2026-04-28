@@ -6,9 +6,9 @@ const {
   updatesDeleteEqMock,
   updatesMaybeSingleMock,
 } = vi.hoisted(() => ({
-  updatesInsertMock: vi.fn(() => Promise.resolve({ error: null })),
-  updatesDeleteEqMock: vi.fn(() => Promise.resolve({ error: null })),
-  updatesMaybeSingleMock: vi.fn(() => Promise.resolve({ data: null, error: null })),
+  updatesInsertMock: vi.fn(() => Promise.resolve({ error: null as null | { message: string } })),
+  updatesDeleteEqMock: vi.fn(() => Promise.resolve({ error: null as null | { message: string } })),
+  updatesMaybeSingleMock: vi.fn(() => Promise.resolve({ data: null as null | { id: string; been_executed_by: number; been_executed_timestamp: string }, error: null })),
 }));
 
 // Mock registry before importing the module under test
