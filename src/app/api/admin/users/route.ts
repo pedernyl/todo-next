@@ -15,10 +15,17 @@ export async function GET() {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { data, error } = await supabaseAdmin
-      .from("User")
+    // Try new table name first; fall back to old name during rollout.
+    let { data, error } = await supabaseAdmin
+      .from("Users")
       .select("id, email")
       .order("id", { ascending: true });
+    if (error) {
+      ({ data, error } = await supabaseAdmin
+        .from("User")
+        .select("id, email")
+        .order("id", { ascending: true }));
+    }
 
     if (error) {
       throw new Error(error.message);

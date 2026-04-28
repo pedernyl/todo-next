@@ -34,7 +34,7 @@ vi.mock('../lib/supabaseAdminClient', () => {
   return {
     supabaseAdmin: {
       from: vi.fn((table: string) => {
-        if (table === 'User') {
+        if (table === 'Users' || table === 'User') {
           return {
             select: () => ({
               eq: () => ({
