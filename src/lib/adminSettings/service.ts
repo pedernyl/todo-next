@@ -143,11 +143,16 @@ export async function loadAdminSettingsGrouped(): Promise<AdminSettingsTypeGroup
 }
 
 async function getActorUserIdByEmail(email: string): Promise<number> {
-  const { data, error } = await supabaseAdmin.from("Users").select("id").eq("email", email).single();
+  const normalizedEmail = email.trim().toLowerCase();
+  const { data, error } = await supabaseAdmin
+    .from("Users")
+    .select("id")
+    .eq("email", normalizedEmail)
+    .single();
 
   const user = (data ?? null) as { id?: number } | null;
   if (error || !user || typeof user.id !== "number") {
-    throw new Error("Could not resolve actor user id for settings save");
+    throw new Error(`Could not resolve actor user id for settings save: ${normalizedEmail}`);
   }
 
   return user.id;
