@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useGlobalBlockingLoader } from "../../context/GlobalBlockingLoaderContext";
 
 type UserItem = {
   id: number;
@@ -12,13 +13,18 @@ export default function AdminUsersView() {
   const [users, setUsers] = useState<UserItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { runBlockingFetch } = useGlobalBlockingLoader();
 
-  async function loadUsers() {
+  const loadUsers = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const res = await fetch("/api/admin/users", { cache: "no-store" });
+      const res = await runBlockingFetch(
+        "/api/admin/users",
+        { cache: "no-store" },
+        { label: "Loading admin users...", cancellable: true }
+      );
       const data = (await res.json()) as { users?: UserItem[]; error?: string };
 
       if (!res.ok || !data.users) {
@@ -27,16 +33,19 @@ export default function AdminUsersView() {
 
       setUsers(data.users);
     } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        return;
+      }
       const message = err instanceof Error ? err.message : "Failed to load users";
       setError(message);
     } finally {
       setIsLoading(false);
     }
-  }
+  }, [runBlockingFetch]);
 
   useEffect(() => {
     void loadUsers();
-  }, []);
+  }, [loadUsers]);
 
   const hasUsers = useMemo(() => users.length > 0, [users.length]);
 

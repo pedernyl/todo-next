@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Todo } from '../../types';
+import { useGlobalBlockingLoader } from '../context/GlobalBlockingLoaderContext';
 
 interface AddTodoProps {
   onTodoAdded?: (todo: Todo) => void;
@@ -15,6 +16,7 @@ interface AddTodoProps {
 export default function AddTodo({ onTodoAdded, editTodo, onTodoUpdated, parentTodo, userId, categoryId }: AddTodoProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const { runBlockingFetch } = useGlobalBlockingLoader();
 
   // Load todo into form when editing
   useEffect(() => {
@@ -30,36 +32,60 @@ export default function AddTodo({ onTodoAdded, editTodo, onTodoUpdated, parentTo
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log('AddTodo categoryId:', categoryId);
+
     if (editTodo && editTodo.id) {
       // Update existing todo
-      const res = await fetch('/api/todos', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: editTodo.id, title, description }),
-      });
-      if (!res.ok) return;
-      const updatedTodo: Todo = await res.json();
-      onTodoUpdated?.(updatedTodo);
+      try {
+        const res = await runBlockingFetch(
+          '/api/todos',
+          {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: editTodo.id, title, description }),
+          },
+          { label: 'Updating todo...', cancellable: true }
+        );
+        if (!res.ok) return;
+        const updatedTodo: Todo = await res.json();
+        onTodoUpdated?.(updatedTodo);
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return;
+        }
+      }
     } else {
       // Create new todo or sub-todo
       if (typeof userId !== 'number') {
         alert("User id not loaded. Please try again.");
         return;
       }
-      const res = await fetch('/api/todos', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title,
-          description,
-          parent_todo: parentTodo?.id,
-          owner_id: userId,
-          ...(categoryId ? { category_id: categoryId } : {})
-        }),
-      });
-      if (!res.ok) return;
-      const newTodo: Todo = await res.json();
-      onTodoAdded?.(newTodo);
+      try {
+        const res = await runBlockingFetch(
+          '/api/todos',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              title,
+              description,
+              parent_todo: parentTodo?.id,
+              owner_id: userId,
+              ...(categoryId ? { category_id: categoryId } : {})
+            }),
+          },
+          { label: 'Creating todo...', cancellable: true }
+        );
+        if (!res.ok) return;
+        const newTodo: Todo = await res.json();
+        onTodoAdded?.(newTodo);
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return;
+        }
+        const message = error instanceof Error ? error.message : 'Failed to create todo. Please try again.';
+        alert(message);
+        return;
+      }
     }
     setTitle('');
     setDescription('');

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useGlobalBlockingLoader } from "../../context/GlobalBlockingLoaderContext";
 
 type UpdateItem = {
   fileName: string;
@@ -23,15 +24,20 @@ export default function AdminUpdatesView() {
   const [runningFileName, setRunningFileName] = useState<string | null>(null);
   const [lastResult, setLastResult] = useState<string | null>(null);
   const [rerunChecked, setRerunChecked] = useState<Set<string>>(new Set());
+  const { runBlockingFetch } = useGlobalBlockingLoader();
 
-  async function loadUpdates(showLoadingState = true) {
+  const loadUpdates = useCallback(async (showLoadingState = true) => {
     if (showLoadingState) {
       setIsLoading(true);
     }
     setError(null);
 
     try {
-      const res = await fetch("/api/admin/updates", { cache: "no-store" });
+      const res = await runBlockingFetch(
+        "/api/admin/updates",
+        { cache: "no-store" },
+        { label: "Loading admin updates...", cancellable: true }
+      );
       const data = (await res.json()) as { updates?: UpdateItem[]; error?: string };
 
       if (!res.ok || !data.updates) {
@@ -40,6 +46,9 @@ export default function AdminUpdatesView() {
 
       setAvailableUpdates(data.updates);
     } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        return;
+      }
       const message = err instanceof Error ? err.message : "Failed to load updates";
       setError(message);
     } finally {
@@ -47,11 +56,11 @@ export default function AdminUpdatesView() {
         setIsLoading(false);
       }
     }
-  }
+  }, [runBlockingFetch]);
 
   useEffect(() => {
     void loadUpdates();
-  }, []);
+  }, [loadUpdates]);
 
   function toggleRerun(fileName: string, checked: boolean) {
     setRerunChecked((prev) => {
@@ -68,13 +77,17 @@ export default function AdminUpdatesView() {
     setLastResult(null);
 
     try {
-      const res = await fetch("/api/admin/updates", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const res = await runBlockingFetch(
+        "/api/admin/updates",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ fileName, ...(force && { force: true }) }),
         },
-        body: JSON.stringify({ fileName, ...(force && { force: true }) }),
-      });
+        { label: `Running update ${fileName}...`, cancellable: true }
+      );
 
       const data = (await res.json()) as {
         error?: string;
@@ -93,6 +106,9 @@ export default function AdminUpdatesView() {
       });
       await loadUpdates(false);
     } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        return;
+      }
       const message = err instanceof Error ? err.message : "Update execution failed";
       setError(message);
     } finally {

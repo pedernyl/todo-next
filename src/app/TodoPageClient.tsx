@@ -6,11 +6,13 @@ import CategoryDropdownWrapper from "../components/CategoryDropdownWrapper";
 import { useUserId } from "../context/UserIdContext";
 import { Todo } from "../../types";
 import type { Category } from "../lib/categoryService";
+import { useGlobalBlockingLoader } from "../context/GlobalBlockingLoaderContext";
 
 export default function TodoPageClient({ initialTodos }: { initialTodos: Todo[] }) {
   const [todos, setTodos] = useState<Todo[]>(initialTodos);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const { userId } = useUserId();
+  const { runBlockingFetch } = useGlobalBlockingLoader();
 
   useEffect(() => {
     if (!userId) return;
@@ -18,11 +20,18 @@ export default function TodoPageClient({ initialTodos }: { initialTodos: Todo[] 
     if (selectedCategory && selectedCategory.id) {
       url += `?category_id=${selectedCategory.id}`;
     }
-    fetch(url)
-      .then(res => res.ok ? res.json() : [])
+    runBlockingFetch(url, undefined, {
+      label: "Loading todos...",
+      cancellable: true,
+    })
+      .then((res) => (res.ok ? res.json() : []))
       .then(setTodos)
-      .catch(() => {});
-  }, [selectedCategory, userId]);
+      .catch((error) => {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+      });
+  }, [selectedCategory, userId, runBlockingFetch]);
 
   return (
     <>
