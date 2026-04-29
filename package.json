@@ -2,9 +2,9 @@
   "name": "todo-next-supabase",
   "version": "0.1.0",
   "private": true,
-   "engines": {  
-    "node": ">=20.9.0"  
-  }, 
+  "engines": {
+    "node": "24.x"
+  },
   "scripts": {
     "generate:admin-updates": "node scripts/generate-admin-updates-registry.mjs",
     "check:admin-updates-registry": "npm run -s generate:admin-updates && git diff --exit-code -- src/lib/adminUpdates/updates/registry.generated.ts",
