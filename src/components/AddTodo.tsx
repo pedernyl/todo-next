@@ -82,6 +82,9 @@ export default function AddTodo({ onTodoAdded, editTodo, onTodoUpdated, parentTo
         if (error instanceof DOMException && error.name === 'AbortError') {
           return;
         }
+        const message = error instanceof Error ? error.message : 'Failed to create todo. Please try again.';
+        alert(message);
+        return;
       }
     }
     setTitle('');
