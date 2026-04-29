@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 
 type BlockingTask = {
   id: number;
@@ -247,6 +247,11 @@ export function GlobalBlockingLoaderProvider({ children }: { children: React.Rea
   const [tasks, setTasks] = useState<BlockingTask[]>([]);
   const [cancelledCancellableCount, setCancelledCancellableCount] = useState(0);
   const idCounter = useRef(1);
+  const tasksRef = useRef<BlockingTask[]>(tasks);
+
+  useEffect(() => {
+    tasksRef.current = tasks;
+  }, [tasks]);
 
   const runBlocking = useCallback<BlockingLoaderContextType["runBlocking"]>(async (operation, options) => {
     const taskId = idCounter.current;
@@ -292,22 +297,18 @@ export function GlobalBlockingLoaderProvider({ children }: { children: React.Rea
   );
 
   const cancelAll = useCallback(() => {
-    setTasks((prev) => {
-      let cancelledCount = 0;
+    let cancelledCount = 0;
 
-      prev.forEach((task) => {
-        if (task.cancellable && task.controller && !task.controller.signal.aborted) {
-          task.controller.abort();
-          cancelledCount += 1;
-        }
-      });
-
-      if (cancelledCount > 0) {
-        setCancelledCancellableCount((existing) => existing + cancelledCount);
+    tasksRef.current.forEach((task) => {
+      if (task.cancellable && task.controller && !task.controller.signal.aborted) {
+        task.controller.abort();
+        cancelledCount += 1;
       }
-
-      return prev;
     });
+
+    if (cancelledCount > 0) {
+      setCancelledCancellableCount((existing) => existing + cancelledCount);
+    }
   }, []);
 
   const contextValue = useMemo<BlockingLoaderContextType>(() => {
