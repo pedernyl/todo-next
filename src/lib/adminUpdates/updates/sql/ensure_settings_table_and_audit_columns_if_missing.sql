@@ -16,8 +16,7 @@ begin
         type text not null,
         settings jsonb not null default ''{}''::jsonb,
         changed_by bigint references public."Users"(id),
-        changed_timestamp timestamptz,
-        unique (name, type)
+        changed_timestamp timestamptz
       )
     ';
   end if;
@@ -91,8 +90,18 @@ begin
   end if;
 
   if not exists (
-    select 1 from pg_indexes
-    where schemaname = 'public' and tablename = 'Settings' and indexname = 'settings_name_type_key'
+    select 1
+    from pg_class t
+    join pg_namespace ns on ns.oid = t.relnamespace
+    join pg_index i on i.indrelid = t.oid
+    where ns.nspname = 'public'
+      and t.relname = 'Settings'
+      and i.indisunique
+      and i.indisvalid
+      and i.indkey::int2[] = array[
+        (select attnum from pg_attribute where attrelid = t.oid and attname = 'name' and not attisdropped),
+        (select attnum from pg_attribute where attrelid = t.oid and attname = 'type' and not attisdropped)
+      ]::int2[]
   ) then
     execute 'create unique index settings_name_type_key on public."Settings" (name, type)';
   end if;
