@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { GlobalBlockingLoaderProvider, useGlobalBlockingLoader } from "../context/GlobalBlockingLoaderContext";
 
 type Deferred<T> = {
@@ -46,6 +46,25 @@ function BlockingHarness({
     </div>
   );
 }
+
+function BlockingFetchHarness({ initSignal }: { initSignal: AbortSignal }) {
+  const { runBlockingFetch } = useGlobalBlockingLoader();
+
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        void runBlockingFetch("/api/test", { signal: initSignal }, { label: "Loading data..." });
+      }}
+    >
+      Start fetch
+    </button>
+  );
+}
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe("GlobalBlockingLoaderContext accessibility", () => {
   it("renders overlay with dialog semantics and traps keyboard focus", async () => {
@@ -111,5 +130,54 @@ describe("GlobalBlockingLoaderContext accessibility", () => {
     });
 
     expect(document.activeElement).toBe(startButton);
+  });
+});
+
+describe("GlobalBlockingLoaderContext runBlockingFetch", () => {
+  it("falls back when AbortSignal.any is unavailable", async () => {
+    const deferred = createDeferred<Response>();
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockReturnValue(deferred.promise);
+    const externalController = new AbortController();
+    const originalAbortSignalAny = (AbortSignal as typeof AbortSignal & {
+      any?: (signals: AbortSignal[]) => AbortSignal;
+    }).any;
+
+    Object.defineProperty(AbortSignal, "any", {
+      value: undefined,
+      writable: true,
+      configurable: true,
+    });
+
+    try {
+      render(
+        <GlobalBlockingLoaderProvider>
+          <BlockingFetchHarness initSignal={externalController.signal} />
+        </GlobalBlockingLoaderProvider>
+      );
+
+      fireEvent.click(screen.getByRole("button", { name: "Start fetch" }));
+
+      await waitFor(() => {
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+      });
+
+      const passedSignal = (fetchSpy.mock.calls[0][1] as RequestInit | undefined)?.signal;
+      expect(passedSignal).toBeDefined();
+      expect(passedSignal).not.toBe(externalController.signal);
+
+      await act(async () => {
+        externalController.abort();
+        deferred.resolve(new Response(null, { status: 200 }));
+        await deferred.promise;
+      });
+
+      expect(passedSignal?.aborted).toBe(true);
+    } finally {
+      Object.defineProperty(AbortSignal, "any", {
+        value: originalAbortSignalAny,
+        writable: true,
+        configurable: true,
+      });
+    }
   });
 });

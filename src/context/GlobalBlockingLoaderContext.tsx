@@ -22,6 +22,64 @@ type BlockingLoaderContextType = {
 
 const GlobalBlockingLoaderContext = createContext<BlockingLoaderContextType | null>(null);
 
+function combineAbortSignals(
+  signalA?: AbortSignal | null,
+  signalB?: AbortSignal | null
+): AbortSignal | undefined {
+  if (!signalA) {
+    return signalB ?? undefined;
+  }
+
+  if (!signalB) {
+    return signalA ?? undefined;
+  }
+
+  const abortSignalAny = (AbortSignal as typeof AbortSignal & {
+    any?: (signals: AbortSignal[]) => AbortSignal;
+  }).any;
+
+  if (typeof abortSignalAny === "function") {
+    try {
+      return abortSignalAny([signalA, signalB]);
+    } catch {
+      // Fall through to manual signal fan-in for environments with partial support.
+    }
+  }
+
+  const controller = new AbortController();
+
+  const abortCombined = () => {
+    if (!controller.signal.aborted) {
+      controller.abort();
+    }
+  };
+
+  if (signalA.aborted || signalB.aborted) {
+    abortCombined();
+    return controller.signal;
+  }
+
+  const cleanup = () => {
+    signalA.removeEventListener("abort", onSignalAAbort);
+    signalB.removeEventListener("abort", onSignalBAbort);
+  };
+
+  const onSignalAAbort = () => {
+    abortCombined();
+    cleanup();
+  };
+
+  const onSignalBAbort = () => {
+    abortCombined();
+    cleanup();
+  };
+
+  signalA.addEventListener("abort", onSignalAAbort, { once: true });
+  signalB.addEventListener("abort", onSignalBAbort, { once: true });
+
+  return controller.signal;
+}
+
 function getFocusableElements(container: HTMLElement): HTMLElement[] {
   const candidates = container.querySelectorAll<HTMLElement>(
     'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
@@ -224,8 +282,7 @@ export function GlobalBlockingLoaderProvider({ children }: { children: React.Rea
     async (input, init, options) => {
       return runBlocking(
         async (signal) => {
-          const combinedSignal =
-            signal && init?.signal ? AbortSignal.any([signal, init.signal]) : signal || init?.signal;
+          const combinedSignal = combineAbortSignals(signal, init?.signal);
           return fetch(input, { ...init, signal: combinedSignal });
         },
         options
