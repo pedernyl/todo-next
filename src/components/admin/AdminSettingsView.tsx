@@ -242,7 +242,13 @@ export default function AdminSettingsView() {
                                 min={field.min}
                                 max={field.max}
                                 step={field.step}
-                                onChange={(event) => updateDraft(setting, field.key, Number(event.target.value))}
+                                onChange={(event) => {
+                                  const nextValue = event.target.valueAsNumber;
+                                  if (Number.isNaN(nextValue)) {
+                                    return;
+                                  }
+                                  updateDraft(setting, field.key, nextValue);
+                                }}
                                 className="w-full rounded border border-slate-300 px-3 py-2 text-sm"
                               />
                             )}
