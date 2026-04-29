@@ -95,6 +95,12 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 - Unit tests (Vitest): see [src/unit-tests/README.md](src/unit-tests/README.md) for commands and setup. Quick run: `npm test`.
 - E2E tests (Playwright): see [tests/README.md](tests/README.md) for auth setup and commands. CSP-specific notes: [tests/README-CSP.md](tests/README-CSP.md).
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for branch, workflow, and versioning guidelines.
+
+For Admin Settings YAML format and conventions, see [src/app/admin/settings/README.md](src/app/admin/settings/README.md).
+
 ## Admin SQL-Style Updates
 
 Admin-triggered database updates are implemented as TypeScript update files (not runtime SQL files) and loaded from an **auto-generated, build-time registry** in `src/lib/adminUpdates/updates/registry.generated.ts`. This approach ensures updates are always bundled and loadable in production, even in serverless deployments where the source tree may not exist at runtime.

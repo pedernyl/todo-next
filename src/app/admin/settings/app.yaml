@@ -1,0 +1,36 @@
+name: app
+type: app
+title: App Settings
+description: Global application settings.
+fields:
+  - key: appName
+    label: Application Name
+    type: text
+    default: Todo Next
+    placeholder: Enter application name
+  - key: allowRegistrations
+    label: Allow New User Registrations
+    type: boolean
+    default: true
+  - key: maxOpenTodos
+    label: Max Open Todos
+    type: number
+    default: 200
+    min: 1
+    step: 1
+  - key: defaultTodoDescription
+    label: Default Todo Description
+    type: textarea
+    default: ""
+    placeholder: Optional default description
+  - key: defaultSortMode
+    label: Default Sort Mode
+    type: select
+    default: manual
+    options:
+      - label: Manual
+        value: manual
+      - label: Created Date
+        value: created
+      - label: Updated Date
+        value: updated

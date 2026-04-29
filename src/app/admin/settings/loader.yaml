@@ -1,0 +1,15 @@
+name: loader
+type: debug
+title: Loader Debug Settings
+description: Loader debugging and timing settings.
+fields:
+  - key: debugLoader
+    label: Debug Loader
+    type: boolean
+    default: false
+  - key: loaderDelaySeconds
+    label: Loader Delay (seconds)
+    type: number
+    default: 0
+    min: 0
+    step: 1
