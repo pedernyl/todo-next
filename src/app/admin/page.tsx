@@ -2,11 +2,12 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import AdminAboutView from "@/components/admin/AdminAboutView";
 import AdminHomeView from "@/components/admin/AdminHomeView";
+import AdminSettingsView from "@/components/admin/AdminSettingsView";
 import AdminUpdatesView from "@/components/admin/AdminUpdatesView";
 import AdminUsersView from "@/components/admin/AdminUsersView";
 import { getAdminAccessCheckResult } from "@/lib/adminAccess";
 
-type AdminView = "home" | "updates" | "users" | "about";
+type AdminView = "home" | "settings" | "updates" | "users" | "about";
 
 type AdminPageProps = {
   searchParams: Promise<{ view?: string | string[] }>;
@@ -14,6 +15,7 @@ type AdminPageProps = {
 
 const adminViews: Array<{ key: AdminView; label: string }> = [
   { key: "home", label: "Home" },
+  { key: "settings", label: "Settings" },
   { key: "updates", label: "Updates" },
   { key: "users", label: "Users" },
   { key: "about", label: "About" },
@@ -22,7 +24,7 @@ const adminViews: Array<{ key: AdminView; label: string }> = [
 function getActiveView(view: string | string[] | undefined): AdminView {
   const raw = Array.isArray(view) ? view[0] : view;
 
-  if (raw === "updates" || raw === "users" || raw === "about") {
+  if (raw === "settings" || raw === "updates" || raw === "users" || raw === "about") {
     return raw;
   }
 
@@ -78,6 +80,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
 
           <div className="p-4 sm:p-6">
             {activeView === "home" && <AdminHomeView />}
+            {activeView === "settings" && <AdminSettingsView />}
             {activeView === "updates" && <AdminUpdatesView />}
             {activeView === "users" && <AdminUsersView />}
             {activeView === "about" && <AdminAboutView />}

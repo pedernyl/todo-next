@@ -86,3 +86,16 @@ Update dependencies
 ```
 
 Since we use squash merge, the PR title becomes the commit message on `main` — make it descriptive.
+
+## Admin Settings YAML
+
+Admin settings schemas live in `src/app/admin/settings`.
+
+Contribution rules:
+
+- Each YAML file represents one component/function/domain settings group.
+- Use `name` + `type` as the identity for that group.
+- Add one or more `fields` entries in that file.
+- Keep `name` + `type` unique across files.
+
+For the complete format and validation rules, see `src/app/admin/settings/README.md`.
