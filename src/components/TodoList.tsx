@@ -24,6 +24,7 @@ import { CSS } from "@dnd-kit/utilities";
 
 
 import type { Category } from "../lib/categoryService";
+import { useGlobalBlockingLoader } from "../context/GlobalBlockingLoaderContext";
 interface TodoListProps {
   initialTodos: Todo[];
   selectedCategory?: Category | null;
@@ -395,6 +396,7 @@ function getIndentClass(level: number): string {
 
 export default function TodoList({ initialTodos, selectedCategory }: TodoListProps) {
   const { userId } = useUserId();
+  const { runBlockingFetch } = useGlobalBlockingLoader();
   const [activeTodoId, setActiveTodoId] = React.useState<string | null>(null);
   const [overTodoId, setOverTodoId] = React.useState<string | null>(null);
 
@@ -405,14 +407,21 @@ export default function TodoList({ initialTodos, selectedCategory }: TodoListPro
       return;
     }
     try {
-      const response = await fetch("/api/todos", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: todo.id, deleted_by: userId }),
-      });
+      const response = await runBlockingFetch(
+        "/api/todos",
+        {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: todo.id, deleted_by: userId }),
+        },
+        { label: "Deleting todo...", cancellable: true }
+      );
       if (!response.ok) throw new Error("Failed to delete todo");
       setTodos((prev: Todo[]) => prev.filter((t: Todo) => t.id !== todo.id));
-    } catch {
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        return;
+      }
       alert("Failed to delete todo");
     }
   };
@@ -443,11 +452,18 @@ export default function TodoList({ initialTodos, selectedCategory }: TodoListPro
       if (selectedCategory?.id) {
         params.set("category_id", selectedCategory.id);
       }
-      const response = await fetch(`/api/todos?${params.toString()}`);
+      const response = await runBlockingFetch(
+        `/api/todos?${params.toString()}`,
+        undefined,
+        { label: "Loading todos...", cancellable: true }
+      );
       if (!response.ok) throw new Error('Failed to fetch todos');
       const data = await response.json();
       setTodos(data);
-    } catch {
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        return;
+      }
       // error intentionally ignored
     }
   };
@@ -481,13 +497,17 @@ export default function TodoList({ initialTodos, selectedCategory }: TodoListPro
 
   const toggleTodo = async (id: string, completed: boolean) => {
     try {
-      const response = await fetch("/api/todos", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await runBlockingFetch(
+        "/api/todos",
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ id, completed }),
         },
-        body: JSON.stringify({ id, completed }),
-      });
+        { label: "Updating todo...", cancellable: true }
+      );
 
       if (!response.ok) {
         throw new Error(`Failed to update todo: ${response.status} ${response.statusText}`);
@@ -498,6 +518,9 @@ export default function TodoList({ initialTodos, selectedCategory }: TodoListPro
         return prev.map((t: Todo) => (t.id === id ? updatedTodo : t));
       });
     } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        return;
+      }
       console.error("Failed to update todo via API route:", error);
     }
   };
@@ -525,19 +548,23 @@ export default function TodoList({ initialTodos, selectedCategory }: TodoListPro
     setTodos(result.nextTodos);
 
     try {
-      const response = await fetch("/api/todos", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await runBlockingFetch(
+        "/api/todos",
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            reorder: true,
+            updates: result.updates,
+            parent_todo: result.scope.parent_todo,
+            completed: result.scope.completed,
+            ...(typeof result.scope.category_id !== "undefined" ? { category_id: result.scope.category_id } : {}),
+          }),
         },
-        body: JSON.stringify({
-          reorder: true,
-          updates: result.updates,
-          parent_todo: result.scope.parent_todo,
-          completed: result.scope.completed,
-          ...(typeof result.scope.category_id !== "undefined" ? { category_id: result.scope.category_id } : {}),
-        }),
-      });
+        { label: "Saving todo order...", cancellable: true }
+      );
 
       if (!response.ok) {
         let details = "";
@@ -550,6 +577,10 @@ export default function TodoList({ initialTodos, selectedCategory }: TodoListPro
         throw new Error(`Failed to persist todo order (${response.status})${details}`);
       }
     } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        setTodos(previousTodos);
+        return;
+      }
       console.error("Failed to persist reorder", error);
       setTodos(previousTodos);
       alert("Failed to save new todo order. Reverted changes.");

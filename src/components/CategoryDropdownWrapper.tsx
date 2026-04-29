@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import CategoryDropdown from "./CategoryDropdown";
 import { useUserId } from "../context/UserIdContext";
 import { getCategories, createCategory, Category } from "../lib/categoryService";
+import { useGlobalBlockingLoader } from "../context/GlobalBlockingLoaderContext";
 
 interface CategoryDropdownWrapperProps {
   onCategoryChange: (category: Category | null) => void;
@@ -12,12 +13,18 @@ const CategoryDropdownWrapper: React.FC<CategoryDropdownWrapperProps> = ({ onCat
   const { userId } = useUserId();
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const { runBlocking } = useGlobalBlockingLoader();
 
   useEffect(() => {
     if (userId) {
-      getCategories(userId).then(setCategories).catch(() => setCategories([]));
+      runBlocking(
+        async () => getCategories(userId),
+        { label: "Loading categories...", cancellable: false }
+      )
+        .then(setCategories)
+        .catch(() => setCategories([]));
     }
-  }, [userId]);
+  }, [userId, runBlocking]);
 
   const handleCategorySelect = (categoryId: string) => {
     if (categoryId === "__create__") {
@@ -31,7 +38,10 @@ const CategoryDropdownWrapper: React.FC<CategoryDropdownWrapperProps> = ({ onCat
 
   const handleCreateCategory = async (name: string, description?: string) => {
     if (!userId) return;
-    const newCat = await createCategory(name, userId, description);
+    const newCat = await runBlocking(
+      async () => createCategory(name, userId, description),
+      { label: "Creating category...", cancellable: false }
+    );
     setCategories(prev => [...prev, newCat]);
     setSelectedCategory(newCat.id);
     onCategoryChange(newCat);
