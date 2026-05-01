@@ -103,6 +103,9 @@ function buildTodoTree(todos: Todo[]): TodoTreeNode[] {
     if (todo.parent_todo) {
       if (todoMap[todo.parent_todo]) {
         todoMap[todo.parent_todo].children.push(todoMap[todo.id]);
+      } else {
+        // If a limited payload excludes the parent, keep the child visible as a root node.
+        roots.push(todoMap[todo.id]);
       }
     } else {
       roots.push(todoMap[todo.id]);
