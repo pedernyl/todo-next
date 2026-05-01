@@ -13,7 +13,6 @@ export async function GET(req: NextRequest) {
   // Resolve the admin-controlled load policy and compute the effective limit.
   // If a valid `limit` query param is provided, it is clamped to [1, maxLoadLimit].
   // Otherwise, defaultLoadLimit is used.
-  const { getTodoLoadPolicy, computeEffectiveLimit } = await import('../../../lib/todoLoadPolicy');
   const policy = await getTodoLoadPolicy();
   const requestedLimit = limitParam !== null ? parseInt(limitParam, 10) : null;
   const effectiveLimit = computeEffectiveLimit(policy, requestedLimit);
@@ -24,6 +23,7 @@ export async function GET(req: NextRequest) {
 }
 import { NextRequest, NextResponse } from 'next/server';
 import { createTodo, updateTodo } from '../../../lib/dataService';
+import { getTodoLoadPolicy, computeEffectiveLimit } from '../../../lib/todoLoadPolicy';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../../../lib/authOptions";
 
