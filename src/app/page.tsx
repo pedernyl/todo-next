@@ -2,6 +2,7 @@
 
 
 import { getTodos } from '../lib/dataService';
+import { getTodoLoadPolicy, computeEffectiveLimit } from '../lib/todoLoadPolicy';
 import AuthButtons from '../components/AuthButtons';
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
@@ -19,7 +20,9 @@ export default async function Home() {
 
   const canAccessAdmin = await isAdminEmail(session.user?.email);
 
-  const todos = await getTodos();
+  const policy = await getTodoLoadPolicy();
+  const effectiveLimit = computeEffectiveLimit(policy);
+  const todos = await getTodos(true, undefined, effectiveLimit);
 
   return (
     <div className="min-h-screen bg-gray-100 p-10 font-sans relative">

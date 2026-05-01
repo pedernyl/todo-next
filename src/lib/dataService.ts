@@ -113,7 +113,7 @@ export async function updateTodoDetails(id: string, title: string, description: 
 }
 
 // Fetch all todos from Supabase
-export async function getTodos(showCompleted: boolean = true, category_id?: string | null): Promise<Todo[]> {
+export async function getTodos(showCompleted: boolean = true, category_id?: string | null, limit?: number): Promise<Todo[]> {
   const userId = await getAuthenticatedUserId();
 
   const { data, error } = await runTodosQueryWithFallback((tableName) => {
@@ -131,6 +131,9 @@ export async function getTodos(showCompleted: boolean = true, category_id?: stri
     }
     if (category_id) {
       query = query.eq('category_id', category_id);
+    }
+    if (typeof limit === 'number') {
+      query = query.limit(limit);
     }
 
     return query;
