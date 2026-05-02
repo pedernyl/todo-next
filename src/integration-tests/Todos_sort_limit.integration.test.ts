@@ -148,7 +148,6 @@ describe("Todos_sort_limit", () => {
     }));
 
     const fetchedWithLimit = await getTodos(true, undefined, 5);
-    console.log("Fetched with limit:", fetchedWithLimit);
     limitedTodosFromFetch = fetchedWithLimit.map((todo) => ({
       id: Number(todo.id),
       title: todo.title,

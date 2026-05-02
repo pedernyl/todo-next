@@ -49,10 +49,6 @@ async function runTodosQueryWithFallback(
     return primaryResult;
   }
 
-  console.warn(
-    '[TODO/remove-legacy-todos-fallback] Falling back to legacy table "todos". Remove this after rename migration is fully rolled out.'
-  );
-
   return queryFactory(LEGACY_TODOS_TABLE_NAME);
 }
 
