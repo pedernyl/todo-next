@@ -42,6 +42,16 @@ See `.env.example` (copy to `.env.local`) for a fully documented list. Required 
 
 In production you typically set `NEXTAUTH_URL` to your site origin.
 
+### Integration test variables
+
+Integration tests run against a **separate test database** to avoid touching dev/production data. Set these in `.env.local`:
+
+- `NEXT_PUBLIC_SUPABASE_TEST_URL` — Supabase URL of your test project
+- `NEXT_PUBLIC_SUPABASE_TEST_ANON_KEY` — anon key for the test project
+- `SUPABASE_TEST_SERVICE_ROLE_KEY` — service role key for the test project (server-side only; never expose to browser)
+
+The integration test setup (`vitest.integration.setup.ts`) maps these to the standard runtime Supabase vars so the app code under test always uses the test database.
+
 Additional (optional) hardening / isolation vars:
 - `NEXT_CSP_MODE` (off|dev|report-only|enforce) – controls CSP behavior (proxy enforces; report-only emitted by config).
 - `NEXT_COEP` (require-corp|credentialless) – enables Cross-Origin-Embedder-Policy for isolation; leave unset if unsure.
