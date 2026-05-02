@@ -5,6 +5,7 @@ import { assertIntegrationTestDbEnvIsActive } from "./assertIntegrationTestDbEnv
 type InsertedTodoRow = {
   id: number;
   title: string;
+  sort_index?: number | null;
   parent_todo?: number | null;
 };
 
@@ -24,6 +25,7 @@ function createSupabaseAdminForIntegrationTests() {
 describe("Todos_sort_limit", () => {
   let insertedTodo: InsertedTodoRow | null = null;
   let insertedChildren: InsertedTodoRow[] = [];
+  let orderedChildrenAfterSort: InsertedTodoRow[] = [];
   let insertedTableName: "Todos" | "todos" | null = null;
 
   beforeAll(async () => {
@@ -33,8 +35,8 @@ describe("Todos_sort_limit", () => {
     const insertIntoTodos = async (tableName: "Todos" | "todos") => {
       return supabaseAdmin
         .from(tableName)
-        .insert({ title: "Todo_sort_limit" })
-        .select("id, title")
+        .insert({ title: "Todo_sort_limit", sort_index: 0 })
+        .select("id, title, sort_index")
         .single<InsertedTodoRow>();
     };
 
@@ -83,6 +85,49 @@ describe("Todos_sort_limit", () => {
     }
 
     insertedChildren = (childrenResult.data ?? []) as InsertedTodoRow[];
+
+    const childByTitle = new Map(insertedChildren.map((child) => [child.title, child]));
+    const c1 = childByTitle.get("Todo_sort_limit_c1");
+    const c2 = childByTitle.get("Todo_sort_limit_c2");
+    const c3 = childByTitle.get("Todo_sort_limit_c3");
+    const c4 = childByTitle.get("Todo_sort_limit_c4");
+    const c5 = childByTitle.get("Todo_sort_limit_c5");
+
+    if (!c1 || !c2 || !c3 || !c4 || !c5) {
+      throw new Error("Failed to find all inserted child todos for sorting");
+    }
+
+    const sortUpdates = [
+      { id: c5.id, sort_index: 0 },
+      { id: c1.id, sort_index: 1 },
+      { id: c2.id, sort_index: 2 },
+      { id: c3.id, sort_index: 3 },
+      { id: c4.id, sort_index: 4 },
+    ];
+
+    for (const update of sortUpdates) {
+      const { error: updateError } = await supabaseAdmin
+        .from(insertedTableName)
+        .update({ sort_index: update.sort_index })
+        .eq("id", update.id);
+
+      if (updateError) {
+        throw new Error(`Failed to update child sort order: ${updateError.message}`);
+      }
+    }
+
+    const { data: orderedChildrenData, error: orderedChildrenError } = await supabaseAdmin
+      .from(insertedTableName)
+      .select("id, title, parent_todo, sort_index")
+      .eq("parent_todo", parentTodo.id)
+      .order("sort_index", { ascending: true })
+      .order("id", { ascending: true });
+
+    if (orderedChildrenError) {
+      throw new Error(`Failed to load sorted child todos: ${orderedChildrenError.message}`);
+    }
+
+    orderedChildrenAfterSort = (orderedChildrenData ?? []) as InsertedTodoRow[];
   });
 
   afterAll(async () => {
@@ -114,6 +159,7 @@ describe("Todos_sort_limit", () => {
   it("adds one todo named Todo_sort_limit in test database", () => {
     expect(insertedTodo).toBeTruthy();
     expect(insertedTodo?.title).toBe("Todo_sort_limit");
+    expect(insertedTodo?.sort_index).toBe(0);
     expect(insertedChildren).toHaveLength(5);
     expect(insertedChildren.map((child) => child.title)).toEqual([
       "Todo_sort_limit_c1",
@@ -121,6 +167,14 @@ describe("Todos_sort_limit", () => {
       "Todo_sort_limit_c3",
       "Todo_sort_limit_c4",
       "Todo_sort_limit_c5",
+    ]);
+    expect(orderedChildrenAfterSort).toHaveLength(5);
+    expect(orderedChildrenAfterSort.map((child) => child.title)).toEqual([
+      "Todo_sort_limit_c5",
+      "Todo_sort_limit_c1",
+      "Todo_sort_limit_c2",
+      "Todo_sort_limit_c3",
+      "Todo_sort_limit_c4",
     ]);
   });
 });
