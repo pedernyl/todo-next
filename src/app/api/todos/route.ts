@@ -7,15 +7,23 @@ export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const showCompleted = url.searchParams.get('showCompleted');
   const category_id = url.searchParams.get('category_id');
+  const limitParam = url.searchParams.get('limit');
   // Default to true if not provided
   const showCompletedBool = showCompleted === null ? true : showCompleted === 'true';
+  // Resolve the admin-controlled load policy and compute the effective limit.
+  // If a valid `limit` query param is provided, it is clamped to [1, maxLoadLimit].
+  // Otherwise, defaultLoadLimit is used.
+  const policy = await getTodoLoadPolicy();
+  const requestedLimit = limitParam !== null ? parseInt(limitParam, 10) : null;
+  const effectiveLimit = computeEffectiveLimit(policy, requestedLimit);
   // Import getTodos dynamically to avoid circular imports
   const { getTodos } = await import('../../../lib/dataService');
-  const todos = await getTodos(showCompletedBool, category_id);
+  const todos = await getTodos(showCompletedBool, category_id, effectiveLimit);
   return NextResponse.json(todos);
 }
 import { NextRequest, NextResponse } from 'next/server';
 import { createTodo, updateTodo } from '../../../lib/dataService';
+import { getTodoLoadPolicy, computeEffectiveLimit } from '../../../lib/todoLoadPolicy';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../../../lib/authOptions";
 

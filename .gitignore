@@ -53,3 +53,6 @@ docs/
 test-results/
 bugs/
 planning/
+error
+data.sql
+schema.sql

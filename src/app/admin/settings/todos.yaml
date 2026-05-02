@@ -1,0 +1,20 @@
+name: todos
+type: App
+title: Todo loading
+description: Controls how many todos are loaded by default and the maximum allowed.
+fields:
+  - key: defaultLoadLimit
+    label: Default todos to load
+    type: number
+    default: 50
+    min: 1
+    max: 200
+    step: 1
+
+  - key: maxLoadLimit
+    label: Max todos allowed
+    type: number
+    default: 200
+    min: 1
+    max: 2000
+    step: 1

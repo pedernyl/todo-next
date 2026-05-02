@@ -49,10 +49,6 @@ async function runTodosQueryWithFallback(
     return primaryResult;
   }
 
-  console.warn(
-    '[TODO/remove-legacy-todos-fallback] Falling back to legacy table "todos". Remove this after rename migration is fully rolled out.'
-  );
-
   return queryFactory(LEGACY_TODOS_TABLE_NAME);
 }
 
@@ -92,6 +88,97 @@ function normalizeSortIndex(value: number | null | undefined): number {
   return value;
 }
 
+function compareTodosForDisplayOrder(a: Todo, b: Todo): number {
+  const completedDiff = Number(a.completed) - Number(b.completed);
+  if (completedDiff !== 0) return completedDiff;
+
+  const sortDiff = normalizeSortIndex(a.sort_index) - normalizeSortIndex(b.sort_index);
+  if (sortDiff !== 0) return sortDiff;
+
+  const aNum = Number(a.id);
+  const bNum = Number(b.id);
+  if (Number.isNaN(aNum) || Number.isNaN(bNum)) {
+    return String(a.id).localeCompare(String(b.id));
+  }
+  return aNum - bNum;
+}
+
+export function applyHierarchicalTodoLimit(todos: Todo[], limit?: number): Todo[] {
+  if (typeof limit !== 'number' || !Number.isFinite(limit)) {
+    return todos;
+  }
+
+  const safeLimit = Math.max(Math.floor(limit), 0);
+  if (safeLimit === 0) {
+    return [];
+  }
+  if (todos.length <= safeLimit) {
+    return todos;
+  }
+
+  const todoById = new Map<string, Todo>();
+  const childrenByParent = new Map<string, Todo[]>();
+  const roots: Todo[] = [];
+
+  for (const todo of todos) {
+    todoById.set(String(todo.id), todo);
+  }
+
+  for (const todo of todos) {
+    const parentId = normalizeComparableId(todo.parent_todo);
+    if (!parentId || !todoById.has(parentId)) {
+      roots.push(todo);
+      continue;
+    }
+
+    const siblings = childrenByParent.get(parentId) ?? [];
+    siblings.push(todo);
+    childrenByParent.set(parentId, siblings);
+  }
+
+  roots.sort(compareTodosForDisplayOrder);
+  for (const siblings of childrenByParent.values()) {
+    siblings.sort(compareTodosForDisplayOrder);
+  }
+
+  const selected: Todo[] = [];
+  const visited = new Set<string>();
+
+  const visit = (todo: Todo): void => {
+    if (selected.length >= safeLimit) return;
+
+    const id = String(todo.id);
+    if (visited.has(id)) return;
+    visited.add(id);
+    selected.push(todo);
+
+    const children = childrenByParent.get(id) ?? [];
+    for (const child of children) {
+      if (selected.length >= safeLimit) break;
+      visit(child);
+    }
+  };
+
+  for (const root of roots) {
+    if (selected.length >= safeLimit) break;
+    visit(root);
+  }
+
+  // Safety fallback for any disconnected/cyclic edge cases.
+  if (selected.length < safeLimit) {
+    const orderedTodos = [...todos].sort(compareTodosForDisplayOrder);
+    for (const todo of orderedTodos) {
+      if (selected.length >= safeLimit) break;
+      if (!visited.has(String(todo.id))) {
+        selected.push(todo);
+        visited.add(String(todo.id));
+      }
+    }
+  }
+
+  return selected;
+}
+
 async function mapTodoWithDescriptionHtml(todo: Todo): Promise<Todo> {
   return {
     ...todo,
@@ -113,7 +200,7 @@ export async function updateTodoDetails(id: string, title: string, description: 
 }
 
 // Fetch all todos from Supabase
-export async function getTodos(showCompleted: boolean = true, category_id?: string | null): Promise<Todo[]> {
+export async function getTodos(showCompleted: boolean = true, category_id?: string | null, limit?: number): Promise<Todo[]> {
   const userId = await getAuthenticatedUserId();
 
   const { data, error } = await runTodosQueryWithFallback((tableName) => {
@@ -137,7 +224,9 @@ export async function getTodos(showCompleted: boolean = true, category_id?: stri
   });
 
   if (error) throw error;
-  return mapTodosWithDescriptionHtml((data ?? []) as Todo[]);
+  const allTodos = (data ?? []) as Todo[];
+  const limitedTodos = applyHierarchicalTodoLimit(allTodos, limit);
+  return mapTodosWithDescriptionHtml(limitedTodos);
 }
 
 // Create a new todo in Supabase

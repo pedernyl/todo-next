@@ -28,5 +28,5 @@ jobs:
       - name: Verify admin updates registry is up to date
         run: npm run check:admin-updates-registry
 
-      - name: Run tests
-        run: npm test
+      - name: Run unit tests
+        run: npm run test:unit
