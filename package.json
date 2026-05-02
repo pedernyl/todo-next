@@ -15,10 +15,13 @@
     "pretest": "npm run generate:admin-updates",
     "start": "next start",
     "lint": "next lint",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:ui": "vitest --ui",
-    "test:coverage": "vitest run --coverage"
+    "test": "npm run test:unit",
+    "test:unit": "vitest run -c vitest.config.ts",
+    "test:unit:watch": "vitest -c vitest.config.ts",
+    "test:unit:ui": "vitest --ui -c vitest.config.ts",
+    "test:coverage": "vitest run --coverage -c vitest.config.ts",
+    "test:integration": "vitest run -c vitest.integration.config.ts",
+    "test:integration:watch": "vitest -c vitest.integration.config.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

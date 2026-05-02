@@ -1,6 +1,8 @@
 # Unit tests (Vitest)
 
-This project uses Vitest for unit testing. Tests live under `src/**/*.test.{ts,tsx}`; this folder contains examples like `category.test.ts` and `todo.test.ts`.
+This project uses Vitest for unit testing. Unit tests live under `src/unit-tests/**/*.test.{ts,tsx}`; this folder contains examples like `category.test.ts` and `todo.test.ts`.
+
+Integration tests are configured separately and live under `src/integration-tests`.
 
 ## Test environment
 
@@ -16,7 +18,7 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: './vitest.setup.ts',
-    include: ['src/**/*.test.{ts,tsx}'],
+    include: ['src/unit-tests/**/*.test.{ts,tsx}'],
   },
 });
 ```
@@ -64,10 +66,11 @@ npx vitest -t "creates a todo"
 Convenient scripts are available in `package.json`:
 
 ```bash
-npm run test          # vitest run
-npm run test:watch    # vitest (watch mode)
-npm run test:ui       # vitest --ui
-npm run test:coverage # vitest run --coverage
+npm run test            # alias for test:unit
+npm run test:unit       # run unit tests
+npm run test:unit:watch # unit watch mode
+npm run test:unit:ui    # unit UI mode
+npm run test:coverage   # unit coverage
 ```
 
 ## Notes on mocks in this repo
