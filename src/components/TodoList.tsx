@@ -462,7 +462,7 @@ export default function TodoList({ initialTodos, selectedCategory }: TodoListPro
       );
       if (!response.ok) throw new Error('Failed to fetch todos');
       const data = await response.json();
-      setTodos(data);
+      setTodos(Array.isArray(data) ? data : data.todos ?? []);
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") {
         return;
