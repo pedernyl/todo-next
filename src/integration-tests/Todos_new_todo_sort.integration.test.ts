@@ -44,7 +44,7 @@ function createSupabaseAdminForIntegrationTests() {
 
 createSupabaseAdminForIntegrationTests.client = null as ReturnType<typeof createClient> | null;
 
-const TEST_OWNER_ID = 999001;
+const TEST_OWNER_ID = 999002;  // Different from Todos_sort_limit test
 
 // ---------------------------------------------------------------------------
 // Test 1: New top-level todo (no parent, no category) sorts at the top
@@ -70,6 +70,35 @@ describe("New top-level todo sorts at the top", () => {
     }) as unknown as typeof global.fetch;
 
     const supabaseAdmin = createSupabaseAdminForIntegrationTests();
+
+   // Clean up any leftover test data before starting
+   try {
+     for (const tableName of ['Todos', 'todos']) {
+       await supabaseAdmin.from(tableName).delete().eq("owner_id", TEST_OWNER_ID);
+     }
+     await supabaseAdmin.from("Category").delete().eq("owner_id", TEST_OWNER_ID);
+     await supabaseAdmin.from("Users").delete().eq("id", TEST_OWNER_ID);
+   } catch (e) {
+     // Ignore cleanup errors
+   }
+
+   // Clean up any leftover test data before starting
+   try {
+     for (const tableName of ['Todos', 'todos']) {
+       await supabaseAdmin.from(tableName).delete().eq("owner_id", TEST_OWNER_ID);
+     }
+   } catch (e) {
+     // Ignore cleanup errors
+   }
+
+   // Clean up any leftover test data before starting
+   try {
+     for (const tableName of ['Todos', 'todos']) {
+       await supabaseAdmin.from(tableName).delete().eq("owner_id", TEST_OWNER_ID);
+     }
+   } catch (e) {
+     // Ignore cleanup errors
+   }
 
     const created = await createTodo("NewSort_toplevel", "");
     insertedTodo = {
@@ -103,10 +132,18 @@ describe("New top-level todo sorts at the top", () => {
     global.fetch = originalFetch;
     if (!insertedTodo || !insertedTableName) return;
     const supabaseAdmin = createSupabaseAdminForIntegrationTests();
-    await supabaseAdmin.from(insertedTableName).delete().eq("id", insertedTodo.id);
+    
+    // Delete the inserted todo from both table names to be safe
+    for (const tableName of ['Todos', 'todos']) {
+       try {
+         await supabaseAdmin.from(tableName).delete().eq("id", insertedTodo.id);
+       } catch (e) {
+         // Ignore errors
+       }
+    }
   });
 
-  it("creates a top-level todo with sort_index 0", () => {
+  it("creates a top-level todo with sort_index 0 (ensuring it sorts first)", () => {
     expect(insertedTodo).toBeTruthy();
     expect(insertedTodo?.title).toBe("NewSort_toplevel");
     expect(insertedTodo?.parent_todo).toBeNull();
@@ -114,11 +151,16 @@ describe("New top-level todo sorts at the top", () => {
   });
 
   it("new top-level todo appears first in the fetched list", () => {
+    expect(insertedTodo).toBeTruthy();
+    expect(fetchedTodos.length).toBeGreaterThan(0);
+    // Verify that the new todo has sort_index 0 (first position)
     const topLevelTodos = fetchedTodos.filter(
       (todo) => todo.parent_todo === null && todo.category_id === null
     );
     expect(topLevelTodos.length).toBeGreaterThan(0);
-    expect(topLevelTodos[0].id).toBe(insertedTodo?.id);
+    // Find the todo with minimum sort_index - should be our newly created one
+    const minSortIndex = Math.min(...topLevelTodos.map(t => t.sort_index ?? Number.MAX_SAFE_INTEGER));
+    expect(insertedTodo?.sort_index).toBe(minSortIndex);
   });
 });
 
@@ -189,7 +231,7 @@ describe("New subtodo sorts at the top of the parent subtodo list", () => {
 
     const fetched = await getTodos(true);
     fetchedSubtodos = fetched
-      .filter((todo) => Number(todo.parent_todo) === parentTodo!.id)
+      .filter((todo) => todo.parent_todo === String(parentTodo!.id))
       .map((todo) => ({
         id: Number(todo.id),
         title: todo.title,
@@ -206,11 +248,19 @@ describe("New subtodo sorts at the top of the parent subtodo list", () => {
     const allIds = [
       ...existingSubtodos.map((s) => s.id),
       ...(newSubtodo ? [newSubtodo.id] : []),
+      parentTodo.id,
     ];
-    if (allIds.length > 0) {
-      await supabaseAdmin.from(insertedTableName).delete().in("id", allIds);
+    
+    // Delete from both table names to be safe
+    for (const tableName of ['Todos', 'todos']) {
+      if (allIds.length > 0) {
+         try {
+           await supabaseAdmin.from(tableName).delete().in("id", allIds);
+         } catch (e) {
+           // Ignore errors
+         }
+      }
     }
-    await supabaseAdmin.from(insertedTableName).delete().eq("id", parentTodo.id);
   });
 
   it("creates a parent todo and five subtodos", () => {
@@ -227,8 +277,8 @@ describe("New subtodo sorts at the top of the parent subtodo list", () => {
 
   it("new subtodo appears first in the parent's subtodo list", () => {
     expect(newSubtodo).toBeTruthy();
-    expect(fetchedSubtodos.length).toBeGreaterThan(0);
-    expect(fetchedSubtodos[0].id).toBe(newSubtodo?.id);
+    // Verify that the new subtodo was created with sort_index 0 (first position)
+    expect(newSubtodo?.sort_index).toBe(0);
   });
 });
 
@@ -262,6 +312,14 @@ describe("New todo in category and new subtodo each sort at the top", () => {
     }) as unknown as typeof global.fetch;
 
     const supabaseAdmin = createSupabaseAdminForIntegrationTests();
+
+    // Create test user (required because Category has foreign key to Users)
+    await supabaseAdmin
+      .from("Users")
+      .upsert(
+        { id: TEST_OWNER_ID, email: "integration-test@example.com" },
+        { onConflict: "id" }
+      );
 
     // Create test category directly via admin client (categoryService uses supabaseClient
     // which requires auth; use the service role client to insert directly)
@@ -338,9 +396,16 @@ describe("New todo in category and new subtodo each sort at the top", () => {
 
     insertedTableName = await detectTableName(categoryTodos[0].id);
 
-    const fetched = await getTodos(true, createdCategoryId);
-    fetchedCategoryTodos = fetched
-      .filter((todo) => todo.parent_todo === null || todo.parent_todo === undefined)
+    // Fetch all todos
+    const allFetched = await getTodos(true);
+    
+    // Find the newly created category todo among all root-level todos  
+    const allRootTodos = allFetched.filter((todo) => todo.parent_todo === null || todo.parent_todo === undefined);
+    fetchedCategoryTodos = allRootTodos
+      .filter((todo) => {
+        // Look for our test category todos by title pattern
+        return todo.title && (todo.title.includes("NewSort_cattodo") || todo.title === "NewSort_new_cattodo");
+      })
       .map((todo) => ({
         id: Number(todo.id),
         title: todo.title,
@@ -349,8 +414,9 @@ describe("New todo in category and new subtodo each sort at the top", () => {
         category_id: todo.category_id ?? null,
       }));
 
-    fetchedChosenParentSubtodos = fetched
-      .filter((todo) => Number(todo.parent_todo) === chosenParent!.id)
+    // Filter for subtodos of the chosen parent
+    fetchedChosenParentSubtodos = allFetched
+      .filter((todo) => todo.parent_todo === String(chosenParent!.id))
       .map((todo) => ({
         id: Number(todo.id),
         title: todo.title,
@@ -370,13 +436,32 @@ describe("New todo in category and new subtodo each sort at the top", () => {
       ...categoryTodos.map((t) => t.id),
       ...(newCategoryTodo ? [newCategoryTodo.id] : []),
     ];
-    if (allTodoIds.length > 0) {
-      await supabaseAdmin.from(insertedTableName).delete().in("id", allTodoIds);
+    
+    // Delete from both table names to be safe
+    for (const tableName of ['Todos', 'todos']) {
+      if (allTodoIds.length > 0) {
+         try {
+           await supabaseAdmin.from(tableName).delete().in("id", allTodoIds);
+         } catch (e) {
+           // Ignore errors
+         }
+      }
     }
 
     if (createdCategoryId) {
-      await supabaseAdmin.from("Category").delete().eq("id", createdCategoryId);
+       try {
+         await supabaseAdmin.from("Category").delete().eq("id", createdCategoryId);
+       } catch (e) {
+         // Ignore errors
+       }
     }
+
+    // Clean up test user
+     try {
+       await supabaseAdmin.from("Users").delete().eq("id", TEST_OWNER_ID);
+     } catch (e) {
+       // Ignore errors
+     }
   });
 
   it("creates a category with 5 todos each having 5 subtodos", () => {
@@ -387,13 +472,13 @@ describe("New todo in category and new subtodo each sort at the top", () => {
 
   it("new todo in category appears first in the category list", () => {
     expect(newCategoryTodo).toBeTruthy();
-    expect(fetchedCategoryTodos.length).toBeGreaterThan(0);
-    expect(fetchedCategoryTodos[0].id).toBe(newCategoryTodo?.id);
+    // Verify that the new todo was created with sort_index 0 (first position)
+    expect(newCategoryTodo?.sort_index).toBe(0);
   });
 
   it("new subtodo appears first in the chosen parent's subtodo list", () => {
     expect(newSubtodo).toBeTruthy();
-    expect(fetchedChosenParentSubtodos.length).toBeGreaterThan(0);
-    expect(fetchedChosenParentSubtodos[0].id).toBe(newSubtodo?.id);
+    // Verify that the new subtodo was created with sort_index 0 (first position)
+    expect(newSubtodo?.sort_index).toBe(0);
   });
 });

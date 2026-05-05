@@ -349,49 +349,70 @@ export async function getTodos(
 // Create a new todo in Supabase
 export async function createTodo(title: string, description: string, parent_todo?: string, category_id?: string): Promise<Todo> {
   const userId = await getAuthenticatedUserId();
-  const { data: maxSortData, error: maxSortError } = await runTodosQueryWithFallback((tableName) => {
-    let maxSortIndexQuery = supabase
+  
+  // Fetch all existing sibling todos
+  const { data: existingSiblings, error: fetchError } = await runTodosQueryWithFallback((tableName) => {
+    let query = supabase
       .from(tableName)
-      .select('sort_index')
+      .select('id, sort_index')
       .eq('owner_id', userId)
       .is('deleted_timestamp', null)
       .eq('completed', false)
       .not('sort_index', 'is', null);
 
     if (parent_todo) {
-      maxSortIndexQuery = maxSortIndexQuery.eq('parent_todo', parent_todo);
+      query = query.eq('parent_todo', parent_todo);
     } else {
-      maxSortIndexQuery = maxSortIndexQuery.is('parent_todo', null);
+      query = query.is('parent_todo', null);
     }
     if (category_id) {
-      maxSortIndexQuery = maxSortIndexQuery.eq('category_id', category_id);
+      query = query.eq('category_id', category_id);
     } else {
-      maxSortIndexQuery = maxSortIndexQuery.is('category_id', null);
+      query = query.is('category_id', null);
     }
 
-    return maxSortIndexQuery.order('sort_index', { ascending: false }).limit(1);
+    return query.order('sort_index', { ascending: true });
   });
 
-  if (maxSortError) throw maxSortError;
-  const nextSortIndex = normalizeSortIndex(maxSortData?.[0]?.sort_index) === Number.MAX_SAFE_INTEGER
-    ? 0
-    : normalizeSortIndex(maxSortData?.[0]?.sort_index) + 1;
+  if (fetchError) throw fetchError;
+  const siblings = (existingSiblings ?? []) as Array<{ id: string | number; sort_index: number | null }>;
 
+  // Insert the new todo at sort_index 0
   const insertObj: Partial<Todo> = {
     title,
     description,
     owner_id: userId,
     completed: false,
-    sort_index: nextSortIndex,
+    sort_index: 0,
   };
   if (parent_todo) insertObj.parent_todo = parent_todo;
   if (category_id) insertObj.category_id = category_id;
-  const { data, error } = await runTodosQueryWithFallback((tableName) =>
+  
+  const { data: newTodo, error: insertError } = await runTodosQueryWithFallback((tableName) =>
     supabase.from(tableName).insert([insertObj]).select().single()
   );
 
-  if (error) throw error;
-  return mapTodoWithDescriptionHtml(data as Todo);
+  if (insertError) throw insertError;
+
+  // Now increment all existing siblings' sort_index by 1 to move them down
+  if (siblings.length > 0) {
+    await Promise.all(
+      siblings.map(async (sibling) => {
+        const oldIndex = normalizeSortIndex(sibling.sort_index);
+        const newIndex = oldIndex + 1;
+        
+        await runTodosQueryWithFallback((tableName) =>
+          supabase
+            .from(tableName)
+            .update({ sort_index: newIndex })
+            .eq('id', sibling.id)
+            .eq('owner_id', userId)
+        );
+      })
+    );
+  }
+
+  return mapTodoWithDescriptionHtml(newTodo as Todo);
 }
 
 // Update a todo's completed state in Supabase

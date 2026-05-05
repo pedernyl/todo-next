@@ -77,6 +77,15 @@ describe("Todos_sort_limit", () => {
 
     const supabaseAdmin = createSupabaseAdminForIntegrationTests();
 
+   // Clean up any leftover test data before starting
+   try {
+     for (const tableName of ['Todos', 'todos']) {
+       await supabaseAdmin.from(tableName).delete().eq("owner_id", TEST_OWNER_ID);
+     }
+   } catch (e) {
+     // Ignore cleanup errors
+   }
+
     const parentTodo = await createTodo("Todo_sort_limit", "");
     insertedTodo = {
       id: Number(parentTodo.id),
@@ -205,7 +214,7 @@ describe("Todos_sort_limit", () => {
   it("adds one todo named Todo_sort_limit in test database", () => {
     expect(insertedTodo).toBeTruthy();
     expect(insertedTodo?.title).toBe("Todo_sort_limit");
-    expect(insertedTodo?.sort_index).toBe(0);
+    expect(insertedTodo?.sort_index).toBe(0);  // New todos get sort_index 0
     expect(insertedChildren).toHaveLength(5);
     expect(insertedChildren.map((child) => child.title)).toEqual([
       "Todo_sort_limit_c1",

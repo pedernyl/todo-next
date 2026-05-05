@@ -76,6 +76,29 @@ function normalizeNullableId(id: string | number | null | undefined): string | n
   return normalized.length > 0 ? normalized : null;
 }
 
+export function applyOptimisticTodoInsert(prev: Todo[], newTodo: Todo): Todo[] {
+  const newParentId = normalizeNullableId(newTodo.parent_todo);
+  const newCategoryId = normalizeNullableId(newTodo.category_id);
+  const newCompleted = Boolean(newTodo.completed);
+
+  const nextTodos = prev.map((todo) => {
+    const sameParent = normalizeNullableId(todo.parent_todo) === newParentId;
+    const sameCategory = normalizeNullableId(todo.category_id) === newCategoryId;
+    const sameCompleted = Boolean(todo.completed) === newCompleted;
+
+    if (!sameParent || !sameCategory || !sameCompleted) {
+      return todo;
+    }
+
+    return {
+      ...todo,
+      sort_index: getNormalizedSortIndex(todo) + 1,
+    };
+  });
+
+  return [newTodo, ...nextTodos];
+}
+
 function compareTodoOrder(a: Todo, b: Todo): number {
   const completedDiff = Number(a.completed) - Number(b.completed);
   if (completedDiff !== 0) return completedDiff;
@@ -481,7 +504,7 @@ export default function TodoList({ initialTodos, selectedCategory }: TodoListPro
   };
 
   const handleTodoAdded = (newTodo: Todo) => {
-    setTodos((prev: Todo[]) => [newTodo, ...prev]);
+    setTodos((prev: Todo[]) => applyOptimisticTodoInsert(prev, newTodo));
     setEditTodo(null);
     setParentTodo(null);
     setShowAddForm(false);
