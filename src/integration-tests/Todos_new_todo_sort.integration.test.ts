@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { createClient } from "@supabase/supabase-js";
 import { assertIntegrationTestDbEnvIsActive } from "./assertIntegrationTestDbEnv";
+import { cleanupTestOwnerData } from "./integrationTestHelpers";
 import { createTodo, getTodos } from "../lib/dataService";
 
 
@@ -71,34 +72,8 @@ describe("New top-level todo sorts at the top", () => {
 
     const supabaseAdmin = createSupabaseAdminForIntegrationTests();
 
-   // Clean up any leftover test data before starting
-   try {
-     for (const tableName of ['Todos', 'todos']) {
-       await supabaseAdmin.from(tableName).delete().eq("owner_id", TEST_OWNER_ID);
-     }
-     await supabaseAdmin.from("Category").delete().eq("owner_id", TEST_OWNER_ID);
-     await supabaseAdmin.from("Users").delete().eq("id", TEST_OWNER_ID);
-   } catch (e) {
-     // Ignore cleanup errors
-   }
-
-   // Clean up any leftover test data before starting
-   try {
-     for (const tableName of ['Todos', 'todos']) {
-       await supabaseAdmin.from(tableName).delete().eq("owner_id", TEST_OWNER_ID);
-     }
-   } catch (e) {
-     // Ignore cleanup errors
-   }
-
-   // Clean up any leftover test data before starting
-   try {
-     for (const tableName of ['Todos', 'todos']) {
-       await supabaseAdmin.from(tableName).delete().eq("owner_id", TEST_OWNER_ID);
-     }
-   } catch (e) {
-     // Ignore cleanup errors
-   }
+    // Clean up any leftover test data before starting
+    await cleanupTestOwnerData(supabaseAdmin, TEST_OWNER_ID);
 
     const created = await createTodo("NewSort_toplevel", "");
     insertedTodo = {
