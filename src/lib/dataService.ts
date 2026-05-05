@@ -242,6 +242,7 @@ export async function getTodos(
 
   // Keep a fixed root batch size so query cost does not grow with deep offsets.
   const ROOT_BATCH_SIZE = 100;
+  const FRONTIER_CHUNK_SIZE = 200;
 
   const applySharedTodoFilters = (query: any) => {
     let nextQuery = query
@@ -284,13 +285,19 @@ export async function getTodos(
     let frontier: string[] = roots.map((r) => String(r.id));
 
     while (frontier.length > 0) {
-      const { data: childData, error: childError } = await runTodosQueryWithFallback((tableName) =>
-        applySharedTodoFilters(
-          supabase.from(tableName).select('*').in('parent_todo', frontier)
-        )
-      );
-      if (childError) throw childError;
-      const children = (childData ?? []) as Todo[];
+      const children: Todo[] = [];
+
+      for (let chunkStart = 0; chunkStart < frontier.length; chunkStart += FRONTIER_CHUNK_SIZE) {
+        const frontierChunk = frontier.slice(chunkStart, chunkStart + FRONTIER_CHUNK_SIZE);
+        const { data: childData, error: childError } = await runTodosQueryWithFallback((tableName) =>
+          applySharedTodoFilters(
+            supabase.from(tableName).select('*').in('parent_todo', frontierChunk)
+          )
+        );
+        if (childError) throw childError;
+        children.push(...((childData ?? []) as Todo[]));
+      }
+
       if (children.length === 0) break;
 
       const nextFrontier: string[] = [];
