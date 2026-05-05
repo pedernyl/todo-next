@@ -200,13 +200,52 @@ export async function updateTodoDetails(id: string, title: string, description: 
 }
 
 // Fetch all todos from Supabase
-export async function getTodos(showCompleted: boolean = true, category_id?: string | null, limit?: number): Promise<Todo[]> {
+export async function getTodos(
+  showCompleted: boolean = true,
+  category_id?: string | null,
+  limit?: number,
+  offset: number = 0
+): Promise<Todo[]> {
   const userId = await getAuthenticatedUserId();
+  const effectiveLimit = typeof limit === 'number' && Number.isFinite(limit)
+    ? Math.max(Math.floor(limit), 1)
+    : 50;
+  const effectiveOffset = Number.isFinite(offset) ? Math.max(Math.floor(offset), 0) : 0;
+  const pageEndExclusive = effectiveOffset + effectiveLimit;
 
-  const { data, error } = await runTodosQueryWithFallback((tableName) => {
-    let query = supabase
-      .from(tableName)
-      .select('*')
+  // When hiding completed todos, include incomplete children whose completed parents
+  // are filtered out by building pages from the full incomplete set.
+  if (!showCompleted) {
+    const { data, error } = await runTodosQueryWithFallback((tableName) => {
+      let query = supabase
+        .from(tableName)
+        .select('*')
+        .eq('owner_id', userId)
+        .is('deleted_timestamp', null)
+        .eq('completed', false)
+        .order('sort_index', { ascending: true })
+        .order('id', { ascending: true });
+
+      if (category_id) {
+        query = query.eq('category_id', category_id);
+      }
+
+      return query;
+    });
+
+    if (error) throw error;
+    const incompleteTodos = (data ?? []) as Todo[];
+    const hierarchicalWindow = applyHierarchicalTodoLimit(incompleteTodos, pageEndExclusive);
+    const pagedTodos = hierarchicalWindow.slice(effectiveOffset, pageEndExclusive);
+    return mapTodosWithDescriptionHtml(pagedTodos);
+  }
+
+  // Keep a fixed root batch size so query cost does not grow with deep offsets.
+  const ROOT_BATCH_SIZE = 100;
+  const FRONTIER_CHUNK_SIZE = 200;
+
+  const applySharedTodoFilters = (query: any) => {
+    let nextQuery = query
       .eq('owner_id', userId)
       .is('deleted_timestamp', null)
       .order('completed', { ascending: true })
@@ -214,19 +253,97 @@ export async function getTodos(showCompleted: boolean = true, category_id?: stri
       .order('id', { ascending: true });
 
     if (!showCompleted) {
-      query = query.eq('completed', false);
+      nextQuery = nextQuery.eq('completed', false);
     }
     if (category_id) {
-      query = query.eq('category_id', category_id);
+      nextQuery = nextQuery.eq('category_id', category_id);
     }
 
-    return query;
-  });
+    return nextQuery;
+  };
 
-  if (error) throw error;
-  const allTodos = (data ?? []) as Todo[];
-  const limitedTodos = applyHierarchicalTodoLimit(allTodos, limit);
-  return mapTodosWithDescriptionHtml(limitedTodos);
+  const orderedTodos: Todo[] = [];
+  let rootOffset = 0;
+
+  while (orderedTodos.length < pageEndExclusive) {
+    // Fetch a batch of root todos.
+    const { data: rootData, error: rootError } = await runTodosQueryWithFallback((tableName) =>
+      applySharedTodoFilters(
+        supabase
+          .from(tableName)
+          .select('*')
+          .is('parent_todo', null)
+      ).range(rootOffset, rootOffset + ROOT_BATCH_SIZE - 1)
+    );
+    if (rootError) throw rootError;
+    const roots = (rootData ?? []) as Todo[];
+    if (roots.length === 0) break;
+
+    // BFS: fetch all descendants of this root batch in bulk —
+    // one query per tree level instead of one query per root.
+    const childrenByParent = new Map<string, Todo[]>();
+    let frontier: string[] = roots.map((r) => String(r.id));
+
+    while (frontier.length > 0) {
+      const children: Todo[] = [];
+
+      for (let chunkStart = 0; chunkStart < frontier.length; chunkStart += FRONTIER_CHUNK_SIZE) {
+        const frontierChunk = frontier.slice(chunkStart, chunkStart + FRONTIER_CHUNK_SIZE);
+        const { data: childData, error: childError } = await runTodosQueryWithFallback((tableName) =>
+          applySharedTodoFilters(
+            supabase.from(tableName).select('*').in('parent_todo', frontierChunk)
+          )
+        );
+        if (childError) throw childError;
+        children.push(...((childData ?? []) as Todo[]));
+      }
+
+      if (children.length === 0) break;
+
+      const nextFrontier: string[] = [];
+      for (const child of children) {
+        const parentId = normalizeComparableId(child.parent_todo);
+        if (!parentId) continue;
+        const siblings = childrenByParent.get(parentId) ?? [];
+        siblings.push(child);
+        childrenByParent.set(parentId, siblings);
+        nextFrontier.push(String(child.id));
+      }
+      frontier = nextFrontier;
+    }
+
+    for (const siblings of childrenByParent.values()) {
+      siblings.sort(compareTodosForDisplayOrder);
+    }
+
+    // Flatten roots + their subtrees in hierarchical display order.
+    const visited = new Set<string>();
+    const flattenSubtree = (parentId: string): void => {
+      const children = childrenByParent.get(parentId) ?? [];
+      for (const child of children) {
+        const id = String(child.id);
+        if (visited.has(id)) continue;
+        visited.add(id);
+        orderedTodos.push(child);
+        flattenSubtree(id);
+      }
+    };
+
+    for (const root of roots) {
+      const id = String(root.id);
+      if (!visited.has(id)) {
+        visited.add(id);
+        orderedTodos.push(root);
+        flattenSubtree(id);
+      }
+    }
+
+    rootOffset += roots.length;
+    if (roots.length < ROOT_BATCH_SIZE) break; // last batch
+  }
+
+  const pagedTodos = orderedTodos.slice(effectiveOffset, pageEndExclusive);
+  return mapTodosWithDescriptionHtml(pagedTodos);
 }
 
 // Create a new todo in Supabase

@@ -8,6 +8,7 @@ export async function GET(req: NextRequest) {
   const showCompleted = url.searchParams.get('showCompleted');
   const category_id = url.searchParams.get('category_id');
   const limitParam = url.searchParams.get('limit');
+  const offsetParam = url.searchParams.get('offset');
   // Default to true if not provided
   const showCompletedBool = showCompleted === null ? true : showCompleted === 'true';
   // Resolve the admin-controlled load policy and compute the effective limit.
@@ -16,10 +17,12 @@ export async function GET(req: NextRequest) {
   const policy = await getTodoLoadPolicy();
   const requestedLimit = limitParam !== null ? parseInt(limitParam, 10) : null;
   const effectiveLimit = computeEffectiveLimit(policy, requestedLimit);
+  const requestedOffset = offsetParam !== null ? parseInt(offsetParam, 10) : 0;
+  const effectiveOffset = Number.isFinite(requestedOffset) ? Math.max(requestedOffset, 0) : 0;
   // Import getTodos dynamically to avoid circular imports
   const { getTodos } = await import('../../../lib/dataService');
-  const todos = await getTodos(showCompletedBool, category_id, effectiveLimit);
-  return NextResponse.json(todos);
+  const todos = await getTodos(showCompletedBool, category_id, effectiveLimit, effectiveOffset);
+  return NextResponse.json({ todos, limit: effectiveLimit });
 }
 import { NextRequest, NextResponse } from 'next/server';
 import { createTodo, updateTodo } from '../../../lib/dataService';
