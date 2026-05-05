@@ -211,9 +211,8 @@ export async function getTodos(
     ? Math.max(Math.floor(limit), 1)
     : 50;
   const effectiveOffset = Number.isFinite(offset) ? Math.max(Math.floor(offset), 0) : 0;
-  // Fetch enough roots to cover offset + limit, then fetch all their
-  // descendants in bulk BFS (one query per tree level, not per root).
-  const ROOT_BATCH_SIZE = Math.max(effectiveOffset + effectiveLimit, 100);
+  // Keep a fixed root batch size so query cost does not grow with deep offsets.
+  const ROOT_BATCH_SIZE = 100;
   const pageEndExclusive = effectiveOffset + effectiveLimit;
 
   const applySharedTodoFilters = (query: any) => {
