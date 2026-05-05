@@ -7,40 +7,50 @@ vi.mock('../lib/markdown', () => ({
   ),
 }));
 
-const maxSortQuery = {
-  eq: vi.fn(() => maxSortQuery),
-  is: vi.fn(() => maxSortQuery),
-  not: vi.fn(() => maxSortQuery),
-  order: vi.fn(() => maxSortQuery),
-  limit: vi.fn(() => Promise.resolve({ data: [{ sort_index: 2 }], error: null })),
-};
-
 // Mock supabaseClient with full method chains (must be first)
 vi.mock('../lib/supabaseClient', () => {
-  const updateChain = {
-    eq: () => ({
-      select: () => ({
-        single: () =>
-          Promise.resolve({
-            data: {
-              id: '1',
-              title: 'Test Todo',
-              description: '',
-              completed: false,
-              owner_id: 1,
-              deleted_timestamp: 1234567890,
-              deleted_by: 'user1',
-            },
-            error: null,
-          }),
-      }),
-    }),
+  // A chainable thenable: every filter method returns itself, and awaiting
+  // it resolves to an empty sibling list (no siblings to shift).
+  function makeSelectChain() {
+    const chain: Record<string, unknown> = {};
+    const resolve = Promise.resolve({ data: [], error: null });
+    chain['then'] = resolve.then.bind(resolve);
+    chain['catch'] = resolve.catch.bind(resolve);
+    for (const method of ['eq', 'is', 'gte', 'not', 'in', 'order', 'limit']) {
+      chain[method] = vi.fn(() => chain);
+    }
+    return chain;
+  }
+
+  const softDeleteData = {
+    id: '1',
+    title: 'Test Todo',
+    description: '',
+    completed: false,
+    owner_id: 1,
+    deleted_timestamp: 1234567890,
+    deleted_by: 'user1',
   };
+
+  // A flexible update chain that satisfies both:
+  //   softDeleteTodo: .update().eq('id').select().single()
+  //   sibling shift:  .update().eq('id').eq('owner_id')  → resolves
+  function makeUpdateEqChain(): Record<string, unknown> {
+    const chain: Record<string, unknown> = {};
+    chain['eq'] = vi.fn(() => chain);
+    chain['select'] = vi.fn(() => ({
+      single: () => Promise.resolve({ data: softDeleteData, error: null }),
+    }));
+    chain['then'] = (resolve: (v: unknown) => unknown) =>
+      resolve({ data: null, error: null });
+    return chain;
+  }
+
   return {
     supabase: {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      from: (_table: string) => ({
-        select: () => maxSortQuery,
+      from: vi.fn((_table: string) => ({
+        select: vi.fn(() => makeSelectChain()),
         insert: (rows: Array<{ title: string; description: string; completed: boolean; owner_id: number }>) => ({
           select: () => ({
             single: () =>
@@ -56,8 +66,8 @@ vi.mock('../lib/supabaseClient', () => {
               }),
           }),
         }),
-        update: () => updateChain,
-      })
+        update: vi.fn(() => makeUpdateEqChain()),
+      })),
     }
   };
 });
@@ -83,7 +93,6 @@ global.fetch = vi.fn(async (url: unknown): Promise<SimpleResponse> => {
 describe('Todo API', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    maxSortQuery.limit.mockResolvedValue({ data: [{ sort_index: 2 }], error: null });
   });
 
   it('creates a todo', async () => {
@@ -100,10 +109,14 @@ describe('Todo API', () => {
     expect(todo.description_html).not.toContain('<script');
   });
 
-  it('filters out null sort_index values when computing the next sort index', async () => {
+  it('does not shift siblings when there are none (no upsert or update called)', async () => {
+    const { supabase } = await import('../lib/supabaseClient');
+    // Mock returns no siblings, so no update should be issued
     await createTodo('Test Todo', '', undefined, undefined);
-
-    expect(maxSortQuery.not).toHaveBeenCalledWith('sort_index', 'is', null);
+    const fromInstance = (supabase.from as ReturnType<typeof vi.fn>).mock.results.find(
+      (r) => r.value?.update
+    )?.value;
+    expect(fromInstance?.update).not.toHaveBeenCalled();
   });
 
   it('soft deletes a todo', async () => {

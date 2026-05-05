@@ -349,40 +349,64 @@ export async function getTodos(
 // Create a new todo in Supabase
 export async function createTodo(title: string, description: string, parent_todo?: string, category_id?: string): Promise<Todo> {
   const userId = await getAuthenticatedUserId();
-  
-  // Fetch all existing sibling todos
-  const { data: existingSiblings, error: fetchError } = await runTodosQueryWithFallback((tableName) => {
+
+  // Fetch existing siblings that have a valid (non-negative) sort_index.
+  // Siblings with null or negative sort_index are sentinel/invalid values and
+  // must not be incremented (avoids overflow and corrupting -1 sentinels).
+  const { data: siblingData, error: fetchError } = await runTodosQueryWithFallback((tableName) => {
     let query = supabase
       .from(tableName)
       .select('id, sort_index')
       .eq('owner_id', userId)
       .is('deleted_timestamp', null)
       .eq('completed', false)
-      .not('sort_index', 'is', null);
+      .gte('sort_index', 0);
 
     if (parent_todo) {
       query = query.eq('parent_todo', parent_todo);
-      // For child todos, scope siblings to the same category_id
       if (category_id) {
         query = query.eq('category_id', category_id);
       } else {
         query = query.is('category_id', null);
       }
     } else {
-      // For top-level todos, shift ALL top-level siblings regardless of category_id.
-      // Top-level todos from all categories share the same sort_index space in the
-      // global (no-category) view, so they must all be shifted together when a new
-      // top-level todo is inserted at sort_index 0.
       query = query.is('parent_todo', null);
+      if (category_id) {
+        query = query.eq('category_id', category_id);
+      } else {
+        query = query.is('category_id', null);
+      }
     }
 
-    return query.order('sort_index', { ascending: true });
+    return query;
   });
 
   if (fetchError) throw fetchError;
-  const siblings = (existingSiblings ?? []) as Array<{ id: string | number; sort_index: number | null }>;
 
-  // Insert the new todo at sort_index 0
+  const siblings = (siblingData ?? []) as Array<{ id: string | number; sort_index: number }>;
+
+  // Shift all valid siblings up by 1 in parallel. Each update is a separate
+  // request (Supabase JS cannot express SET col = col + 1 in a single UPDATE
+  // without a stored procedure). Errors are captured and surfaced so a failed
+  // shift does not silently produce inconsistent sort_index values.
+  if (siblings.length > 0) {
+    const shiftResults = await Promise.all(
+      siblings.map((sibling) =>
+        runTodosQueryWithFallback((tableName) =>
+          supabase
+            .from(tableName)
+            .update({ sort_index: sibling.sort_index + 1 })
+            .eq('id', sibling.id)
+            .eq('owner_id', userId)
+        )
+      )
+    );
+
+    const shiftError = shiftResults.find((r) => r.error)?.error;
+    if (shiftError) throw shiftError;
+  }
+
+  // Insert the new todo at sort_index = 0 (top of the shifted list).
   const insertObj: Partial<Todo> = {
     title,
     description,
@@ -392,32 +416,13 @@ export async function createTodo(title: string, description: string, parent_todo
   };
   if (parent_todo) insertObj.parent_todo = parent_todo;
   if (category_id) insertObj.category_id = category_id;
-  
-  const { data: newTodo, error: insertError } = await runTodosQueryWithFallback((tableName) =>
+
+  const { data, error: insertError } = await runTodosQueryWithFallback((tableName) =>
     supabase.from(tableName).insert([insertObj]).select().single()
   );
 
   if (insertError) throw insertError;
-
-  // Now increment all existing siblings' sort_index by 1 to move them down
-  if (siblings.length > 0) {
-    await Promise.all(
-      siblings.map(async (sibling) => {
-        const oldIndex = normalizeSortIndex(sibling.sort_index);
-        const newIndex = oldIndex + 1;
-        
-        await runTodosQueryWithFallback((tableName) =>
-          supabase
-            .from(tableName)
-            .update({ sort_index: newIndex })
-            .eq('id', sibling.id)
-            .eq('owner_id', userId)
-        );
-      })
-    );
-  }
-
-  return mapTodoWithDescriptionHtml(newTodo as Todo);
+  return mapTodoWithDescriptionHtml(data as Todo);
 }
 
 // Update a todo's completed state in Supabase
