@@ -350,78 +350,19 @@ export async function getTodos(
 export async function createTodo(title: string, description: string, parent_todo?: string, category_id?: string): Promise<Todo> {
   const userId = await getAuthenticatedUserId();
 
-  // Fetch existing siblings that have a valid (non-negative) sort_index.
-  // Siblings with null or negative sort_index are sentinel/invalid values and
-  // must not be incremented (avoids overflow and corrupting -1 sentinels).
-  const { data: siblingData, error: fetchError } = await runTodosQueryWithFallback((tableName) => {
-    let query = supabase
-      .from(tableName)
-      .select('id, sort_index')
-      .eq('owner_id', userId)
-      .is('deleted_timestamp', null)
-      .eq('completed', false)
-      .gte('sort_index', 0);
-
-    if (parent_todo) {
-      query = query.eq('parent_todo', parent_todo);
-      if (category_id) {
-        query = query.eq('category_id', category_id);
-      } else {
-        query = query.is('category_id', null);
-      }
-    } else {
-      query = query.is('parent_todo', null);
-      if (category_id) {
-        query = query.eq('category_id', category_id);
-      } else {
-        query = query.is('category_id', null);
-      }
-    }
-
-    return query;
+  // insert_todo_at_top shifts all valid sibling sort_index values up by 1 and
+  // inserts the new todo at sort_index = 0 in a single atomic transaction.
+  // This avoids the N+1 update pattern and ensures no inconsistent state is
+  // visible between the shift and the insert.
+  const { data, error } = await supabase.rpc('insert_todo_at_top', {
+    p_title: title,
+    p_description: description,
+    p_owner_id: userId,
+    p_parent_todo: parent_todo != null ? Number(parent_todo) : null,
+    p_category_id: category_id != null ? Number(category_id) : null,
   });
 
-  if (fetchError) throw fetchError;
-
-  const siblings = (siblingData ?? []) as Array<{ id: string | number; sort_index: number }>;
-
-  // Shift all valid siblings up by 1 in parallel. Each update is a separate
-  // request (Supabase JS cannot express SET col = col + 1 in a single UPDATE
-  // without a stored procedure). Errors are captured and surfaced so a failed
-  // shift does not silently produce inconsistent sort_index values.
-  if (siblings.length > 0) {
-    const shiftResults = await Promise.all(
-      siblings.map((sibling) =>
-        runTodosQueryWithFallback((tableName) =>
-          supabase
-            .from(tableName)
-            .update({ sort_index: sibling.sort_index + 1 })
-            .eq('id', sibling.id)
-            .eq('owner_id', userId)
-        )
-      )
-    );
-
-    const shiftError = shiftResults.find((r) => r.error)?.error;
-    if (shiftError) throw shiftError;
-  }
-
-  // Insert the new todo at sort_index = 0 (top of the shifted list).
-  const insertObj: Partial<Todo> = {
-    title,
-    description,
-    owner_id: userId,
-    completed: false,
-    sort_index: 0,
-  };
-  if (parent_todo) insertObj.parent_todo = parent_todo;
-  if (category_id) insertObj.category_id = category_id;
-
-  const { data, error: insertError } = await runTodosQueryWithFallback((tableName) =>
-    supabase.from(tableName).insert([insertObj]).select().single()
-  );
-
-  if (insertError) throw insertError;
+  if (error) throw error;
   return mapTodoWithDescriptionHtml(data as Todo);
 }
 
