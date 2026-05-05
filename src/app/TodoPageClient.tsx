@@ -19,6 +19,7 @@ export default function TodoPageClient({ initialTodos }: { initialTodos: Todo[] 
   const [pageSize, setPageSize] = useState<number>(50);
   const [offset, setOffset] = useState<number>(initialTodos.length);
   const [hasMore, setHasMore] = useState<boolean>(true);
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
   const { userId } = useUserId();
   const { runBlockingFetch } = useGlobalBlockingLoader();
@@ -28,6 +29,8 @@ export default function TodoPageClient({ initialTodos }: { initialTodos: Todo[] 
   const offsetRef = useRef<number>(offset);
   const pageSizeRef = useRef<number>(pageSize);
   const hasMoreRef = useRef<boolean>(hasMore);
+  const isRefreshingRef = useRef<boolean>(false);
+  const refreshSeqRef = useRef<number>(0);
   const selectedCategoryIdRef = useRef<string | null>(selectedCategory?.id ?? null);
 
   useEffect(() => {
@@ -43,11 +46,15 @@ export default function TodoPageClient({ initialTodos }: { initialTodos: Todo[] 
   }, [hasMore]);
 
   useEffect(() => {
+    isRefreshingRef.current = isRefreshing;
+  }, [isRefreshing]);
+
+  useEffect(() => {
     selectedCategoryIdRef.current = selectedCategory?.id ?? null;
   }, [selectedCategory]);
 
   const loadMore = useCallback(async () => {
-    if (!userId || !hasMoreRef.current || isLoadingMoreRef.current) return;
+    if (!userId || isRefreshingRef.current || !hasMoreRef.current || isLoadingMoreRef.current) return;
 
     const categoryId = selectedCategoryIdRef.current;
     const currentOffset = offsetRef.current;
@@ -99,9 +106,15 @@ export default function TodoPageClient({ initialTodos }: { initialTodos: Todo[] 
 
   useEffect(() => {
     if (!userId) return;
+    const currentRefreshSeq = ++refreshSeqRef.current;
+
     inFlightRequestKeysRef.current.clear();
     isLoadingMoreRef.current = false;
     setIsLoadingMore(false);
+    setIsRefreshing(true);
+    // Reset paging before category refresh to avoid stale offsets during in-flight loads.
+    setOffset(0);
+    setHasMore(true);
 
     let url = "/api/todos";
     if (selectedCategory && selectedCategory.id) {
@@ -119,6 +132,9 @@ export default function TodoPageClient({ initialTodos }: { initialTodos: Todo[] 
         return data;
       })
       .then((data) => {
+        if (refreshSeqRef.current !== currentRefreshSeq) {
+          return;
+        }
         setTodos(data.todos);
         setPageSize((prev) => (prev === data.limit ? prev : data.limit));
         setOffset(data.todos.length);
@@ -128,10 +144,17 @@ export default function TodoPageClient({ initialTodos }: { initialTodos: Todo[] 
         if (error instanceof DOMException && error.name === "AbortError") {
           return;
         }
+      })
+      .finally(() => {
+        if (refreshSeqRef.current === currentRefreshSeq) {
+          setIsRefreshing(false);
+        }
       });
   }, [selectedCategory, userId, runBlockingFetch]);
 
   useEffect(() => {
+    if (isRefreshing) return;
+
     const sentinel = sentinelRef.current;
     if (!sentinel) return;
 
@@ -146,7 +169,7 @@ export default function TodoPageClient({ initialTodos }: { initialTodos: Todo[] 
 
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [loadMore]);
+  }, [loadMore, isRefreshing]);
 
   return (
     <>
@@ -155,7 +178,7 @@ export default function TodoPageClient({ initialTodos }: { initialTodos: Todo[] 
       </div>
       <TodoList initialTodos={todos} selectedCategory={selectedCategory} />
       <div ref={sentinelRef} className="py-4 text-center text-sm text-gray-600">
-        {isLoadingMore ? "Loading more todos..." : !hasMore ? "All todos loaded" : ""}
+        {isRefreshing ? "Loading todos..." : isLoadingMore ? "Loading more todos..." : !hasMore ? "All todos loaded" : ""}
       </div>
     </>
   );
