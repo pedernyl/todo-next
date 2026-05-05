@@ -61,7 +61,7 @@ type SortableTodoItemProps = {
 };
 
 function getNormalizedSortIndex(todo: Todo): number {
-  if (typeof todo.sort_index !== "number" || Number.isNaN(todo.sort_index) || todo.sort_index < 0) {
+  if (typeof todo.sort_index !== "number" || !Number.isFinite(todo.sort_index)) {
     return Number.MAX_SAFE_INTEGER;
   }
   return todo.sort_index;
@@ -94,9 +94,20 @@ export function applyOptimisticTodoInsert(prev: Todo[], newTodo: Todo): Todo[] {
       return todo;
     }
 
+    const canShiftSortIndex =
+      typeof todo.sort_index === "number" &&
+      Number.isFinite(todo.sort_index) &&
+      todo.sort_index >= 0;
+
+    if (!canShiftSortIndex) {
+      return todo;
+    }
+
+    const currentSortIndex = Number(todo.sort_index);
+
     return {
       ...todo,
-      sort_index: getNormalizedSortIndex(todo) + 1,
+      sort_index: currentSortIndex + 1,
     };
   });
 

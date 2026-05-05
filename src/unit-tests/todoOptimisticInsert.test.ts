@@ -89,4 +89,31 @@ describe('applyOptimisticTodoInsert', () => {
     expect(next.find((t) => t.id === '21')?.sort_index).toBe(0);
     expect(next.find((t) => t.id === '22')?.sort_index).toBe(0);
   });
+
+  it('only shifts siblings with finite non-negative numeric sort_index values', () => {
+    const prev = [
+      makeTodo({ id: '30', title: 'Valid', sort_index: 0, parent_todo: null, category_id: null, completed: false }),
+      makeTodo({ id: '31', title: 'Null', sort_index: null, parent_todo: null, category_id: null, completed: false }),
+      makeTodo({ id: '32', title: 'Negative', sort_index: -1, parent_todo: null, category_id: null, completed: false }),
+      makeTodo({ id: '33', title: 'NaN', sort_index: Number.NaN, parent_todo: null, category_id: null, completed: false }),
+      makeTodo({ id: '34', title: 'Infinity', sort_index: Number.POSITIVE_INFINITY, parent_todo: null, category_id: null, completed: false }),
+    ];
+
+    const newTodo = makeTodo({
+      id: '300',
+      title: 'Inserted',
+      sort_index: 0,
+      parent_todo: null,
+      category_id: null,
+      completed: false,
+    });
+
+    const next = applyOptimisticTodoInsert(prev, newTodo);
+
+    expect(next.find((t) => t.id === '30')?.sort_index).toBe(1);
+    expect(next.find((t) => t.id === '31')?.sort_index).toBeNull();
+    expect(next.find((t) => t.id === '32')?.sort_index).toBe(-1);
+    expect(next.find((t) => t.id === '33')?.sort_index).toBeNaN();
+    expect(next.find((t) => t.id === '34')?.sort_index).toBe(Number.POSITIVE_INFINITY);
+  });
 });

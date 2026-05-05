@@ -82,7 +82,7 @@ async function getAuthenticatedUserId(): Promise<number> {
 }
 
 function normalizeSortIndex(value: number | null | undefined): number {
-  if (typeof value !== 'number' || Number.isNaN(value) || value < 0) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
     return Number.MAX_SAFE_INTEGER;
   }
   return value;
