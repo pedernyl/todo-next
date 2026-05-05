@@ -113,14 +113,14 @@ export default function TodoPageClient({ initialTodos }: { initialTodos: Todo[] 
     })
       .then(async (res) => {
         if (!res.ok) {
-          return { todos: [], limit: pageSize } as TodosResponse;
+          return { todos: [], limit: pageSizeRef.current } as TodosResponse;
         }
         const data = (await res.json()) as TodosResponse;
         return data;
       })
       .then((data) => {
         setTodos(data.todos);
-        setPageSize(data.limit);
+        setPageSize((prev) => (prev === data.limit ? prev : data.limit));
         setOffset(data.todos.length);
         setHasMore(data.todos.length >= data.limit);
       })
@@ -129,7 +129,7 @@ export default function TodoPageClient({ initialTodos }: { initialTodos: Todo[] 
           return;
         }
       });
-  }, [selectedCategory, userId, runBlockingFetch, pageSize]);
+  }, [selectedCategory, userId, runBlockingFetch]);
 
   useEffect(() => {
     const sentinel = sentinelRef.current;
