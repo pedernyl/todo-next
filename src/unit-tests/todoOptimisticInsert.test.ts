@@ -66,7 +66,7 @@ describe('applyOptimisticTodoInsert', () => {
     expect(next.find((t) => t.id === '13')?.sort_index).toBe(2);
   });
 
-  it('respects category and completed scope when shifting siblings', () => {
+  it('respects completed scope but not category scope for top-level todos when shifting siblings', () => {
     const prev = [
       makeTodo({ id: '20', title: 'Cat A active', sort_index: 0, parent_todo: null, category_id: 'cat-a', completed: false }),
       makeTodo({ id: '21', title: 'Cat A done', sort_index: 0, parent_todo: null, category_id: 'cat-a', completed: true }),
@@ -85,9 +85,39 @@ describe('applyOptimisticTodoInsert', () => {
     const next = applyOptimisticTodoInsert(prev, newCatTodo);
 
     expect(next[0]?.id).toBe('200');
+    // All top-level active siblings (regardless of category) must be shifted
     expect(next.find((t) => t.id === '20')?.sort_index).toBe(1);
+    expect(next.find((t) => t.id === '22')?.sort_index).toBe(1);
+    // Completed todos are not shifted (different completed scope)
     expect(next.find((t) => t.id === '21')?.sort_index).toBe(0);
-    expect(next.find((t) => t.id === '22')?.sort_index).toBe(0);
+  });
+
+  it('shifts cross-category top-level siblings to prevent sort_index collisions', () => {
+    // Regression test: adding a no-category todo must also shift categorised top-level
+    // todos so that their relative visual order is preserved in the global view.
+    const prev = [
+      makeTodo({ id: '379', title: 'hello', sort_index: 3, parent_todo: null, category_id: null, completed: false }),
+      makeTodo({ id: '247', title: 'SIKT', sort_index: 4, parent_todo: null, category_id: 'cat-19', completed: false }),
+    ];
+
+    const newTodo = makeTodo({
+      id: '383',
+      title: 'fifth',
+      sort_index: 0,
+      parent_todo: null,
+      category_id: null,
+      completed: false,
+    });
+
+    const next = applyOptimisticTodoInsert(prev, newTodo);
+
+    // Both siblings must be shifted; no sort_index collision between hello and SIKT
+    expect(next.find((t) => t.id === '379')?.sort_index).toBe(4);
+    expect(next.find((t) => t.id === '247')?.sort_index).toBe(5);
+    // SIKT keeps its position after hello (higher sort_index)
+    const helloIdx = next.findIndex((t) => t.id === '379');
+    const siktIdx = next.findIndex((t) => t.id === '247');
+    expect(helloIdx).toBeLessThan(siktIdx);
   });
 
   it('only shifts siblings with finite non-negative numeric sort_index values', () => {

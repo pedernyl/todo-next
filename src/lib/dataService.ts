@@ -362,13 +362,18 @@ export async function createTodo(title: string, description: string, parent_todo
 
     if (parent_todo) {
       query = query.eq('parent_todo', parent_todo);
+      // For child todos, scope siblings to the same category_id
+      if (category_id) {
+        query = query.eq('category_id', category_id);
+      } else {
+        query = query.is('category_id', null);
+      }
     } else {
+      // For top-level todos, shift ALL top-level siblings regardless of category_id.
+      // Top-level todos from all categories share the same sort_index space in the
+      // global (no-category) view, so they must all be shifted together when a new
+      // top-level todo is inserted at sort_index 0.
       query = query.is('parent_todo', null);
-    }
-    if (category_id) {
-      query = query.eq('category_id', category_id);
-    } else {
-      query = query.is('category_id', null);
     }
 
     return query.order('sort_index', { ascending: true });

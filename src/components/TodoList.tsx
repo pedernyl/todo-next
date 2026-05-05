@@ -79,16 +79,21 @@ function normalizeNullableId(id: string | number | null | undefined): string | n
 export function applyOptimisticTodoInsert(prev: Todo[], newTodo: Todo): Todo[] {
   // Keep client state consistent with server-side createTodo ordering:
   // new todos are inserted with sort_index = 0, and existing siblings are shifted down.
-  // We only shift todos in the same ordering scope (parent_todo, category_id, completed)
-  // so other branches/categories keep their relative order.
+  //
+  // For top-level todos (no parent_todo), ALL top-level todos in the same completed
+  // scope are shifted regardless of category_id. This is because top-level todos from
+  // all categories share the same sort_index space in the global view.
+  // For child todos (has parent_todo), siblings are scoped to the same category_id.
   const newParentId = normalizeNullableId(newTodo.parent_todo);
   const newCategoryId = normalizeNullableId(newTodo.category_id);
   const newCompleted = Boolean(newTodo.completed);
+  const isTopLevel = newParentId === null;
 
   const nextTodos = prev.map((todo) => {
     const sameParent = normalizeNullableId(todo.parent_todo) === newParentId;
-    const sameCategory = normalizeNullableId(todo.category_id) === newCategoryId;
     const sameCompleted = Boolean(todo.completed) === newCompleted;
+    // For top-level todos, category does not limit the shift scope.
+    const sameCategory = isTopLevel || normalizeNullableId(todo.category_id) === newCategoryId;
 
     if (!sameParent || !sameCategory || !sameCompleted) {
       return todo;
