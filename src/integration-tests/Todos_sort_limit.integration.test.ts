@@ -49,6 +49,7 @@ describe("Todos_sort_limit", () => {
   let insertedChildren: InsertedTodoRow[] = [];
   let orderedChildrenAfterSort: InsertedTodoRow[] = [];
   let limitedTodosFromFetch: InsertedTodoRow[] = [];
+  let offsetTodosFromFetch: InsertedTodoRow[] = [];
   let insertedTableName: "Todos" | "todos" | null = null;
   const originalFetch = global.fetch;
 
@@ -159,6 +160,19 @@ describe("Todos_sort_limit", () => {
             : Number(todo.parent_todo),
       sort_index: todo.sort_index,
     }));
+
+    const fetchedWithOffset = await getTodos(true, undefined, 3, 2);
+    offsetTodosFromFetch = fetchedWithOffset.map((todo) => ({
+      id: Number(todo.id),
+      title: todo.title,
+      parent_todo:
+        typeof todo.parent_todo === "number"
+          ? todo.parent_todo
+          : todo.parent_todo === null
+            ? null
+            : Number(todo.parent_todo),
+      sort_index: todo.sort_index,
+    }));
   });
 
   afterAll(async () => {
@@ -212,6 +226,13 @@ describe("Todos_sort_limit", () => {
     expect(limitedTodosFromFetch.map((todo) => todo.title)).toEqual([
       "Todo_sort_limit",
       "Todo_sort_limit_c5",
+      "Todo_sort_limit_c1",
+      "Todo_sort_limit_c2",
+      "Todo_sort_limit_c3",
+    ]);
+
+    expect(offsetTodosFromFetch).toHaveLength(3);
+    expect(offsetTodosFromFetch.map((todo) => todo.title)).toEqual([
       "Todo_sort_limit_c1",
       "Todo_sort_limit_c2",
       "Todo_sort_limit_c3",
