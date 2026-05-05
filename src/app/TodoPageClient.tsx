@@ -23,19 +23,50 @@ export default function TodoPageClient({ initialTodos }: { initialTodos: Todo[] 
   const { userId } = useUserId();
   const { runBlockingFetch } = useGlobalBlockingLoader();
   const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const isLoadingMoreRef = useRef<boolean>(false);
+  const inFlightRequestKeysRef = useRef<Set<string>>(new Set());
+  const offsetRef = useRef<number>(offset);
+  const pageSizeRef = useRef<number>(pageSize);
+  const hasMoreRef = useRef<boolean>(hasMore);
+  const selectedCategoryIdRef = useRef<string | null>(selectedCategory?.id ?? null);
+
+  useEffect(() => {
+    offsetRef.current = offset;
+  }, [offset]);
+
+  useEffect(() => {
+    pageSizeRef.current = pageSize;
+  }, [pageSize]);
+
+  useEffect(() => {
+    hasMoreRef.current = hasMore;
+  }, [hasMore]);
+
+  useEffect(() => {
+    selectedCategoryIdRef.current = selectedCategory?.id ?? null;
+  }, [selectedCategory]);
 
   const loadMore = useCallback(async () => {
-    if (!userId || !hasMore || isLoadingMore) return;
+    if (!userId || !hasMoreRef.current || isLoadingMoreRef.current) return;
+
+    const categoryId = selectedCategoryIdRef.current;
+    const currentOffset = offsetRef.current;
+    const currentPageSize = pageSizeRef.current;
+    const requestKey = `${categoryId ?? "all"}:${currentOffset}:${currentPageSize}`;
+    if (inFlightRequestKeysRef.current.has(requestKey)) return;
+
+    inFlightRequestKeysRef.current.add(requestKey);
+    isLoadingMoreRef.current = true;
     setIsLoadingMore(true);
 
     try {
       const params = new URLSearchParams({
-        offset: String(offset),
-        limit: String(pageSize),
+        offset: String(currentOffset),
+        limit: String(currentPageSize),
       });
 
-      if (selectedCategory?.id) {
-        params.set("category_id", selectedCategory.id);
+      if (categoryId) {
+        params.set("category_id", categoryId);
       }
 
       const res = await fetch(`/api/todos?${params.toString()}`, {
@@ -47,18 +78,31 @@ export default function TodoPageClient({ initialTodos }: { initialTodos: Todo[] 
       }
 
       const data: TodosResponse = await res.json();
+      if (selectedCategoryIdRef.current !== categoryId) {
+        return;
+      }
+      if (offsetRef.current !== currentOffset) {
+        return;
+      }
+
       setTodos((prev) => [...prev, ...data.todos]);
       setOffset((prev) => prev + data.todos.length);
-      setHasMore(data.todos.length >= pageSize);
+      setHasMore(data.todos.length >= currentPageSize);
     } catch {
       setHasMore(false);
     } finally {
+      inFlightRequestKeysRef.current.delete(requestKey);
+      isLoadingMoreRef.current = false;
       setIsLoadingMore(false);
     }
-  }, [userId, hasMore, isLoadingMore, offset, pageSize, selectedCategory]);
+  }, [userId]);
 
   useEffect(() => {
     if (!userId) return;
+    inFlightRequestKeysRef.current.clear();
+    isLoadingMoreRef.current = false;
+    setIsLoadingMore(false);
+
     let url = "/api/todos";
     if (selectedCategory && selectedCategory.id) {
       url += `?category_id=${selectedCategory.id}`;
