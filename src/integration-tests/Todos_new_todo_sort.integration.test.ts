@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { createClient } from "@supabase/supabase-js";
 import { assertIntegrationTestDbEnvIsActive } from "./assertIntegrationTestDbEnv";
 import { createTodo, getTodos } from "../lib/dataService";
-import { createCategory } from "../lib/categoryService";
+
 
 vi.mock("next-auth", () => ({
   getServerSession: vi.fn(async () => ({
