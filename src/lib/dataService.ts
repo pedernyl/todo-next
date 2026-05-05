@@ -211,9 +211,37 @@ export async function getTodos(
     ? Math.max(Math.floor(limit), 1)
     : 50;
   const effectiveOffset = Number.isFinite(offset) ? Math.max(Math.floor(offset), 0) : 0;
+  const pageEndExclusive = effectiveOffset + effectiveLimit;
+
+  // When hiding completed todos, include incomplete children whose completed parents
+  // are filtered out by building pages from the full incomplete set.
+  if (!showCompleted) {
+    const { data, error } = await runTodosQueryWithFallback((tableName) => {
+      let query = supabase
+        .from(tableName)
+        .select('*')
+        .eq('owner_id', userId)
+        .is('deleted_timestamp', null)
+        .eq('completed', false)
+        .order('sort_index', { ascending: true })
+        .order('id', { ascending: true });
+
+      if (category_id) {
+        query = query.eq('category_id', category_id);
+      }
+
+      return query;
+    });
+
+    if (error) throw error;
+    const incompleteTodos = (data ?? []) as Todo[];
+    const hierarchicalWindow = applyHierarchicalTodoLimit(incompleteTodos, pageEndExclusive);
+    const pagedTodos = hierarchicalWindow.slice(effectiveOffset, pageEndExclusive);
+    return mapTodosWithDescriptionHtml(pagedTodos);
+  }
+
   // Keep a fixed root batch size so query cost does not grow with deep offsets.
   const ROOT_BATCH_SIZE = 100;
-  const pageEndExclusive = effectiveOffset + effectiveLimit;
 
   const applySharedTodoFilters = (query: any) => {
     let nextQuery = query
