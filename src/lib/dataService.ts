@@ -82,7 +82,7 @@ async function getAuthenticatedUserId(): Promise<number> {
 }
 
 function normalizeSortIndex(value: number | null | undefined): number {
-  if (typeof value !== 'number' || Number.isNaN(value) || value < 0) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
     return Number.MAX_SAFE_INTEGER;
   }
   return value;
@@ -349,46 +349,18 @@ export async function getTodos(
 // Create a new todo in Supabase
 export async function createTodo(title: string, description: string, parent_todo?: string, category_id?: string): Promise<Todo> {
   const userId = await getAuthenticatedUserId();
-  const { data: maxSortData, error: maxSortError } = await runTodosQueryWithFallback((tableName) => {
-    let maxSortIndexQuery = supabase
-      .from(tableName)
-      .select('sort_index')
-      .eq('owner_id', userId)
-      .is('deleted_timestamp', null)
-      .eq('completed', false)
-      .not('sort_index', 'is', null);
 
-    if (parent_todo) {
-      maxSortIndexQuery = maxSortIndexQuery.eq('parent_todo', parent_todo);
-    } else {
-      maxSortIndexQuery = maxSortIndexQuery.is('parent_todo', null);
-    }
-    if (category_id) {
-      maxSortIndexQuery = maxSortIndexQuery.eq('category_id', category_id);
-    } else {
-      maxSortIndexQuery = maxSortIndexQuery.is('category_id', null);
-    }
-
-    return maxSortIndexQuery.order('sort_index', { ascending: false }).limit(1);
+  // insert_todo_at_top shifts all valid sibling sort_index values up by 1 and
+  // inserts the new todo at sort_index = 0 in a single atomic transaction.
+  // This avoids the N+1 update pattern and ensures no inconsistent state is
+  // visible between the shift and the insert.
+  const { data, error } = await supabase.rpc('insert_todo_at_top', {
+    p_title: title,
+    p_description: description,
+    p_owner_id: userId,
+    p_parent_todo: parent_todo != null ? Number(parent_todo) : null,
+    p_category_id: category_id != null ? Number(category_id) : null,
   });
-
-  if (maxSortError) throw maxSortError;
-  const nextSortIndex = normalizeSortIndex(maxSortData?.[0]?.sort_index) === Number.MAX_SAFE_INTEGER
-    ? 0
-    : normalizeSortIndex(maxSortData?.[0]?.sort_index) + 1;
-
-  const insertObj: Partial<Todo> = {
-    title,
-    description,
-    owner_id: userId,
-    completed: false,
-    sort_index: nextSortIndex,
-  };
-  if (parent_todo) insertObj.parent_todo = parent_todo;
-  if (category_id) insertObj.category_id = category_id;
-  const { data, error } = await runTodosQueryWithFallback((tableName) =>
-    supabase.from(tableName).insert([insertObj]).select().single()
-  );
 
   if (error) throw error;
   return mapTodoWithDescriptionHtml(data as Todo);

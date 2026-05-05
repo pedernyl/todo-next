@@ -7,57 +7,49 @@ vi.mock('../lib/markdown', () => ({
   ),
 }));
 
-const maxSortQuery = {
-  eq: vi.fn(() => maxSortQuery),
-  is: vi.fn(() => maxSortQuery),
-  not: vi.fn(() => maxSortQuery),
-  order: vi.fn(() => maxSortQuery),
-  limit: vi.fn(() => Promise.resolve({ data: [{ sort_index: 2 }], error: null })),
-};
-
 // Mock supabaseClient with full method chains (must be first)
 vi.mock('../lib/supabaseClient', () => {
-  const updateChain = {
-    eq: () => ({
-      select: () => ({
-        single: () =>
-          Promise.resolve({
-            data: {
-              id: '1',
-              title: 'Test Todo',
-              description: '',
-              completed: false,
-              owner_id: 1,
-              deleted_timestamp: 1234567890,
-              deleted_by: 'user1',
-            },
-            error: null,
-          }),
-      }),
-    }),
-  };
+  // update chain for softDeleteTodo: .update().eq('id').select().single()
+  function makeUpdateEqChain(): Record<string, unknown> {
+    const chain: Record<string, unknown> = {};
+    chain['eq'] = vi.fn(() => chain);
+    chain['select'] = vi.fn(() => ({
+      single: () =>
+        Promise.resolve({
+          data: {
+            id: '1',
+            title: 'Test Todo',
+            description: '',
+            completed: false,
+            owner_id: 1,
+            deleted_timestamp: 1234567890,
+            deleted_by: 'user1',
+          },
+          error: null,
+        }),
+    }));
+    return chain;
+  }
+
   return {
     supabase: {
+      rpc: vi.fn(async (_fn: string, params: { p_title?: string; p_description?: string }) =>
+        Promise.resolve({
+          data: {
+            id: '1',
+            title: params.p_title ?? 'Test Todo',
+            description: params.p_description ?? '',
+            completed: false,
+            owner_id: 1,
+            sort_index: 0,
+          },
+          error: null,
+        })
+      ),
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      from: (_table: string) => ({
-        select: () => maxSortQuery,
-        insert: (rows: Array<{ title: string; description: string; completed: boolean; owner_id: number }>) => ({
-          select: () => ({
-            single: () =>
-              Promise.resolve({
-                data: {
-                  id: '1',
-                  title: rows[0]?.title ?? 'Test Todo',
-                  description: rows[0]?.description ?? '',
-                  completed: rows[0]?.completed ?? false,
-                  owner_id: rows[0]?.owner_id ?? 1,
-                },
-                error: null,
-              }),
-          }),
-        }),
-        update: () => updateChain,
-      })
+      from: vi.fn((_table: string) => ({
+        update: vi.fn(() => makeUpdateEqChain()),
+      })),
     }
   };
 });
@@ -83,7 +75,6 @@ global.fetch = vi.fn(async (url: unknown): Promise<SimpleResponse> => {
 describe('Todo API', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    maxSortQuery.limit.mockResolvedValue({ data: [{ sort_index: 2 }], error: null });
   });
 
   it('creates a todo', async () => {
@@ -100,10 +91,17 @@ describe('Todo API', () => {
     expect(todo.description_html).not.toContain('<script');
   });
 
-  it('filters out null sort_index values when computing the next sort index', async () => {
-    await createTodo('Test Todo', '', undefined, undefined);
+  it('calls insert_todo_at_top RPC with correct parameters', async () => {
+    const { supabase } = await import('../lib/supabaseClient');
+    await createTodo('Test Todo', 'desc', undefined, undefined);
 
-    expect(maxSortQuery.not).toHaveBeenCalledWith('sort_index', 'is', null);
+    expect(supabase.rpc).toHaveBeenCalledWith('insert_todo_at_top', {
+      p_title: 'Test Todo',
+      p_description: 'desc',
+      p_owner_id: 1,
+      p_parent_todo: null,
+      p_category_id: null,
+    });
   });
 
   it('soft deletes a todo', async () => {

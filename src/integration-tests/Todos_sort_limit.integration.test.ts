@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { createClient } from "@supabase/supabase-js";
 import { assertIntegrationTestDbEnvIsActive } from "./assertIntegrationTestDbEnv";
+import { cleanupTestOwnerData } from "./integrationTestHelpers";
 import { createTodo, getTodos, reorderTodoSiblings } from "../lib/dataService";
 
 vi.mock("next-auth", () => ({
@@ -76,6 +77,9 @@ describe("Todos_sort_limit", () => {
     }) as unknown as typeof global.fetch;
 
     const supabaseAdmin = createSupabaseAdminForIntegrationTests();
+
+    // Clean up any leftover test data before starting
+    await cleanupTestOwnerData(supabaseAdmin, TEST_OWNER_ID);
 
     const parentTodo = await createTodo("Todo_sort_limit", "");
     insertedTodo = {
@@ -205,7 +209,7 @@ describe("Todos_sort_limit", () => {
   it("adds one todo named Todo_sort_limit in test database", () => {
     expect(insertedTodo).toBeTruthy();
     expect(insertedTodo?.title).toBe("Todo_sort_limit");
-    expect(insertedTodo?.sort_index).toBe(0);
+    expect(insertedTodo?.sort_index).toBe(0);  // New todos get sort_index 0
     expect(insertedChildren).toHaveLength(5);
     expect(insertedChildren.map((child) => child.title)).toEqual([
       "Todo_sort_limit_c1",

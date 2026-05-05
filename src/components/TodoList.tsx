@@ -61,7 +61,7 @@ type SortableTodoItemProps = {
 };
 
 function getNormalizedSortIndex(todo: Todo): number {
-  if (typeof todo.sort_index !== "number" || Number.isNaN(todo.sort_index) || todo.sort_index < 0) {
+  if (typeof todo.sort_index !== "number" || !Number.isFinite(todo.sort_index)) {
     return Number.MAX_SAFE_INTEGER;
   }
   return todo.sort_index;
@@ -74,6 +74,49 @@ function normalizeTodoId(id: string | number | null | undefined): string {
 function normalizeNullableId(id: string | number | null | undefined): string | null {
   const normalized = normalizeTodoId(id);
   return normalized.length > 0 ? normalized : null;
+}
+
+export function applyOptimisticTodoInsert(prev: Todo[], newTodo: Todo): Todo[] {
+  // Keep client state consistent with server-side createTodo ordering:
+  // new todos are inserted with sort_index = 0, and existing siblings are shifted down.
+  //
+  // For top-level todos (no parent_todo), ALL top-level todos in the same completed
+  // scope are shifted regardless of category_id. This is because top-level todos from
+  // all categories share the same sort_index space in the global view.
+  // For child todos (has parent_todo), siblings are scoped to the same category_id.
+  const newParentId = normalizeNullableId(newTodo.parent_todo);
+  const newCategoryId = normalizeNullableId(newTodo.category_id);
+  const newCompleted = Boolean(newTodo.completed);
+  const isTopLevel = newParentId === null;
+
+  const nextTodos = prev.map((todo) => {
+    const sameParent = normalizeNullableId(todo.parent_todo) === newParentId;
+    const sameCompleted = Boolean(todo.completed) === newCompleted;
+    // For top-level todos, category does not limit the shift scope.
+    const sameCategory = isTopLevel || normalizeNullableId(todo.category_id) === newCategoryId;
+
+    if (!sameParent || !sameCategory || !sameCompleted) {
+      return todo;
+    }
+
+    const canShiftSortIndex =
+      typeof todo.sort_index === "number" &&
+      Number.isFinite(todo.sort_index) &&
+      todo.sort_index >= 0;
+
+    if (!canShiftSortIndex) {
+      return todo;
+    }
+
+    const currentSortIndex = Number(todo.sort_index);
+
+    return {
+      ...todo,
+      sort_index: currentSortIndex + 1,
+    };
+  });
+
+  return [newTodo, ...nextTodos];
 }
 
 function compareTodoOrder(a: Todo, b: Todo): number {
@@ -481,7 +524,7 @@ export default function TodoList({ initialTodos, selectedCategory }: TodoListPro
   };
 
   const handleTodoAdded = (newTodo: Todo) => {
-    setTodos((prev: Todo[]) => [newTodo, ...prev]);
+    setTodos((prev: Todo[]) => applyOptimisticTodoInsert(prev, newTodo));
     setEditTodo(null);
     setParentTodo(null);
     setShowAddForm(false);
