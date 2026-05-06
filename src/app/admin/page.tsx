@@ -15,6 +15,10 @@ type AdminPageProps = {
   searchParams: Promise<{ view?: string | string[] }>;
 };
 
+type AdminMetadataProps = {
+  searchParams: Promise<{ view?: string | string[] }>;
+};
+
 const adminViews: Array<{ key: AdminView; label: string }> = [
   { key: "home", label: "Home" },
   { key: "settings", label: "Settings" },
@@ -33,9 +37,16 @@ function getActiveView(view: string | string[] | undefined): AdminView {
   return "home";
 }
 
-export const metadata: Metadata = {
-  title: getDevTitle('HOME'),
-};
+function getActiveLabel(view: string | string[] | undefined): string {
+  const activeView = getActiveView(view);
+  return adminViews.find((item) => item.key === activeView)?.label ?? "Admin";
+}
+
+export function generateMetadata(): Metadata {
+  return {
+    title: getDevTitle("Admin"),
+  };
+}
 
 export default async function AdminPage({ searchParams }: AdminPageProps) {
   // Authorization boundary for all Admin views: keep checks here (and in admin APIs).
@@ -50,7 +61,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
 
   const resolvedSearchParams = await searchParams;
   const activeView = getActiveView(resolvedSearchParams?.view);
-  const activeLabel = adminViews.find((item) => item.key === activeView)?.label ?? "Admin";
+  const activeLabel = getActiveLabel(resolvedSearchParams?.view);
   const testDbActive = isTestDbActive();
   const headerClassName = testDbActive
     ? 'bg-emerald-600 text-white border-emerald-700'
