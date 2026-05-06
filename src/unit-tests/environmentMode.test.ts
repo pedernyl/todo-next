@@ -75,6 +75,14 @@ describe("isTestDbActive", () => {
     expect(isTestDbActive()).toBe(false);
   });
 
+  it("returns true when TEST_DB_ACTIVE is false but URLs are equal", () => {
+    process.env.TEST_DB_ACTIVE = "false";
+    process.env.NEXT_PUBLIC_SUPABASE_TEST_URL = "https://same.example";
+    process.env.NEXT_PUBLIC_SUPABASE_URL = "https://same.example";
+
+    expect(isTestDbActive()).toBe(true);
+  });
+
   it("returns false when one or both URLs are missing", () => {
     delete process.env.TEST_DB_ACTIVE;
     delete process.env.NEXT_PUBLIC_SUPABASE_TEST_URL;
