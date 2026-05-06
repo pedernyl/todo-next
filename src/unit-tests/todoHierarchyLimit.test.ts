@@ -17,6 +17,18 @@ function todo(overrides: Partial<Todo>): Todo {
 }
 
 describe("applyHierarchicalTodoLimit", () => {
+  it("preserves hierarchical order when limit exceeds todo count", () => {
+    const todos: Todo[] = [
+      todo({ id: "2", sort_index: 1, parent_todo: null, title: "Parent B" }),
+      todo({ id: "3", sort_index: 0, parent_todo: "1", title: "Child of A" }),
+      todo({ id: "1", sort_index: 0, parent_todo: null, title: "Parent A" }),
+    ];
+
+    const limited = applyHierarchicalTodoLimit(todos, 10);
+
+    expect(limited.map((t) => t.id)).toEqual(["1", "3", "2"]);
+  });
+
   it("counts parent and children toward the same limit", () => {
     const todos: Todo[] = [
       todo({ id: "100", sort_index: 0, parent_todo: null, title: "Parent" }),
@@ -42,6 +54,17 @@ describe("applyHierarchicalTodoLimit", () => {
     const limited = applyHierarchicalTodoLimit(todos, 2);
 
     expect(limited.map((t) => t.id)).toEqual(["1", "2"]);
+  });
+
+  it("keeps orphan children after real roots even with a large limit", () => {
+    const todos: Todo[] = [
+      todo({ id: "10", sort_index: 5, parent_todo: null, title: "Root" }),
+      todo({ id: "11", sort_index: 0, parent_todo: "999", title: "Orphan" }),
+    ];
+
+    const limited = applyHierarchicalTodoLimit(todos, 10);
+
+    expect(limited.map((t) => t.id)).toEqual(["10", "11"]);
   });
 
   it("returns all todos when no limit is provided", () => {

@@ -112,13 +112,11 @@ export function applyHierarchicalTodoLimit(todos: Todo[], limit?: number): Todo[
   if (safeLimit === 0) {
     return [];
   }
-  if (todos.length <= safeLimit) {
-    return todos;
-  }
 
   const todoById = new Map<string, Todo>();
   const childrenByParent = new Map<string, Todo[]>();
   const roots: Todo[] = [];
+  const orphanRoots: Todo[] = [];
 
   for (const todo of todos) {
     todoById.set(String(todo.id), todo);
@@ -126,8 +124,13 @@ export function applyHierarchicalTodoLimit(todos: Todo[], limit?: number): Todo[
 
   for (const todo of todos) {
     const parentId = normalizeComparableId(todo.parent_todo);
-    if (!parentId || !todoById.has(parentId)) {
+    if (!parentId) {
       roots.push(todo);
+      continue;
+    }
+
+    if (!todoById.has(parentId)) {
+      orphanRoots.push(todo);
       continue;
     }
 
@@ -137,6 +140,7 @@ export function applyHierarchicalTodoLimit(todos: Todo[], limit?: number): Todo[
   }
 
   roots.sort(compareTodosForDisplayOrder);
+  orphanRoots.sort(compareTodosForDisplayOrder);
   for (const siblings of childrenByParent.values()) {
     siblings.sort(compareTodosForDisplayOrder);
   }
@@ -162,6 +166,11 @@ export function applyHierarchicalTodoLimit(todos: Todo[], limit?: number): Todo[
   for (const root of roots) {
     if (selected.length >= safeLimit) break;
     visit(root);
+  }
+
+  for (const orphanRoot of orphanRoots) {
+    if (selected.length >= safeLimit) break;
+    visit(orphanRoot);
   }
 
   // Safety fallback for any disconnected/cyclic edge cases.
