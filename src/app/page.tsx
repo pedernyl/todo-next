@@ -30,7 +30,7 @@ export default async function Home() {
   const testDbActive = isTestDbActive();
   const titleClassName = testDbActive
     ? 'bg-emerald-600 text-white border-emerald-700'
-    : 'bg-white text-slate-800 border-slate-200';
+    : 'bg-transparent text-slate-800 border-transparent';
 
   return (
     <div className="min-h-screen bg-gray-100 p-10 font-sans relative">
