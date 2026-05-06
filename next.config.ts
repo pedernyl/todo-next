@@ -12,6 +12,16 @@ const nextConfig: NextConfig = {
   // Remove X-Powered-By header to avoid disclosing framework details
   poweredByHeader: false,
   async headers() {
+    const isTestDbRuntimeMappingActive =
+      process.env.NEXT_PUBLIC_SUPABASE_TEST_URL &&
+      process.env.NEXT_PUBLIC_SUPABASE_URL === process.env.NEXT_PUBLIC_SUPABASE_TEST_URL;
+    const isProductionBuild = process.env.NODE_ENV === 'production';
+    if (isProductionBuild && isTestDbRuntimeMappingActive && process.env.ALLOW_TEST_DB_BUILD !== 'true') {
+      throw new Error(
+        'Refusing production build with test DB runtime variables. Set ALLOW_TEST_DB_BUILD=true only if intentional.'
+      );
+    }
+
     const mode = (process.env.NEXT_CSP_MODE || 'report-only').toLowerCase();
 
     // Always apply general security headers from next.config.ts (to pages, API and static assets)

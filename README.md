@@ -52,6 +52,35 @@ Integration tests run against a **separate test database** to avoid touching dev
 
 The integration test setup (`vitest.integration.setup.ts`) maps these to the standard runtime Supabase vars so the app code under test always uses the test database.
 
+You can also use these same test database variables during local development and build by passing `--testDb`:
+
+```bash
+npm run dev -- --testDb
+npm run build -- --testDb  # requires ALLOW_TEST_DB_BUILD=true (blocked by default — see build safety guard below)
+```
+
+Alternative convenience scripts (no npm flag warning):
+
+```bash
+npm run dev:testDb
+npm run build:testDb
+npm run start:testDb
+```
+
+Note: `npm run build --testDb` and `npm run dev --testDb` are interpreted by npm as npm-config flags and may show npm warnings in current npm versions. The app now still switches to test DB in that case, but `npm run build -- --testDb` (or the `:testDb` scripts above) is recommended.
+
+Behavior summary:
+- With `--testDb`: `NEXT_PUBLIC_SUPABASE_TEST_URL`, `NEXT_PUBLIC_SUPABASE_TEST_ANON_KEY`, and `SUPABASE_TEST_SERVICE_ROLE_KEY` are mapped to the standard Supabase runtime variables before Next.js starts.
+- Without `--testDb`: `dev` and `build` use the default runtime variables as usual.
+
+Build safety guard:
+- `build` with `--testDb` is blocked by default to avoid accidentally creating production artifacts that are wired to the test database.
+- If you intentionally need this for a local/test-only scenario, explicitly opt in for that command:
+
+```bash
+ALLOW_TEST_DB_BUILD=true npm run build:testDb
+```
+
 Additional (optional) hardening / isolation vars:
 - `NEXT_CSP_MODE` (off|dev|report-only|enforce) – controls CSP behavior (proxy enforces; report-only emitted by config).
 - `NEXT_COEP` (require-corp|credentialless) – enables Cross-Origin-Embedder-Policy for isolation; leave unset if unsure.

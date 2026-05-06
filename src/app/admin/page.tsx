@@ -1,15 +1,21 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import type { Metadata } from 'next';
 import AdminAboutView from "@/components/admin/AdminAboutView";
 import AdminHomeView from "@/components/admin/AdminHomeView";
 import AdminSettingsView from "@/components/admin/AdminSettingsView";
 import AdminUpdatesView from "@/components/admin/AdminUpdatesView";
 import AdminUsersView from "@/components/admin/AdminUsersView";
 import { getAdminAccessCheckResult } from "@/lib/adminAccess";
+import { getDevTitle, isTestDbActive } from '@/lib/environmentMode';
 
 type AdminView = "home" | "settings" | "updates" | "users" | "about";
 
 type AdminPageProps = {
+  searchParams: Promise<{ view?: string | string[] }>;
+};
+
+type AdminMetadataProps = {
   searchParams: Promise<{ view?: string | string[] }>;
 };
 
@@ -31,6 +37,17 @@ function getActiveView(view: string | string[] | undefined): AdminView {
   return "home";
 }
 
+function getActiveLabel(view: string | string[] | undefined): string {
+  const activeView = getActiveView(view);
+  return adminViews.find((item) => item.key === activeView)?.label ?? "Admin";
+}
+
+export function generateMetadata(): Metadata {
+  return {
+    title: getDevTitle("Admin"),
+  };
+}
+
 export default async function AdminPage({ searchParams }: AdminPageProps) {
   // Authorization boundary for all Admin views: keep checks here (and in admin APIs).
   // Proxy also enforces /admin access as an additional layer.
@@ -44,7 +61,11 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
 
   const resolvedSearchParams = await searchParams;
   const activeView = getActiveView(resolvedSearchParams?.view);
-  const activeLabel = adminViews.find((item) => item.key === activeView)?.label ?? "Admin";
+  const activeLabel = getActiveLabel(resolvedSearchParams?.view);
+  const testDbActive = isTestDbActive();
+  const headerClassName = testDbActive
+    ? 'bg-emerald-600 text-white border-emerald-700'
+    : 'bg-white text-slate-700 border-slate-200';
 
   return (
     <main className="min-h-screen bg-[#edf0f3] text-slate-800">
@@ -71,9 +92,9 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         </aside>
 
         <section className="flex min-h-screen flex-col">
-          <header className="flex h-14 items-center justify-between border-b border-slate-200 bg-white px-4 sm:px-6">
-            <h1 className="text-2xl font-semibold text-slate-700">{activeLabel}</h1>
-            <Link href="/" className="text-sm font-semibold text-blue-700 hover:underline">
+          <header className={`sticky top-0 z-20 flex h-14 items-center justify-between border-b px-4 sm:px-6 ${headerClassName}`}>
+            <h1 className="text-2xl font-semibold">{getDevTitle(activeLabel)}</h1>
+            <Link href="/" className={`text-sm font-semibold hover:underline ${testDbActive ? 'text-white' : 'text-blue-700'}`}>
               Todos
             </Link>
           </header>
