@@ -44,7 +44,7 @@ describe("applyHierarchicalTodoLimit", () => {
     expect(limited.map((t) => t.id)).toEqual(["100", "101", "102", "103", "104"]);
   });
 
-  it("does not return orphan children before available roots", () => {
+  it("does not return orphan roots before available roots", () => {
     const todos: Todo[] = [
       todo({ id: "1", sort_index: 0, parent_todo: null, title: "Parent A" }),
       todo({ id: "2", sort_index: 0, parent_todo: null, title: "Parent B" }),
@@ -56,7 +56,7 @@ describe("applyHierarchicalTodoLimit", () => {
     expect(limited.map((t) => t.id)).toEqual(["1", "2"]);
   });
 
-  it("keeps orphan children after real roots even with a large limit", () => {
+  it("keeps orphan roots after real roots even with a large limit", () => {
     const todos: Todo[] = [
       todo({ id: "10", sort_index: 5, parent_todo: null, title: "Root" }),
       todo({ id: "11", sort_index: 0, parent_todo: "999", title: "Orphan" }),
