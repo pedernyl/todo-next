@@ -10,5 +10,5 @@ export function isTestDbActive(): boolean {
 }
 
 export function getDevTitle(base: string): string {
-  return process.env.NODE_ENV === 'production' ? base : `${base} - DEV`;
+  return process.env.TEST_DB_ACTIVE === 'true' ? `${base} - TEST DB` : base;
 }
