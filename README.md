@@ -56,7 +56,7 @@ You can also use these same test database variables during local development and
 
 ```bash
 npm run dev -- --testDb
-npm run build -- --testDb
+npm run build -- --testDb  # requires ALLOW_TEST_DB_BUILD=true (blocked by default — see build safety guard below)
 ```
 
 Alternative convenience scripts (no npm flag warning):
