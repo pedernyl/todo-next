@@ -48,8 +48,6 @@ export async function POST(req: NextRequest) {
       changedByEmail: access.email,
     });
 
-   
-
     return NextResponse.json({ setting });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to save setting";
