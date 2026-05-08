@@ -1,7 +1,7 @@
 name: todos
 type: App
 title: Todo batch size settings
-description: Controls how many todos are loaded by default in each batch (every scrolling) and the maximum allowed batch size.
+description: Controls how many todos are loaded by default in each batch on each scroll, and the maximum allowed batch size.
 fields:
   - key: defaultLoadLimit
     label: Default todos to load
