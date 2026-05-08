@@ -8,12 +8,55 @@ import type {
   AdminSettingsTypeGroup,
 } from "./types";
 
+// TEMPORARY COMPATIBILITY FALLBACK. Remove in the next major release.
+const LEGACY_TYPE_FALLBACK_FLAG = "[DEPRECATION][settings-type-legacy-fallback]";
+
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function valueKey(name: string, type: string): string {
   return `${type}::${name}`;
+}
+
+function lowercaseFirstCharacter(value: string): string {
+  if (!value) return value;
+  return `${value[0].toLowerCase()}${value.slice(1)}`;
+}
+
+function getLegacyTypesFor(currentType: string): readonly string[] {
+  const candidates = [lowercaseFirstCharacter(currentType), currentType.toLowerCase()];
+  const unique = new Set<string>();
+
+  for (const candidate of candidates) {
+    if (candidate && candidate !== currentType) {
+      unique.add(candidate);
+    }
+  }
+
+  return Array.from(unique);
+}
+
+function resolveRowForDefinition(
+  definition: AdminSettingsDefinition,
+  rows: AdminSettingsStoredRow[]
+): AdminSettingsStoredRow | undefined {
+  const exact = rows.find((row) => row.name === definition.name && row.type === definition.type);
+  if (exact) {
+    return exact;
+  }
+
+  for (const legacyType of getLegacyTypesFor(definition.type)) {
+    const legacy = rows.find((row) => row.name === definition.name && row.type === legacyType);
+    if (legacy) {
+      console.warn(
+        `${LEGACY_TYPE_FALLBACK_FLAG} Loading legacy Settings.type=\"${legacyType}\" for ${definition.type}/${definition.name}. Run migration update and remove this fallback in the next major release.`
+      );
+      return legacy;
+    }
+  }
+
+  return undefined;
 }
 
 function coerceFieldValue(field: AdminSettingFieldDefinition, value: unknown): unknown {
@@ -132,11 +175,15 @@ export async function loadAdminSettingsGrouped(): Promise<AdminSettingsTypeGroup
     throw new Error(`Failed to load settings from Settings table: ${error.message}`);
   }
 
-  const rows = ((data ?? []) as AdminSettingsStoredRow[]).filter((row) => {
-    return definitions.some((definition) => row.name === definition.name && row.type === definition.type);
-  });
+  const rows = (data ?? []) as AdminSettingsStoredRow[];
+  const rowByKey = new Map<string, AdminSettingsStoredRow>();
+  for (const definition of definitions) {
+    const resolved = resolveRowForDefinition(definition, rows);
+    if (resolved) {
+      rowByKey.set(valueKey(definition.name, definition.type), resolved);
+    }
+  }
 
-  const rowByKey = new Map(rows.map((row) => [valueKey(row.name, row.type), row]));
   const groups = definitions.map((definition) => composeGroupState(definition, rowByKey));
 
   return groupAdminSettingsByType(groups);
@@ -186,7 +233,30 @@ export async function saveAdminSettingGroup(args: {
     throw new Error(`Failed to load existing settings row: ${existingRowError.message}`);
   }
 
-  const existingRow = (existingRowData ?? null) as { id?: number } | null;
+  let existingRow = (existingRowData ?? null) as { id?: number } | null;
+
+  if (!existingRow) {
+    for (const legacyType of getLegacyTypesFor(args.type)) {
+      const { data: legacyRowData, error: legacyRowError } = await supabaseAdmin
+        .from("Settings")
+        .select("id")
+        .eq("name", args.name)
+        .eq("type", legacyType)
+        .maybeSingle();
+
+      if (legacyRowError) {
+        throw new Error(`Failed to load legacy settings row: ${legacyRowError.message}`);
+      }
+
+      if (legacyRowData) {
+        console.warn(
+          `${LEGACY_TYPE_FALLBACK_FLAG} Saving over legacy Settings.type=\"${legacyType}\" for ${args.type}/${args.name}. This upgrades the row to current type.`
+        );
+        existingRow = legacyRowData as { id?: number };
+        break;
+      }
+    }
+  }
 
   const writePayload = {
     name: args.name,

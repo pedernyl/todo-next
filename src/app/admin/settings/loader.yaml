@@ -1,5 +1,5 @@
 name: loader
-type: debug
+type: Debug
 title: Loader Debug Settings
 description: Loader debugging and timing settings.
 fields:

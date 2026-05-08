@@ -163,7 +163,12 @@ export async function loadAdminSettingsDefinitions(
   const entries = await readdir(dirPath, { withFileTypes: true });
 
   const yamlFiles = entries
-    .filter((entry) => entry.isFile() && /\.ya?ml$/i.test(entry.name))
+    .filter(
+      (entry) =>
+        entry.isFile() &&
+        /\.ya?ml$/i.test(entry.name) &&
+        !/^example\./i.test(entry.name)
+    )
     .map((entry) => entry.name)
     .sort((a, b) => a.localeCompare(b));
 
