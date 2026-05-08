@@ -3,8 +3,8 @@
 // Run: npm run generate:admin-updates
 
 import * as update_addUsersIsAdminAndSeedFromAllowedUsers_1777381562_0 from "./addUsersIsAdminAndSeedFromAllowedUsers_1777381562";
-import * as update_ensureSettingsTableAuditColumns_1777470000_1 from "./ensureSettingsTableAuditColumns_1777470000";
-import * as update_migrateSettingsTypeAppLowercaseToApp_1778225819_2 from "./migrateSettingsTypeAppLowercaseToApp_1778225819";
+import * as update_capitalizeSettingsTypeFirstChar_1778225819_1 from "./capitalizeSettingsTypeFirstChar_1778225819";
+import * as update_ensureSettingsTableAuditColumns_1777470000_2 from "./ensureSettingsTableAuditColumns_1777470000";
 import * as update_normalizeNegativeTodoSortIndexToNull_1777482000_3 from "./normalizeNegativeTodoSortIndexToNull_1777482000";
 import * as update_reindexTodoSortIndexPerScope_1777482600_4 from "./reindexTodoSortIndexPerScope_1777482600";
 import * as update_renameTodosTableToTodos_1777392359_5 from "./renameTodosTableToTodos_1777392359";
@@ -18,12 +18,12 @@ export const adminUpdateRegistry: RegisteredAdminUpdate[] = [
     module: update_addUsersIsAdminAndSeedFromAllowedUsers_1777381562_0,
   },
   {
-    fileName: "ensureSettingsTableAuditColumns_1777470000.ts",
-    module: update_ensureSettingsTableAuditColumns_1777470000_1,
+    fileName: "capitalizeSettingsTypeFirstChar_1778225819.ts",
+    module: update_capitalizeSettingsTypeFirstChar_1778225819_1,
   },
   {
-    fileName: "migrateSettingsTypeAppLowercaseToApp_1778225819.ts",
-    module: update_migrateSettingsTypeAppLowercaseToApp_1778225819_2,
+    fileName: "ensureSettingsTableAuditColumns_1777470000.ts",
+    module: update_ensureSettingsTableAuditColumns_1777470000_2,
   },
   {
     fileName: "normalizeNegativeTodoSortIndexToNull_1777482000.ts",
