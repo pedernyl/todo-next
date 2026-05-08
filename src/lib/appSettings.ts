@@ -25,8 +25,7 @@ function getLegacyTypesFor(currentType: string): string[] {
  * Reads the app settings from the Settings table.
  * Falls back to hardcoded default if no row is found or on error.
  * Uses React cache() for per-request deduplication: multiple calls within a single request return memoized value.
- * Resets on every new request, so settings are always fresh when the page re-renders.
- * Changes made in admin immediately appear on next page load (no persistent cross-request caching).
+ * With force-dynamic rendering, each request fetches fresh data, so changes are reflected on the next request/render.
  */
 async function loadAppSettings(): Promise<AppSettings> {
   const { data: currentData, error: currentError } = await supabaseAdmin
