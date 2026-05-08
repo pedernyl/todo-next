@@ -11,7 +11,7 @@ Examples:
 ## Required top-level keys
 
 - `name` (string): unique group key, for example `loader`
-- `type` (string): grouping key shown in Admin output, for example `app` or `debug`
+- `type` (string): grouping key shown in Admin output. Use Uppercase values, for example `App` or `Debug`.
 - `fields` (array): one or more field definitions
 
 ## Optional top-level keys
@@ -52,7 +52,7 @@ Optional field properties:
 
 ```yaml
 name: loader
-type: debug
+type: Debug
 title: Loader Debug Settings
 description: Loader debugging and timing settings.
 fields:
@@ -71,5 +71,6 @@ fields:
 ## Validation rules
 
 - `name` + `type` must be unique across all YAML files in this folder
+- Top-level `type` should use Uppercase values (for example `App`, `Debug`)
 - `key` must be unique within each YAML file
 - `select` fields must provide at least one option
