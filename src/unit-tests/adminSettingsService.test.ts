@@ -23,7 +23,7 @@ vi.mock("../lib/adminSettings/loader", () => ({
       title: "App Settings",
       description: "Core app",
       fields: [
-        { key: "appName", label: "App Name", type: "text", default: "Todo Next" },
+        { key: "appName", label: "App Name", type: "text", default: "Todo App" },
         { key: "allowRegistrations", label: "Allow Registrations", type: "boolean", default: true },
       ],
     },
@@ -144,7 +144,7 @@ describe("admin settings service", () => {
     expect(groups[1].type).toBe("Debug");
 
     const appGroup = groups[0].settings[0];
-    expect(appGroup.values.appName).toBe("Todo Next");
+    expect(appGroup.values.appName).toBe("Todo App");
     expect(appGroup.values.allowRegistrations).toBe(true);
   });
 

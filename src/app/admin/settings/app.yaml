@@ -6,5 +6,5 @@ fields:
   - key: appName
     label: Application Name
     type: text
-    default: Todo
+    default: Todo App
     placeholder: Enter application name

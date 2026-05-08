@@ -1,6 +1,7 @@
 
 import { getTodos } from '../lib/dataService';
 import { getTodoLoadPolicy, computeEffectiveLimit } from '../lib/todoLoadPolicy';
+import { getAppSettings } from '../lib/appSettings';
 import AuthButtons from '../components/AuthButtons';
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
@@ -11,9 +12,14 @@ import TodoPageClient from "./TodoPageClient";
 import type { Metadata } from 'next';
 import { getDevTitle, isTestDbActive } from '../lib/environmentMode';
 
-export const metadata: Metadata = {
-  title: getDevTitle('Todo App'),
-};
+export const dynamic = "force-dynamic";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const appSettings = await getAppSettings();
+  return {
+    title: getDevTitle(appSettings.appName),
+  };
+}
 
 export default async function Home() {
   const session = await getServerSession(authOptions);
@@ -27,6 +33,7 @@ export default async function Home() {
   const policy = await getTodoLoadPolicy();
   const effectiveLimit = computeEffectiveLimit(policy);
   const todos = await getTodos(true, undefined, effectiveLimit);
+  const appSettings = await getAppSettings();
   const testDbActive = isTestDbActive();
   const titleClassName = testDbActive
     ? 'bg-emerald-600 text-white border-emerald-700'
@@ -46,7 +53,7 @@ export default async function Home() {
         </div>
       )}
       <div className={`sticky top-3 z-20 mb-8 mt-16 rounded border px-4 py-3 text-center shadow-sm ${titleClassName}`}>
-        <h1 className="text-3xl font-bold">{getDevTitle('Todo App')}</h1>
+        <h1 className="text-3xl font-bold">{getDevTitle(appSettings.appName)}</h1>
       </div>
       <TodoPageClient initialTodos={todos} />
     </div>

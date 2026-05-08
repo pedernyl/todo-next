@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { getAdminAccessCheckResult } from "@/lib/adminAccess";
 import { loadAdminSettingsGrouped, saveAdminSettingGroup } from "@/lib/adminSettings";
 
@@ -47,6 +48,9 @@ export async function POST(req: NextRequest) {
       settings: payload.settings ?? {},
       changedByEmail: access.email,
     });
+
+    // Ensure the todo page and its metadata are re-fetched on next navigation.
+    revalidatePath("/", "page");
 
     return NextResponse.json({ setting });
   } catch (error) {

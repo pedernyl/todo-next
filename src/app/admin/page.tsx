@@ -94,7 +94,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         <section className="flex min-h-screen flex-col">
           <header className={`sticky top-0 z-20 flex h-14 items-center justify-between border-b px-4 sm:px-6 ${headerClassName}`}>
             <h1 className="text-2xl font-semibold">{getDevTitle(activeLabel)}</h1>
-            <Link href="/" className={`text-sm font-semibold hover:underline ${testDbActive ? 'text-white' : 'text-blue-700'}`}>
+            <Link href="/" prefetch={false} className={`text-sm font-semibold hover:underline ${testDbActive ? 'text-white' : 'text-blue-700'}`}>
               Todos
             </Link>
           </header>
