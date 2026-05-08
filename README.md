@@ -139,6 +139,7 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 See [CONTRIBUTING.md](CONTRIBUTING.md) for branch, workflow, and versioning guidelines.
 
 For Admin Settings YAML format and conventions, see [src/app/admin/settings/README.md](src/app/admin/settings/README.md).
+Reference-only settings examples can be placed in files prefixed with `example.` (for example `src/app/admin/settings/example.app.yaml`); these are ignored by the runtime loader.
 
 ## Admin SQL-Style Updates
 

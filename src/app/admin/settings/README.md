@@ -8,6 +8,9 @@ Examples:
 - app-level settings in `app.yaml`
 - loader debug settings in `loader.yaml`
 
+Reference example files can be added with the prefix `example.` (for example `example.app.yaml`).
+These files are ignored by the runtime loader and are meant only as implementation references.
+
 ## Required top-level keys
 
 - `name` (string): unique group key, for example `loader`
@@ -74,3 +77,4 @@ fields:
 - Top-level `type` should use Uppercase values (for example `App`, `Debug`)
 - `key` must be unique within each YAML file
 - `select` fields must provide at least one option
+- Files named `example.*.yaml` or `example.*.yml` are ignored at runtime
