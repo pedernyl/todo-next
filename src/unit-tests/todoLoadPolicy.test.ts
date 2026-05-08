@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { testState } = vi.hoisted(() => ({
   testState: {
-    settingsRow: null as null | { settings: Record<string, unknown> },
+    settingsRowsByType: new Map<string, { settings: Record<string, unknown> }>(),
     queryError: null as null | { message: string },
   },
 }));
@@ -25,7 +25,7 @@ vi.mock("../lib/supabaseAdminClient", () => ({
           if (testState.queryError) {
             return { data: null, error: testState.queryError };
           }
-          return { data: testState.settingsRow, error: null };
+          return { data: testState.settingsRowsByType.get(filters.type) ?? null, error: null };
         },
       };
       return builder;
@@ -93,12 +93,12 @@ describe("computeEffectiveLimit", () => {
 
 describe("getTodoLoadPolicy", () => {
   beforeEach(() => {
-    testState.settingsRow = null;
+    testState.settingsRowsByType = new Map();
     testState.queryError = null;
   });
 
   it("returns hardcoded defaults when no DB row exists", async () => {
-    testState.settingsRow = null;
+    testState.settingsRowsByType = new Map();
     const policy = await getTodoLoadPolicy();
     expect(policy.defaultLoadLimit).toBe(50);
     expect(policy.maxLoadLimit).toBe(200);
@@ -112,30 +112,39 @@ describe("getTodoLoadPolicy", () => {
   });
 
   it("returns stored values when a valid DB row exists", async () => {
-    testState.settingsRow = { settings: { defaultLoadLimit: 75, maxLoadLimit: 500 } };
+    testState.settingsRowsByType.set("App", { settings: { defaultLoadLimit: 75, maxLoadLimit: 500 } });
     const policy = await getTodoLoadPolicy();
     expect(policy.defaultLoadLimit).toBe(75);
     expect(policy.maxLoadLimit).toBe(500);
   });
 
   it("falls back to defaults for invalid stored values", async () => {
-    testState.settingsRow = { settings: { defaultLoadLimit: "invalid", maxLoadLimit: -5 } };
+    testState.settingsRowsByType.set("App", {
+      settings: { defaultLoadLimit: "invalid", maxLoadLimit: -5 },
+    });
     const policy = await getTodoLoadPolicy();
     expect(policy.defaultLoadLimit).toBe(50);
     expect(policy.maxLoadLimit).toBe(200);
   });
 
   it("falls back per-field: uses stored defaultLoadLimit but default maxLoadLimit when maxLoadLimit is missing", async () => {
-    testState.settingsRow = { settings: { defaultLoadLimit: 30 } };
+    testState.settingsRowsByType.set("App", { settings: { defaultLoadLimit: 30 } });
     const policy = await getTodoLoadPolicy();
     expect(policy.defaultLoadLimit).toBe(30);
     expect(policy.maxLoadLimit).toBe(200);
   });
 
   it("returns defaults when settings object is empty", async () => {
-    testState.settingsRow = { settings: {} };
+    testState.settingsRowsByType.set("App", { settings: {} });
     const policy = await getTodoLoadPolicy();
     expect(policy.defaultLoadLimit).toBe(50);
     expect(policy.maxLoadLimit).toBe(200);
+  });
+
+  it("falls back to legacy lowercase type when current type row is missing", async () => {
+    testState.settingsRowsByType.set("app", { settings: { defaultLoadLimit: 33, maxLoadLimit: 333 } });
+    const policy = await getTodoLoadPolicy();
+    expect(policy.defaultLoadLimit).toBe(33);
+    expect(policy.maxLoadLimit).toBe(333);
   });
 });

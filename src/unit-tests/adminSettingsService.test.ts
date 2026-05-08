@@ -102,6 +102,8 @@ vi.mock("../lib/supabaseAdminClient", () => ({
                 return { error: { message: "missing row" } };
               }
 
+              row.name = typeof payload.name === "string" ? payload.name : row.name;
+              row.type = typeof payload.type === "string" ? payload.type : row.type;
               row.settings = payload.settings as Record<string, unknown>;
               row.changed_by = payload.changed_by as number;
               row.changed_timestamp = payload.changed_timestamp as string;
@@ -148,6 +150,43 @@ describe("admin settings service", () => {
     expect(appGroup.values.allowRegistrations).toBe(true);
   });
 
+  it("loads app settings from legacy lowercase type when current type row is missing", async () => {
+    testState.settingsRows = [
+      {
+        id: 11,
+        name: "app",
+        type: "app",
+        settings: { appName: "Legacy Name", allowRegistrations: false },
+        changed_by: 7,
+        changed_timestamp: "2026-01-01T00:00:00.000Z",
+      },
+    ];
+
+    const groups = await loadAdminSettingsGrouped();
+    const appGroup = groups.find((group) => group.type === "App")?.settings[0];
+
+    expect(appGroup?.values.appName).toBe("Legacy Name");
+    expect(appGroup?.values.allowRegistrations).toBe(false);
+  });
+
+  it("loads debug settings from legacy lowercase type when current type row is missing", async () => {
+    testState.settingsRows = [
+      {
+        id: 12,
+        name: "debug",
+        type: "debug",
+        settings: { debugEnabled: true },
+        changed_by: 7,
+        changed_timestamp: "2026-01-01T00:00:00.000Z",
+      },
+    ];
+
+    const groups = await loadAdminSettingsGrouped();
+    const debugGroup = groups.find((group) => group.type === "Debug")?.settings[0];
+
+    expect(debugGroup?.values.debugEnabled).toBe(true);
+  });
+
   it("saves settings and writes changed_by and changed_timestamp", async () => {
     const saved = await saveAdminSettingGroup({
       name: "app",
@@ -181,5 +220,57 @@ describe("admin settings service", () => {
 
     expect(debugGroup).toBeDefined();
     expect(debugGroup?.values.debugEnabled).toBe(true);
+  });
+
+  it("updates legacy lowercase type row and upgrades it to current type", async () => {
+    testState.settingsRows = [
+      {
+        id: 9,
+        name: "app",
+        type: "app",
+        settings: { appName: "Legacy Name", allowRegistrations: true },
+        changed_by: 2,
+        changed_timestamp: "2025-01-01T00:00:00.000Z",
+      },
+    ];
+
+    const saved = await saveAdminSettingGroup({
+      name: "app",
+      type: "App",
+      settings: { appName: "Updated Name", allowRegistrations: false },
+      changedByEmail: "admin@example.com",
+    });
+
+    expect(testState.settingsRows).toHaveLength(1);
+    expect(testState.settingsRows[0].type).toBe("App");
+    expect(testState.settingsRows[0].settings.appName).toBe("Updated Name");
+    expect(saved.type).toBe("App");
+    expect(saved.values.appName).toBe("Updated Name");
+  });
+
+  it("updates legacy lowercase type row for debug and upgrades it to current type", async () => {
+    testState.settingsRows = [
+      {
+        id: 10,
+        name: "debug",
+        type: "debug",
+        settings: { debugEnabled: false },
+        changed_by: 2,
+        changed_timestamp: "2025-01-01T00:00:00.000Z",
+      },
+    ];
+
+    const saved = await saveAdminSettingGroup({
+      name: "debug",
+      type: "Debug",
+      settings: { debugEnabled: true },
+      changedByEmail: "admin@example.com",
+    });
+
+    expect(testState.settingsRows).toHaveLength(1);
+    expect(testState.settingsRows[0].type).toBe("Debug");
+    expect(testState.settingsRows[0].settings.debugEnabled).toBe(true);
+    expect(saved.type).toBe("Debug");
+    expect(saved.values.debugEnabled).toBe(true);
   });
 });
