@@ -13,7 +13,7 @@ import {
   getDatabaseCopyAvailability,
 } from "../lib/adminDatabaseCopy";
 
-function createSuccessfulProcess() {
+function createProcess(options?: { closeCode?: number; emitError?: Error }) {
   const proc = new EventEmitter() as EventEmitter & {
     stdout: { pipe: ReturnType<typeof vi.fn> };
     stderr: EventEmitter;
@@ -24,7 +24,12 @@ function createSuccessfulProcess() {
   proc.stdin = {};
 
   queueMicrotask(() => {
-    proc.emit("close", 0);
+    if (options?.emitError) {
+      proc.emit("error", options.emitError);
+      return;
+    }
+
+    proc.emit("close", options?.closeCode ?? 0);
   });
 
   return proc;
@@ -42,7 +47,7 @@ describe("adminDatabaseCopy", () => {
     process.env.SUPABASE_PROD_DB_URL = "postgres://prod-db";
     process.env.SUPABASE_DB_URL = "postgres://legacy-prod-db";
     process.env.SUPABASE_TEST_DB_URL = "postgres://test-db";
-    spawnMock.mockImplementation(() => createSuccessfulProcess());
+    spawnMock.mockImplementation(() => createProcess());
   });
 
   afterEach(() => {
@@ -108,6 +113,24 @@ describe("adminDatabaseCopy", () => {
       "psql",
       ["--dbname", "postgres://test-db", "-v", "ON_ERROR_STOP=1"],
       { stdio: ["pipe", "pipe", "pipe"] }
+    );
+  });
+
+  it("throws when pg_dump exits with a non-zero status", async () => {
+    spawnMock.mockImplementationOnce(() => createProcess({ closeCode: 1 }));
+    spawnMock.mockImplementationOnce(() => createProcess());
+
+    await expect(copyProductionDatabaseToTest("overwrite")).rejects.toThrow(
+      "pg_dump exited with 1"
+    );
+  });
+
+  it("throws when psql process fails to start", async () => {
+    spawnMock.mockImplementationOnce(() => createProcess());
+    spawnMock.mockImplementationOnce(() => createProcess({ emitError: new Error("spawn failed") }));
+
+    await expect(copyProductionDatabaseToTest("overwrite")).rejects.toThrow(
+      "Failed to run psql: spawn failed"
     );
   });
 });

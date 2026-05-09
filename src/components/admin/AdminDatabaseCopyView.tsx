@@ -151,7 +151,7 @@ export default function AdminDatabaseCopyView() {
             <span>
               <span className="block font-semibold">Overwrite</span>
               <span className="text-xs text-slate-500">
-                Truncate test database and copy all schema and data from production.
+                Replace test database schema and data with production.
               </span>
             </span>
           </label>
