@@ -49,6 +49,8 @@ Integration tests run against a **separate test database** to avoid touching dev
 - `NEXT_PUBLIC_SUPABASE_TEST_URL` — Supabase URL of your test project
 - `NEXT_PUBLIC_SUPABASE_TEST_ANON_KEY` — anon key for the test project
 - `SUPABASE_TEST_SERVICE_ROLE_KEY` — service role key for the test project (server-side only; never expose to browser)
+- `SUPABASE_PROD_DB_URL` (or `SUPABASE_DB_URL`) — PostgreSQL connection string for production DB (server-side only)
+- `SUPABASE_TEST_DB_URL` — PostgreSQL connection string for test DB (server-side only)
 
 The integration test setup (`vitest.integration.setup.ts`) maps these to the standard runtime Supabase vars so the app code under test always uses the test database.
 
@@ -66,6 +68,15 @@ npm run dev:testDb
 npm run build:testDb
 npm run start:testDb
 ```
+
+### Admin: copy production DB to test DB
+
+In Admin, open **Database copy** to run a server-side copy from production DB to test DB.
+
+- **Overwrite**: replaces test DB schema/data from production.
+- **Append**: applies production schema and inserts production rows where possible without truncating test data.
+
+This action is only enabled when `SUPABASE_TEST_DB_URL` and the production DB URL variable are present.
 
 Note: `npm run build --testDb` and `npm run dev --testDb` are interpreted by npm as npm-config flags and may show npm warnings in current npm versions. The app now still switches to test DB in that case, but `npm run build -- --testDb` (or the `:testDb` scripts above) is recommended.
 
