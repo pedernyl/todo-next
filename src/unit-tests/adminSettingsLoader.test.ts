@@ -1,6 +1,7 @@
-import { mkdtemp, rm, writeFile } from "fs/promises";
+import { mkdtemp, readFile, readdir, rm, writeFile } from "fs/promises";
 import os from "os";
 import path from "path";
+import YAML from "yaml";
 import { describe, expect, it } from "vitest";
 import {
   loadAdminSettingsDefinitions,
@@ -59,6 +60,33 @@ describe("adminSettings loader", () => {
       expect(definitions[0].name).toBe("app");
     } finally {
       await rm(tmpDir, { recursive: true, force: true });
+    }
+  });
+
+  it("validates all settings YAML files have a capitalized type field", async () => {
+    const settingsDir = path.join(process.cwd(), "src", "app", "admin", "settings");
+    const entries = await readdir(settingsDir, { withFileTypes: true });
+
+    const yamlFiles = entries
+      .filter((entry) => entry.isFile() && /\.ya?ml$/i.test(entry.name))
+      .map((entry) => entry.name)
+      .sort((a, b) => a.localeCompare(b));
+
+    for (const fileName of yamlFiles) {
+      const filePath = path.join(settingsDir, fileName);
+      const rawYaml = await readFile(filePath, "utf-8");
+      const parsed = YAML.parse(rawYaml) as { type?: unknown } | null;
+      const type = parsed?.type;
+
+      if (typeof type !== "string" || !type.trim()) {
+        throw new Error(`Missing required "type" field in ${fileName}`);
+      }
+
+      if (!/^[A-Z]/.test(type)) {
+        throw new Error(
+          `Invalid "type" in ${fileName}: expected value starting with a capital letter, received "${type}"`
+        );
+      }
     }
   });
 });
