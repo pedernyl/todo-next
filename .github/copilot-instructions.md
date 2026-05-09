@@ -42,6 +42,12 @@ Primary folders:
 - Bump `PATCH` for bug fixes or small improvements.
 - Create releases only when meaningful features/fixes land on `main`.
 
+## Database changes
+
+- Never use Supabase migrations or the Supabase CLI to modify the database schema.
+- All database changes must go through the `adminUpdates` workflow in `src/lib/adminUpdates`.
+- Run `npm run check:admin-updates-registry` after any changes to admin updates and commit the generated registry.
+
 ## Validation expectations
 
 Before finalizing work, run the checks that apply to your change:
