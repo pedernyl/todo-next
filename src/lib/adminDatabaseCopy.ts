@@ -7,22 +7,76 @@ type CopyAvailability = {
   missingVariables: string[];
 };
 
+function isPostgresConnectionString(value: string): boolean {
+  return value.startsWith("postgres://") || value.startsWith("postgresql://");
+}
+
+function getSupabaseRefFromUrl(urlValue: string): string | undefined {
+  try {
+    const host = new URL(urlValue).hostname;
+    if (!host.endsWith(".supabase.co")) {
+      return undefined;
+    }
+
+    const [projectRef] = host.split(".");
+    return projectRef || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function toPostgresConnectionString(urlValue: string, password: string, refOverride?: string): string {
+  if (isPostgresConnectionString(urlValue)) {
+    return urlValue;
+  }
+
+  const projectRef = refOverride ?? getSupabaseRefFromUrl(urlValue);
+  if (!projectRef) {
+    throw new Error(
+      "Could not derive Supabase project ref from URL. Use a postgres:// URL or set SUPABASE_TEST_REF."
+    );
+  }
+
+  return `postgresql://postgres:${encodeURIComponent(password)}@db.${projectRef}.supabase.co:5432/postgres?sslmode=require`;
+}
+
 function getProdDbUrl(): string | undefined {
-  return process.env.SUPABASE_PROD_DB_URL ?? process.env.SUPABASE_DB_URL;
+  const prodUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const prodPassword = process.env.SUPABASE_DB_PASSWORD;
+
+  if (!prodUrl || !prodPassword) {
+    return undefined;
+  }
+
+  return toPostgresConnectionString(prodUrl, prodPassword);
 }
 
 function getTestDbUrl(): string | undefined {
-  return process.env.SUPABASE_TEST_DB_URL;
+  const testUrl = process.env.NEXT_PUBLIC_SUPABASE_TEST_URL;
+  const testPassword = process.env.SUPABASE_TEST_DB_PASSWORD;
+  const testRef = process.env.SUPABASE_TEST_REF;
+
+  if (!testUrl || !testPassword) {
+    return undefined;
+  }
+
+  return toPostgresConnectionString(testUrl, testPassword, testRef);
 }
 
 export function getDatabaseCopyAvailability(): CopyAvailability {
   const missingVariables: string[] = [];
 
-  if (!getProdDbUrl()) {
-    missingVariables.push("SUPABASE_PROD_DB_URL (or SUPABASE_DB_URL)");
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+    missingVariables.push("NEXT_PUBLIC_SUPABASE_URL");
   }
-  if (!getTestDbUrl()) {
-    missingVariables.push("SUPABASE_TEST_DB_URL");
+  if (!process.env.SUPABASE_DB_PASSWORD) {
+    missingVariables.push("SUPABASE_DB_PASSWORD");
+  }
+  if (!process.env.NEXT_PUBLIC_SUPABASE_TEST_URL) {
+    missingVariables.push("NEXT_PUBLIC_SUPABASE_TEST_URL");
+  }
+  if (!process.env.SUPABASE_TEST_DB_PASSWORD) {
+    missingVariables.push("SUPABASE_TEST_DB_PASSWORD");
   }
 
   return {
@@ -124,14 +178,31 @@ export async function copyProductionDatabaseToTest(mode: DatabaseCopyMode): Prom
 
   if (mode === "overwrite") {
     await runDumpRestorePipeline(
-      ["--no-owner", "--no-privileges", "--clean", "--if-exists", "--dbname", prodDbUrl],
+      [
+        "--schema",
+        "public",
+        "--no-owner",
+        "--no-privileges",
+        "--clean",
+        "--if-exists",
+        "--dbname",
+        prodDbUrl,
+      ],
       ["--dbname", testDbUrl, "-v", "ON_ERROR_STOP=1"]
     );
     return;
   }
 
   await runDumpRestorePipeline(
-    ["--schema-only", "--no-owner", "--no-privileges", "--dbname", prodDbUrl],
+    [
+      "--schema-only",
+      "--schema",
+      "public",
+      "--no-owner",
+      "--no-privileges",
+      "--dbname",
+      prodDbUrl,
+    ],
     ["--dbname", testDbUrl, "-v", "ON_ERROR_STOP=0"],
     { allowRestoreErrors: true }
   );
@@ -139,6 +210,8 @@ export async function copyProductionDatabaseToTest(mode: DatabaseCopyMode): Prom
   await runDumpRestorePipeline(
     [
       "--data-only",
+      "--schema",
+      "public",
       "--inserts",
       "--column-inserts",
       "--on-conflict-do-nothing",
