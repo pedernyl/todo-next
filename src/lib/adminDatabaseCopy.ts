@@ -165,6 +165,62 @@ function runDumpRestorePipeline(
   });
 }
 
+function runPsqlCommand(args: string[]): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const proc = spawn("psql", args, { stdio: ["ignore", "pipe", "pipe"] });
+    let stderr = "";
+    let settled = false;
+
+    proc.stderr.on("data", (chunk) => {
+      stderr += chunk.toString();
+    });
+
+    proc.on("error", (error) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      reject(new Error(`Failed to run psql: ${error.message}`));
+    });
+
+    proc.on("close", (code) => {
+      if (settled) {
+        return;
+      }
+
+      if (code !== 0) {
+        settled = true;
+        reject(
+          new Error(
+            [
+              "Database copy failed during post-restore grants.",
+              `psql exited with ${code}.`,
+              stderr ? `psql: ${stderr.trim()}` : null,
+            ]
+              .filter(Boolean)
+              .join(" ")
+          )
+        );
+        return;
+      }
+
+      settled = true;
+      resolve();
+    });
+  });
+}
+
+async function applySupabasePublicSchemaGrants(dbUrl: string): Promise<void> {
+  const grantSql = [
+    "GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;",
+    "GRANT SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;",
+    "GRANT USAGE, SELECT, UPDATE ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;",
+    "GRANT EXECUTE ON ALL ROUTINES IN SCHEMA public TO anon, authenticated, service_role;",
+  ].join(" ");
+
+  await runPsqlCommand(["--dbname", dbUrl, "-v", "ON_ERROR_STOP=1", "-c", grantSql]);
+}
+
 export async function copyProductionDatabaseToTest(mode: DatabaseCopyMode): Promise<void> {
   const prodDbUrl = getProdDbUrl();
   const testDbUrl = getTestDbUrl();
@@ -182,7 +238,7 @@ export async function copyProductionDatabaseToTest(mode: DatabaseCopyMode): Prom
         "--schema",
         "public",
         "--no-owner",
-        "--no-privileges",
+        "--no-acl",
         "--clean",
         "--if-exists",
         "--dbname",
@@ -190,6 +246,7 @@ export async function copyProductionDatabaseToTest(mode: DatabaseCopyMode): Prom
       ],
       ["--dbname", testDbUrl, "-v", "ON_ERROR_STOP=1"]
     );
+    await applySupabasePublicSchemaGrants(testDbUrl);
     return;
   }
 
@@ -199,7 +256,7 @@ export async function copyProductionDatabaseToTest(mode: DatabaseCopyMode): Prom
       "--schema",
       "public",
       "--no-owner",
-      "--no-privileges",
+      "--no-acl",
       "--dbname",
       prodDbUrl,
     ],
@@ -216,10 +273,12 @@ export async function copyProductionDatabaseToTest(mode: DatabaseCopyMode): Prom
       "--column-inserts",
       "--on-conflict-do-nothing",
       "--no-owner",
-      "--no-privileges",
+      "--no-acl",
       "--dbname",
       prodDbUrl,
     ],
     ["--dbname", testDbUrl, "-v", "ON_ERROR_STOP=1"]
   );
+
+  await applySupabasePublicSchemaGrants(testDbUrl);
 }
