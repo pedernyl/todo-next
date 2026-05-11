@@ -49,8 +49,9 @@ Integration tests run against a **separate test database** to avoid touching dev
 - `NEXT_PUBLIC_SUPABASE_TEST_URL` — Supabase URL of your test project
 - `NEXT_PUBLIC_SUPABASE_TEST_ANON_KEY` — anon key for the test project
 - `SUPABASE_TEST_SERVICE_ROLE_KEY` — service role key for the test project (server-side only; never expose to browser)
-- `SUPABASE_PROD_DB_URL` (or `SUPABASE_DB_URL`) — PostgreSQL connection string for production DB (server-side only)
-- `SUPABASE_TEST_DB_URL` — PostgreSQL connection string for test DB (server-side only)
+- `SUPABASE_DB_PASSWORD` — password for the production project Postgres user (`postgres`)
+- `SUPABASE_TEST_DB_PASSWORD` — password for the test project Postgres user (`postgres`)
+- `SUPABASE_TEST_REF` — test Supabase project ref (optional if `NEXT_PUBLIC_SUPABASE_TEST_URL` is set)
 
 The integration test setup (`vitest.integration.setup.ts`) maps these to the standard runtime Supabase vars so the app code under test always uses the test database.
 
@@ -81,7 +82,7 @@ Requirements / platform notes:
 - This feature is intended for local development or self-hosted Node.js environments where the server can spawn those binaries.
 - It may not work on hosted/serverless platforms (including typical Vercel deployments) that do not provide Postgres client tools or do not allow this kind of shell access.
 
-This action is only enabled when `SUPABASE_TEST_DB_URL` and the production DB URL variable are present.
+This action is enabled when the required password and ref/URL variables are present.
 
 Note: `npm run build --testDb` and `npm run dev --testDb` are interpreted by npm as npm-config flags and may show npm warnings in current npm versions. The app now still switches to test DB in that case, but `npm run build -- --testDb` (or the `:testDb` scripts above) is recommended.
 
