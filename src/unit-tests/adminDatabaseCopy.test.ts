@@ -167,4 +167,29 @@ describe("adminDatabaseCopy", () => {
     );
   });
 
+  it("throws when append schema restore exits with non-zero status", async () => {
+    spawnMock.mockImplementationOnce(() => createProcess());
+    spawnMock.mockImplementationOnce(() => createProcess({ closeCode: 1 }));
+
+    await expect(copyProductionDatabaseToTest("append")).rejects.toThrow("psql exited with 1");
+    expect(spawnMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("blocks copy when production and test urls resolve to the same target", async () => {
+    process.env.SUPABASE_TEST_DB_URL = "postgres://prod-db";
+
+    await expect(copyProductionDatabaseToTest("overwrite")).rejects.toThrow(
+      "production and test database targets are the same"
+    );
+    expect(spawnMock).not.toHaveBeenCalled();
+  });
+
+  it("throws a generic invalid-url message without ref-specific guidance", async () => {
+    process.env.SUPABASE_PROD_DB_URL = "https://example.com";
+
+    await expect(copyProductionDatabaseToTest("overwrite")).rejects.toThrow(
+      "Invalid SUPABASE_PROD_DB_URL. Use a valid postgres:// or postgresql:// connection string."
+    );
+  });
+
 });

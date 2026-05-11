@@ -7,6 +7,13 @@ type CopyAvailability = {
   missingVariables: string[];
 };
 
+type ParsedDatabaseTarget = {
+  host: string;
+  port: string;
+  database: string;
+  username: string;
+};
+
 function getProdDbUrl(): string | undefined {
   return process.env.SUPABASE_PROD_DB_URL ?? process.env.SUPABASE_DB_URL;
 }
@@ -31,10 +38,50 @@ export function getDatabaseCopyAvailability(): CopyAvailability {
   };
 }
 
+function parseDatabaseTarget(dbUrl: string, envVarName: string): ParsedDatabaseTarget {
+  let parsed: URL;
+  try {
+    parsed = new URL(dbUrl);
+  } catch {
+    throw new Error(
+      `Invalid ${envVarName}. Use a valid postgres:// or postgresql:// connection string.`
+    );
+  }
+
+  if (parsed.protocol !== "postgres:" && parsed.protocol !== "postgresql:") {
+    throw new Error(
+      `Invalid ${envVarName}. Use a valid postgres:// or postgresql:// connection string.`
+    );
+  }
+
+  return {
+    host: parsed.hostname.toLowerCase(),
+    port: parsed.port || "5432",
+    database: parsed.pathname.replace(/^\/+/, "") || "postgres",
+    username: decodeURIComponent(parsed.username || ""),
+  };
+}
+
+function ensureDistinctDatabaseTargets(prodDbUrl: string, testDbUrl: string): void {
+  const prodTarget = parseDatabaseTarget(
+    prodDbUrl,
+    process.env.SUPABASE_PROD_DB_URL ? "SUPABASE_PROD_DB_URL" : "SUPABASE_DB_URL"
+  );
+  const testTarget = parseDatabaseTarget(testDbUrl, "SUPABASE_TEST_DB_URL");
+
+  const prodIdentity = `${prodTarget.username}@${prodTarget.host}:${prodTarget.port}/${prodTarget.database}`;
+  const testIdentity = `${testTarget.username}@${testTarget.host}:${testTarget.port}/${testTarget.database}`;
+
+  if (prodIdentity === testIdentity) {
+    throw new Error(
+      "Database copy is blocked because production and test database targets are the same."
+    );
+  }
+}
+
 function runDumpRestorePipeline(
   dumpArgs: string[],
-  restoreArgs: string[],
-  options?: { allowRestoreErrors?: boolean }
+  restoreArgs: string[]
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     const dumper = spawn("pg_dump", dumpArgs, { stdio: ["ignore", "pipe", "pipe"] });
@@ -53,7 +100,7 @@ function runDumpRestorePipeline(
         return;
       }
 
-      const restoreFailed = restoreExitCode !== 0 && !options?.allowRestoreErrors;
+      const restoreFailed = restoreExitCode !== 0;
       if (dumpExitCode !== 0 || restoreFailed) {
         settled = true;
         reject(
@@ -178,6 +225,8 @@ export async function copyProductionDatabaseToTest(mode: DatabaseCopyMode): Prom
     );
   }
 
+  ensureDistinctDatabaseTargets(prodDbUrl, testDbUrl);
+
   if (mode === "overwrite") {
     await runDumpRestorePipeline(
       [
@@ -206,8 +255,7 @@ export async function copyProductionDatabaseToTest(mode: DatabaseCopyMode): Prom
       "--dbname",
       prodDbUrl,
     ],
-    ["--dbname", testDbUrl, "-v", "ON_ERROR_STOP=0"],
-    { allowRestoreErrors: true }
+    ["--dbname", testDbUrl, "-v", "ON_ERROR_STOP=0"]
   );
 
   await runDumpRestorePipeline(
