@@ -42,9 +42,17 @@ function toPostgresConnectionString(urlValue: string, password: string, refOverr
 
 function getProdDbUrl(): string | undefined {
   const prodUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const prodPassword = process.env.SUPABASE_DB_PASSWORD;
 
-  if (!prodUrl || !prodPassword) {
+  if (!prodUrl) {
+    return undefined;
+  }
+
+  if (isPostgresConnectionString(prodUrl)) {
+    return prodUrl;
+  }
+
+  const prodPassword = process.env.SUPABASE_DB_PASSWORD;
+  if (!prodPassword) {
     return undefined;
   }
 
@@ -53,10 +61,18 @@ function getProdDbUrl(): string | undefined {
 
 function getTestDbUrl(): string | undefined {
   const testUrl = process.env.NEXT_PUBLIC_SUPABASE_TEST_URL;
-  const testPassword = process.env.SUPABASE_TEST_DB_PASSWORD;
   const testRef = process.env.SUPABASE_TEST_REF;
 
-  if (!testUrl || !testPassword) {
+  if (!testUrl) {
+    return undefined;
+  }
+
+  if (isPostgresConnectionString(testUrl)) {
+    return testUrl;
+  }
+
+  const testPassword = process.env.SUPABASE_TEST_DB_PASSWORD;
+  if (!testPassword) {
     return undefined;
   }
 
@@ -65,17 +81,18 @@ function getTestDbUrl(): string | undefined {
 
 export function getDatabaseCopyAvailability(): CopyAvailability {
   const missingVariables: string[] = [];
+  const prodUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const testUrl = process.env.NEXT_PUBLIC_SUPABASE_TEST_URL;
 
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+  if (!prodUrl) {
     missingVariables.push("NEXT_PUBLIC_SUPABASE_URL");
-  }
-  if (!process.env.SUPABASE_DB_PASSWORD) {
+  } else if (!isPostgresConnectionString(prodUrl) && !process.env.SUPABASE_DB_PASSWORD) {
     missingVariables.push("SUPABASE_DB_PASSWORD");
   }
-  if (!process.env.NEXT_PUBLIC_SUPABASE_TEST_URL) {
+
+  if (!testUrl) {
     missingVariables.push("NEXT_PUBLIC_SUPABASE_TEST_URL");
-  }
-  if (!process.env.SUPABASE_TEST_DB_PASSWORD) {
+  } else if (!isPostgresConnectionString(testUrl) && !process.env.SUPABASE_TEST_DB_PASSWORD) {
     missingVariables.push("SUPABASE_TEST_DB_PASSWORD");
   }
 
