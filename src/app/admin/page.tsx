@@ -27,7 +27,7 @@ const adminViews: Array<{ key: string; label: string }> = [
   { key: "about", label: "About" },
 ];
 
-function isAdminView(value: string | undefined): boolean {
+function isAdminView(value: string | undefined): value is (typeof adminViews)[number]["key"] {
   if (!value) {
     return false;
   }
@@ -35,7 +35,9 @@ function isAdminView(value: string | undefined): boolean {
   return adminViews.some((item) => item.key === value);
 }
 
-function getActiveView(view: string | string[] | undefined): string {
+function getActiveView(
+  view: string | string[] | undefined
+): (typeof adminViews)[number]["key"] {
   const raw = Array.isArray(view) ? view[0] : view;
 
   if (isAdminView(raw)) {
