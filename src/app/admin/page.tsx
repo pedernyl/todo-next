@@ -4,12 +4,11 @@ import type { Metadata } from 'next';
 import AdminAboutView from "@/components/admin/AdminAboutView";
 import AdminHomeView from "@/components/admin/AdminHomeView";
 import AdminSettingsView from "@/components/admin/AdminSettingsView";
+import AdminDatabaseCopyView from "@/components/admin/AdminDatabaseCopyView";
 import AdminUpdatesView from "@/components/admin/AdminUpdatesView";
 import AdminUsersView from "@/components/admin/AdminUsersView";
 import { getAdminAccessCheckResult } from "@/lib/adminAccess";
 import { getDevTitle, isTestDbActive } from '@/lib/environmentMode';
-
-type AdminView = "home" | "settings" | "updates" | "users" | "about";
 
 type AdminPageProps = {
   searchParams: Promise<{ view?: string | string[] }>;
@@ -19,18 +18,29 @@ type AdminMetadataProps = {
   searchParams: Promise<{ view?: string | string[] }>;
 };
 
-const adminViews: Array<{ key: AdminView; label: string }> = [
+const adminViews: Array<{ key: string; label: string }> = [
   { key: "home", label: "Home" },
   { key: "settings", label: "Settings" },
+  { key: "database-copy", label: "Database copy" },
   { key: "updates", label: "Updates" },
   { key: "users", label: "Users" },
   { key: "about", label: "About" },
 ];
 
-function getActiveView(view: string | string[] | undefined): AdminView {
+function isAdminView(value: string | undefined): value is (typeof adminViews)[number]["key"] {
+  if (!value) {
+    return false;
+  }
+
+  return adminViews.some((item) => item.key === value);
+}
+
+function getActiveView(
+  view: string | string[] | undefined
+): (typeof adminViews)[number]["key"] {
   const raw = Array.isArray(view) ? view[0] : view;
 
-  if (raw === "settings" || raw === "updates" || raw === "users" || raw === "about") {
+  if (isAdminView(raw)) {
     return raw;
   }
 
@@ -102,6 +112,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           <div className="p-4 sm:p-6">
             {activeView === "home" && <AdminHomeView />}
             {activeView === "settings" && <AdminSettingsView />}
+            {activeView === "database-copy" && <AdminDatabaseCopyView />}
             {activeView === "updates" && <AdminUpdatesView />}
             {activeView === "users" && <AdminUsersView />}
             {activeView === "about" && <AdminAboutView />}
