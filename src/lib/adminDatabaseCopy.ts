@@ -57,8 +57,8 @@ function parseDatabaseTarget(dbUrl: string, envVarName: string): ParsedDatabaseT
   return {
     host: parsed.hostname.toLowerCase(),
     port: parsed.port || "5432",
-    database: parsed.pathname.replace(/^\/+/, "") || "postgres",
-    username: decodeURIComponent(parsed.username || ""),
+    database: parsed.pathname.replace(/^\/+/, "").toLowerCase(),
+    username: decodeURIComponent(parsed.username || "").toLowerCase(),
   };
 }
 
