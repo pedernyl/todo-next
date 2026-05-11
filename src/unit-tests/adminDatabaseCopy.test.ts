@@ -37,57 +37,61 @@ function createProcess(options?: { closeCode?: number; emitError?: Error }) {
 
 describe("adminDatabaseCopy", () => {
   const originalEnv = {
-    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
-    NEXT_PUBLIC_SUPABASE_TEST_URL: process.env.NEXT_PUBLIC_SUPABASE_TEST_URL,
-    SUPABASE_DB_PASSWORD: process.env.SUPABASE_DB_PASSWORD,
-    SUPABASE_TEST_DB_PASSWORD: process.env.SUPABASE_TEST_DB_PASSWORD,
-    SUPABASE_TEST_REF: process.env.SUPABASE_TEST_REF,
+    SUPABASE_PROD_DB_URL: process.env.SUPABASE_PROD_DB_URL,
+    SUPABASE_DB_URL: process.env.SUPABASE_DB_URL,
+    SUPABASE_TEST_DB_URL: process.env.SUPABASE_TEST_DB_URL,
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.NEXT_PUBLIC_SUPABASE_URL = "postgres://prod-db";
-    process.env.NEXT_PUBLIC_SUPABASE_TEST_URL = "postgres://test-db";
-    process.env.SUPABASE_DB_PASSWORD = "prod-password";
-    process.env.SUPABASE_TEST_DB_PASSWORD = "test-password";
-    process.env.SUPABASE_TEST_REF = "test-ref";
+    process.env.SUPABASE_PROD_DB_URL = "postgres://prod-db";
+    process.env.SUPABASE_TEST_DB_URL = "postgres://test-db";
+    delete process.env.SUPABASE_DB_URL;
     spawnMock.mockImplementation(() => createProcess());
   });
 
   afterEach(() => {
-    if (originalEnv.NEXT_PUBLIC_SUPABASE_URL === undefined) delete process.env.NEXT_PUBLIC_SUPABASE_URL;
-    else process.env.NEXT_PUBLIC_SUPABASE_URL = originalEnv.NEXT_PUBLIC_SUPABASE_URL;
+    if (originalEnv.SUPABASE_PROD_DB_URL === undefined) delete process.env.SUPABASE_PROD_DB_URL;
+    else process.env.SUPABASE_PROD_DB_URL = originalEnv.SUPABASE_PROD_DB_URL;
 
-    if (originalEnv.NEXT_PUBLIC_SUPABASE_TEST_URL === undefined) delete process.env.NEXT_PUBLIC_SUPABASE_TEST_URL;
-    else process.env.NEXT_PUBLIC_SUPABASE_TEST_URL = originalEnv.NEXT_PUBLIC_SUPABASE_TEST_URL;
+    if (originalEnv.SUPABASE_DB_URL === undefined) delete process.env.SUPABASE_DB_URL;
+    else process.env.SUPABASE_DB_URL = originalEnv.SUPABASE_DB_URL;
 
-    if (originalEnv.SUPABASE_DB_PASSWORD === undefined) delete process.env.SUPABASE_DB_PASSWORD;
-    else process.env.SUPABASE_DB_PASSWORD = originalEnv.SUPABASE_DB_PASSWORD;
-
-    if (originalEnv.SUPABASE_TEST_DB_PASSWORD === undefined) delete process.env.SUPABASE_TEST_DB_PASSWORD;
-    else process.env.SUPABASE_TEST_DB_PASSWORD = originalEnv.SUPABASE_TEST_DB_PASSWORD;
-
-    if (originalEnv.SUPABASE_TEST_REF === undefined) delete process.env.SUPABASE_TEST_REF;
-    else process.env.SUPABASE_TEST_REF = originalEnv.SUPABASE_TEST_REF;
+    if (originalEnv.SUPABASE_TEST_DB_URL === undefined) delete process.env.SUPABASE_TEST_DB_URL;
+    else process.env.SUPABASE_TEST_DB_URL = originalEnv.SUPABASE_TEST_DB_URL;
   });
 
   it("reports missing variables when test db url is absent", () => {
-    delete process.env.NEXT_PUBLIC_SUPABASE_TEST_URL;
+    delete process.env.SUPABASE_TEST_DB_URL;
 
     expect(getDatabaseCopyAvailability()).toEqual({
       available: false,
-      missingVariables: ["NEXT_PUBLIC_SUPABASE_TEST_URL"],
+      missingVariables: ["SUPABASE_TEST_DB_URL"],
     });
   });
 
-  it("reports missing password variables when absent", () => {
-    delete process.env.SUPABASE_DB_PASSWORD;
-    delete process.env.SUPABASE_TEST_DB_PASSWORD;
+  it("reports missing production db url variables when absent", () => {
+    delete process.env.SUPABASE_PROD_DB_URL;
+    delete process.env.SUPABASE_DB_URL;
 
     expect(getDatabaseCopyAvailability()).toEqual({
       available: false,
-      missingVariables: ["SUPABASE_DB_PASSWORD", "SUPABASE_TEST_DB_PASSWORD"],
+      missingVariables: ["SUPABASE_PROD_DB_URL or SUPABASE_DB_URL"],
     });
+  });
+
+  it("accepts legacy SUPABASE_DB_URL as production source", async () => {
+    delete process.env.SUPABASE_PROD_DB_URL;
+    process.env.SUPABASE_DB_URL = "postgres://prod-db-fallback";
+
+    await copyProductionDatabaseToTest("overwrite");
+
+    expect(spawnMock).toHaveBeenNthCalledWith(
+      1,
+      "pg_dump",
+      expect.arrayContaining(["--clean", "--if-exists", "--dbname", "postgres://prod-db-fallback"]),
+      { stdio: ["ignore", "pipe", "pipe"] }
+    );
   });
 
   it("runs overwrite copy with clean restore arguments", async () => {
@@ -163,34 +167,4 @@ describe("adminDatabaseCopy", () => {
     );
   });
 
-  it("converts Supabase URLs to Postgres URLs for copy commands", async () => {
-    process.env.NEXT_PUBLIC_SUPABASE_URL = "https://prodproj.supabase.co";
-    process.env.NEXT_PUBLIC_SUPABASE_TEST_URL = "https://testproj.supabase.co";
-    process.env.SUPABASE_DB_PASSWORD = "prod pass";
-    process.env.SUPABASE_TEST_DB_PASSWORD = "test pass";
-    delete process.env.SUPABASE_TEST_REF;
-
-    await copyProductionDatabaseToTest("overwrite");
-
-    expect(spawnMock).toHaveBeenNthCalledWith(
-      1,
-      "pg_dump",
-      expect.arrayContaining([
-        "--dbname",
-        "postgresql://postgres:prod%20pass@db.prodproj.supabase.co:5432/postgres?sslmode=require",
-      ]),
-      { stdio: ["ignore", "pipe", "pipe"] }
-    );
-    expect(spawnMock).toHaveBeenNthCalledWith(
-      2,
-      "psql",
-      [
-        "--dbname",
-        "postgresql://postgres:test%20pass@db.testproj.supabase.co:5432/postgres?sslmode=require",
-        "-v",
-        "ON_ERROR_STOP=1",
-      ],
-      { stdio: ["pipe", "pipe", "pipe"] }
-    );
-  });
 });

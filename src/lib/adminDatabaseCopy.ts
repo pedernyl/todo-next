@@ -7,93 +7,22 @@ type CopyAvailability = {
   missingVariables: string[];
 };
 
-function isPostgresConnectionString(value: string): boolean {
-  return value.startsWith("postgres://") || value.startsWith("postgresql://");
-}
-
-function getSupabaseRefFromUrl(urlValue: string): string | undefined {
-  try {
-    const host = new URL(urlValue).hostname;
-    if (!host.endsWith(".supabase.co")) {
-      return undefined;
-    }
-
-    const [projectRef] = host.split(".");
-    return projectRef || undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-function toPostgresConnectionString(urlValue: string, password: string, refOverride?: string): string {
-  if (isPostgresConnectionString(urlValue)) {
-    return urlValue;
-  }
-
-  const projectRef = refOverride ?? getSupabaseRefFromUrl(urlValue);
-  if (!projectRef) {
-    throw new Error(
-      "Could not derive Supabase project ref from URL. Use a postgres:// URL or set SUPABASE_TEST_REF."
-    );
-  }
-
-  return `postgresql://postgres:${encodeURIComponent(password)}@db.${projectRef}.supabase.co:5432/postgres?sslmode=require`;
-}
-
 function getProdDbUrl(): string | undefined {
-  const prodUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-
-  if (!prodUrl) {
-    return undefined;
-  }
-
-  if (isPostgresConnectionString(prodUrl)) {
-    return prodUrl;
-  }
-
-  const prodPassword = process.env.SUPABASE_DB_PASSWORD;
-  if (!prodPassword) {
-    return undefined;
-  }
-
-  return toPostgresConnectionString(prodUrl, prodPassword);
+  return process.env.SUPABASE_PROD_DB_URL ?? process.env.SUPABASE_DB_URL;
 }
 
 function getTestDbUrl(): string | undefined {
-  const testUrl = process.env.NEXT_PUBLIC_SUPABASE_TEST_URL;
-  const testRef = process.env.SUPABASE_TEST_REF;
-
-  if (!testUrl) {
-    return undefined;
-  }
-
-  if (isPostgresConnectionString(testUrl)) {
-    return testUrl;
-  }
-
-  const testPassword = process.env.SUPABASE_TEST_DB_PASSWORD;
-  if (!testPassword) {
-    return undefined;
-  }
-
-  return toPostgresConnectionString(testUrl, testPassword, testRef);
+  return process.env.SUPABASE_TEST_DB_URL;
 }
 
 export function getDatabaseCopyAvailability(): CopyAvailability {
   const missingVariables: string[] = [];
-  const prodUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const testUrl = process.env.NEXT_PUBLIC_SUPABASE_TEST_URL;
 
-  if (!prodUrl) {
-    missingVariables.push("NEXT_PUBLIC_SUPABASE_URL");
-  } else if (!isPostgresConnectionString(prodUrl) && !process.env.SUPABASE_DB_PASSWORD) {
-    missingVariables.push("SUPABASE_DB_PASSWORD");
+  if (!process.env.SUPABASE_PROD_DB_URL && !process.env.SUPABASE_DB_URL) {
+    missingVariables.push("SUPABASE_PROD_DB_URL or SUPABASE_DB_URL");
   }
-
-  if (!testUrl) {
-    missingVariables.push("NEXT_PUBLIC_SUPABASE_TEST_URL");
-  } else if (!isPostgresConnectionString(testUrl) && !process.env.SUPABASE_TEST_DB_PASSWORD) {
-    missingVariables.push("SUPABASE_TEST_DB_PASSWORD");
+  if (!process.env.SUPABASE_TEST_DB_URL) {
+    missingVariables.push("SUPABASE_TEST_DB_URL");
   }
 
   return {
