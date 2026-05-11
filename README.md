@@ -76,6 +76,11 @@ In Admin, open **Database copy** to run a server-side copy from production DB to
 - **Overwrite**: replaces test DB schema/data from production.
 - **Append**: applies production schema and inserts production rows where possible without truncating test data.
 
+Requirements / platform notes:
+- The Next.js server running this admin flow must have the PostgreSQL client tools `pg_dump` and `psql` installed and available on `PATH`.
+- This feature is intended for local development or self-hosted Node.js environments where the server can spawn those binaries.
+- It may not work on hosted/serverless platforms (including typical Vercel deployments) that do not provide Postgres client tools or do not allow this kind of shell access.
+
 This action is only enabled when `SUPABASE_TEST_DB_URL` and the production DB URL variable are present.
 
 Note: `npm run build --testDb` and `npm run dev --testDb` are interpreted by npm as npm-config flags and may show npm warnings in current npm versions. The app now still switches to test DB in that case, but `npm run build -- --testDb` (or the `:testDb` scripts above) is recommended.
