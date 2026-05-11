@@ -7,11 +7,12 @@ type CopyAvailability = {
   missingVariables: string[];
 };
 
-type ParsedDatabaseTarget = {
+type DatabaseTarget = {
   host: string;
   port: string;
   database: string;
   username: string;
+  password: string;
 };
 
 function parseProjectRefFromSupabaseUrl(urlValue: string, envVarName: string): string {
@@ -47,11 +48,17 @@ function parseProjectRefFromSupabaseUrl(urlValue: string, envVarName: string): s
   return projectRef;
 }
 
-function buildSupabasePostgresUrl(projectRef: string, password: string): string {
-  return `postgresql://postgres:${encodeURIComponent(password)}@db.${projectRef}.supabase.co:5432/postgres`;
+function buildSupabaseDatabaseTarget(projectRef: string, password: string): DatabaseTarget {
+  return {
+    host: `db.${projectRef}.supabase.co`,
+    port: "5432",
+    database: "postgres",
+    username: "postgres",
+    password,
+  };
 }
 
-function getProdDbUrl(): string | undefined {
+function getProdDbTarget(): DatabaseTarget | undefined {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const dbPassword = process.env.SUPABASE_DB_PASSWORD;
 
@@ -60,17 +67,17 @@ function getProdDbUrl(): string | undefined {
   }
 
   const projectRef = parseProjectRefFromSupabaseUrl(supabaseUrl, "NEXT_PUBLIC_SUPABASE_URL");
-  return buildSupabasePostgresUrl(projectRef, dbPassword);
+  return buildSupabaseDatabaseTarget(projectRef, dbPassword);
 }
 
-function getTestDbUrl(): string | undefined {
+function getTestDbTarget(): DatabaseTarget | undefined {
   const dbPassword = process.env.SUPABASE_TEST_DB_PASSWORD;
   if (!dbPassword) {
     return undefined;
   }
 
   if (process.env.SUPABASE_TEST_REF) {
-    return buildSupabasePostgresUrl(process.env.SUPABASE_TEST_REF.toLowerCase(), dbPassword);
+    return buildSupabaseDatabaseTarget(process.env.SUPABASE_TEST_REF.toLowerCase(), dbPassword);
   }
 
   const testSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_TEST_URL;
@@ -82,7 +89,7 @@ function getTestDbUrl(): string | undefined {
     testSupabaseUrl,
     "NEXT_PUBLIC_SUPABASE_TEST_URL"
   );
-  return buildSupabasePostgresUrl(projectRef, dbPassword);
+  return buildSupabaseDatabaseTarget(projectRef, dbPassword);
 }
 
 export function getDatabaseCopyAvailability(): CopyAvailability {
@@ -108,36 +115,30 @@ export function getDatabaseCopyAvailability(): CopyAvailability {
   };
 }
 
-function parseDatabaseTarget(dbUrl: string, envVarName: string): ParsedDatabaseTarget {
-  let parsed: URL;
-  try {
-    parsed = new URL(dbUrl);
-  } catch {
-    throw new Error(
-      `Invalid ${envVarName}. Use a valid postgres:// or postgresql:// connection string.`
-    );
-  }
+function buildPgConnectionArgs(target: DatabaseTarget): string[] {
+  return [
+    "--host",
+    target.host,
+    "--port",
+    target.port,
+    "--username",
+    target.username,
+    "--dbname",
+    target.database,
+  ];
+}
 
-  if (parsed.protocol !== "postgres:" && parsed.protocol !== "postgresql:") {
-    throw new Error(
-      `Invalid ${envVarName}. Use a valid postgres:// or postgresql:// connection string.`
-    );
-  }
-
+function buildPgEnv(password: string): NodeJS.ProcessEnv {
   return {
-    host: parsed.hostname.toLowerCase(),
-    port: parsed.port || "5432",
-    database: parsed.pathname.replace(/^\/+/, "").toLowerCase(),
-    username: decodeURIComponent(parsed.username || "").toLowerCase(),
+    ...process.env,
+    PGPASSWORD: password,
+    PGSSLMODE: "require",
   };
 }
 
-function ensureDistinctDatabaseTargets(prodDbUrl: string, testDbUrl: string): void {
-  const prodTarget = parseDatabaseTarget(prodDbUrl, "production database connection");
-  const testTarget = parseDatabaseTarget(testDbUrl, "test database connection");
-
-  const prodIdentity = `${prodTarget.username}@${prodTarget.host}:${prodTarget.port}/${prodTarget.database}`;
-  const testIdentity = `${testTarget.username}@${testTarget.host}:${testTarget.port}/${testTarget.database}`;
+function ensureDistinctDatabaseTargets(prodTarget: DatabaseTarget, testTarget: DatabaseTarget): void {
+  const prodIdentity = `${prodTarget.username.toLowerCase()}@${prodTarget.host.toLowerCase()}:${prodTarget.port}/${prodTarget.database.toLowerCase()}`;
+  const testIdentity = `${testTarget.username.toLowerCase()}@${testTarget.host.toLowerCase()}:${testTarget.port}/${testTarget.database.toLowerCase()}`;
 
   if (prodIdentity === testIdentity) {
     throw new Error(
@@ -148,11 +149,19 @@ function ensureDistinctDatabaseTargets(prodDbUrl: string, testDbUrl: string): vo
 
 function runDumpRestorePipeline(
   dumpArgs: string[],
-  restoreArgs: string[]
+  restoreArgs: string[],
+  dumpEnv: NodeJS.ProcessEnv,
+  restoreEnv: NodeJS.ProcessEnv
 ): Promise<void> {
   return new Promise((resolve, reject) => {
-    const dumper = spawn("pg_dump", dumpArgs, { stdio: ["ignore", "pipe", "pipe"] });
-    const restorer = spawn("psql", restoreArgs, { stdio: ["pipe", "pipe", "pipe"] });
+    const dumper = spawn("pg_dump", dumpArgs, {
+      stdio: ["ignore", "pipe", "pipe"],
+      env: dumpEnv,
+    });
+    const restorer = spawn("psql", restoreArgs, {
+      stdio: ["pipe", "pipe", "pipe"],
+      env: restoreEnv,
+    });
 
     dumper.stdout.pipe(restorer.stdin);
 
@@ -225,9 +234,9 @@ function runDumpRestorePipeline(
   });
 }
 
-function runPsqlCommand(args: string[]): Promise<void> {
+function runPsqlCommand(args: string[], env: NodeJS.ProcessEnv): Promise<void> {
   return new Promise((resolve, reject) => {
-    const proc = spawn("psql", args, { stdio: ["ignore", "pipe", "pipe"] });
+    const proc = spawn("psql", args, { stdio: ["ignore", "pipe", "pipe"], env });
     let stderr = "";
     let settled = false;
 
@@ -270,7 +279,7 @@ function runPsqlCommand(args: string[]): Promise<void> {
   });
 }
 
-async function applySupabasePublicSchemaGrants(dbUrl: string): Promise<void> {
+async function applySupabasePublicSchemaGrants(target: DatabaseTarget): Promise<void> {
   const grantSql = [
     "GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;",
     "GRANT SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;",
@@ -278,21 +287,24 @@ async function applySupabasePublicSchemaGrants(dbUrl: string): Promise<void> {
     "GRANT EXECUTE ON ALL ROUTINES IN SCHEMA public TO anon, authenticated, service_role;",
   ].join(" ");
 
-  await runPsqlCommand(["--dbname", dbUrl, "-v", "ON_ERROR_STOP=1", "-c", grantSql]);
+  await runPsqlCommand(
+    [...buildPgConnectionArgs(target), "-v", "ON_ERROR_STOP=1", "-c", grantSql],
+    buildPgEnv(target.password)
+  );
 }
 
 export async function copyProductionDatabaseToTest(mode: DatabaseCopyMode): Promise<void> {
-  const prodDbUrl = getProdDbUrl();
-  const testDbUrl = getTestDbUrl();
+  const prodDbTarget = getProdDbTarget();
+  const testDbTarget = getTestDbTarget();
   const availability = getDatabaseCopyAvailability();
 
-  if (!prodDbUrl || !testDbUrl || !availability.available) {
+  if (!prodDbTarget || !testDbTarget || !availability.available) {
     throw new Error(
       `Database copy is not available. Missing variables: ${availability.missingVariables.join(", ")}`
     );
   }
 
-  ensureDistinctDatabaseTargets(prodDbUrl, testDbUrl);
+  ensureDistinctDatabaseTargets(prodDbTarget, testDbTarget);
 
   if (mode === "overwrite") {
     await runDumpRestorePipeline(
@@ -303,12 +315,13 @@ export async function copyProductionDatabaseToTest(mode: DatabaseCopyMode): Prom
         "--no-acl",
         "--clean",
         "--if-exists",
-        "--dbname",
-        prodDbUrl,
+        ...buildPgConnectionArgs(prodDbTarget),
       ],
-      ["--dbname", testDbUrl, "-v", "ON_ERROR_STOP=1"]
+      [...buildPgConnectionArgs(testDbTarget), "-v", "ON_ERROR_STOP=1"],
+      buildPgEnv(prodDbTarget.password),
+      buildPgEnv(testDbTarget.password)
     );
-    await applySupabasePublicSchemaGrants(testDbUrl);
+    await applySupabasePublicSchemaGrants(testDbTarget);
     return;
   }
 
@@ -319,10 +332,11 @@ export async function copyProductionDatabaseToTest(mode: DatabaseCopyMode): Prom
       "public",
       "--no-owner",
       "--no-acl",
-      "--dbname",
-      prodDbUrl,
+      ...buildPgConnectionArgs(prodDbTarget),
     ],
-    ["--dbname", testDbUrl, "-v", "ON_ERROR_STOP=0"]
+    [...buildPgConnectionArgs(testDbTarget), "-v", "ON_ERROR_STOP=0"],
+    buildPgEnv(prodDbTarget.password),
+    buildPgEnv(testDbTarget.password)
   );
 
   await runDumpRestorePipeline(
@@ -335,11 +349,12 @@ export async function copyProductionDatabaseToTest(mode: DatabaseCopyMode): Prom
       "--on-conflict-do-nothing",
       "--no-owner",
       "--no-acl",
-      "--dbname",
-      prodDbUrl,
+      ...buildPgConnectionArgs(prodDbTarget),
     ],
-    ["--dbname", testDbUrl, "-v", "ON_ERROR_STOP=1"]
+    [...buildPgConnectionArgs(testDbTarget), "-v", "ON_ERROR_STOP=1"],
+    buildPgEnv(prodDbTarget.password),
+    buildPgEnv(testDbTarget.password)
   );
 
-  await applySupabasePublicSchemaGrants(testDbUrl);
+  await applySupabasePublicSchemaGrants(testDbTarget);
 }

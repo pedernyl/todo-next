@@ -101,21 +101,58 @@ describe("adminDatabaseCopy", () => {
     const overwriteDumpArgs = spawnMock.mock.calls[0]?.[1] as string[];
     expect(overwriteDumpArgs).toEqual(expect.arrayContaining(["--schema", "public"]));
 
-    const expectedProdDbUrl = "postgresql://postgres:prod-password@db.prod-ref.supabase.co:5432/postgres";
-    const expectedTestDbUrl = "postgresql://postgres:test-password@db.test-ref.supabase.co:5432/postgres";
-
     expect(spawnMock).toHaveBeenNthCalledWith(
       1,
       "pg_dump",
-      expect.arrayContaining(["--clean", "--if-exists", "--dbname", expectedProdDbUrl]),
-      { stdio: ["ignore", "pipe", "pipe"] }
+      expect.arrayContaining([
+        "--clean",
+        "--if-exists",
+        "--host",
+        "db.prod-ref.supabase.co",
+        "--port",
+        "5432",
+        "--username",
+        "postgres",
+        "--dbname",
+        "postgres",
+      ]),
+      {
+        stdio: ["ignore", "pipe", "pipe"],
+        env: expect.objectContaining({
+          PGPASSWORD: "prod-password",
+          PGSSLMODE: "require",
+        }),
+      }
     );
     expect(spawnMock).toHaveBeenNthCalledWith(
       2,
       "psql",
-      ["--dbname", expectedTestDbUrl, "-v", "ON_ERROR_STOP=1"],
-      { stdio: ["pipe", "pipe", "pipe"] }
+      [
+        "--host",
+        "db.test-ref.supabase.co",
+        "--port",
+        "5432",
+        "--username",
+        "postgres",
+        "--dbname",
+        "postgres",
+        "-v",
+        "ON_ERROR_STOP=1",
+      ],
+      {
+        stdio: ["pipe", "pipe", "pipe"],
+        env: expect.objectContaining({
+          PGPASSWORD: "test-password",
+          PGSSLMODE: "require",
+        }),
+      }
     );
+
+    const allSpawnArgText = spawnMock.mock.calls
+      .map(([, args]) => (args as string[]).join(" "))
+      .join(" ");
+    expect(allSpawnArgText).not.toContain("prod-password");
+    expect(allSpawnArgText).not.toContain("test-password");
   });
 
   it("runs append copy with schema and data phases", async () => {
@@ -127,33 +164,103 @@ describe("adminDatabaseCopy", () => {
     const appendDataDumpArgs = spawnMock.mock.calls[2]?.[1] as string[];
     expect(appendDataDumpArgs).toEqual(expect.arrayContaining(["--schema", "public"]));
 
-    const expectedProdDbUrl = "postgresql://postgres:prod-password@db.prod-ref.supabase.co:5432/postgres";
-    const expectedTestDbUrl = "postgresql://postgres:test-password@db.test-ref.supabase.co:5432/postgres";
-
     expect(spawnMock).toHaveBeenNthCalledWith(
       1,
       "pg_dump",
-      expect.arrayContaining(["--schema-only", "--dbname", expectedProdDbUrl]),
-      { stdio: ["ignore", "pipe", "pipe"] }
+      expect.arrayContaining([
+        "--schema-only",
+        "--host",
+        "db.prod-ref.supabase.co",
+        "--port",
+        "5432",
+        "--username",
+        "postgres",
+        "--dbname",
+        "postgres",
+      ]),
+      {
+        stdio: ["ignore", "pipe", "pipe"],
+        env: expect.objectContaining({
+          PGPASSWORD: "prod-password",
+          PGSSLMODE: "require",
+        }),
+      }
     );
     expect(spawnMock).toHaveBeenNthCalledWith(
       2,
       "psql",
-      ["--dbname", expectedTestDbUrl, "-v", "ON_ERROR_STOP=0"],
-      { stdio: ["pipe", "pipe", "pipe"] }
+      [
+        "--host",
+        "db.test-ref.supabase.co",
+        "--port",
+        "5432",
+        "--username",
+        "postgres",
+        "--dbname",
+        "postgres",
+        "-v",
+        "ON_ERROR_STOP=0",
+      ],
+      {
+        stdio: ["pipe", "pipe", "pipe"],
+        env: expect.objectContaining({
+          PGPASSWORD: "test-password",
+          PGSSLMODE: "require",
+        }),
+      }
     );
     expect(spawnMock).toHaveBeenNthCalledWith(
       3,
       "pg_dump",
-      expect.arrayContaining(["--data-only", "--on-conflict-do-nothing", "--dbname", expectedProdDbUrl]),
-      { stdio: ["ignore", "pipe", "pipe"] }
+      expect.arrayContaining([
+        "--data-only",
+        "--on-conflict-do-nothing",
+        "--host",
+        "db.prod-ref.supabase.co",
+        "--port",
+        "5432",
+        "--username",
+        "postgres",
+        "--dbname",
+        "postgres",
+      ]),
+      {
+        stdio: ["ignore", "pipe", "pipe"],
+        env: expect.objectContaining({
+          PGPASSWORD: "prod-password",
+          PGSSLMODE: "require",
+        }),
+      }
     );
     expect(spawnMock).toHaveBeenNthCalledWith(
       4,
       "psql",
-      ["--dbname", expectedTestDbUrl, "-v", "ON_ERROR_STOP=1"],
-      { stdio: ["pipe", "pipe", "pipe"] }
+      [
+        "--host",
+        "db.test-ref.supabase.co",
+        "--port",
+        "5432",
+        "--username",
+        "postgres",
+        "--dbname",
+        "postgres",
+        "-v",
+        "ON_ERROR_STOP=1",
+      ],
+      {
+        stdio: ["pipe", "pipe", "pipe"],
+        env: expect.objectContaining({
+          PGPASSWORD: "test-password",
+          PGSSLMODE: "require",
+        }),
+      }
     );
+
+    const allSpawnArgText = spawnMock.mock.calls
+      .map(([, args]) => (args as string[]).join(" "))
+      .join(" ");
+    expect(allSpawnArgText).not.toContain("prod-password");
+    expect(allSpawnArgText).not.toContain("test-password");
   });
 
   it("uses NEXT_PUBLIC_SUPABASE_TEST_URL when SUPABASE_TEST_REF is missing", async () => {
@@ -164,8 +271,25 @@ describe("adminDatabaseCopy", () => {
     expect(spawnMock).toHaveBeenNthCalledWith(
       2,
       "psql",
-      ["--dbname", "postgresql://postgres:test-password@db.test-ref.supabase.co:5432/postgres", "-v", "ON_ERROR_STOP=1"],
-      { stdio: ["pipe", "pipe", "pipe"] }
+      [
+        "--host",
+        "db.test-ref.supabase.co",
+        "--port",
+        "5432",
+        "--username",
+        "postgres",
+        "--dbname",
+        "postgres",
+        "-v",
+        "ON_ERROR_STOP=1",
+      ],
+      {
+        stdio: ["pipe", "pipe", "pipe"],
+        env: expect.objectContaining({
+          PGPASSWORD: "test-password",
+          PGSSLMODE: "require",
+        }),
+      }
     );
   });
 
