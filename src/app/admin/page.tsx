@@ -10,8 +10,6 @@ import AdminUsersView from "@/components/admin/AdminUsersView";
 import { getAdminAccessCheckResult } from "@/lib/adminAccess";
 import { getDevTitle, isTestDbActive } from '@/lib/environmentMode';
 
-type AdminView = "home" | "settings" | "database-copy" | "updates" | "users" | "about";
-
 type AdminPageProps = {
   searchParams: Promise<{ view?: string | string[] }>;
 };
@@ -20,7 +18,7 @@ type AdminMetadataProps = {
   searchParams: Promise<{ view?: string | string[] }>;
 };
 
-const adminViews: Array<{ key: AdminView; label: string }> = [
+const adminViews: Array<{ key: string; label: string }> = [
   { key: "home", label: "Home" },
   { key: "settings", label: "Settings" },
   { key: "database-copy", label: "Database copy" },
@@ -29,7 +27,7 @@ const adminViews: Array<{ key: AdminView; label: string }> = [
   { key: "about", label: "About" },
 ];
 
-function isAdminView(value: string | undefined): value is AdminView {
+function isAdminView(value: string | undefined): boolean {
   if (!value) {
     return false;
   }
@@ -37,7 +35,7 @@ function isAdminView(value: string | undefined): value is AdminView {
   return adminViews.some((item) => item.key === value);
 }
 
-function getActiveView(view: string | string[] | undefined): AdminView {
+function getActiveView(view: string | string[] | undefined): string {
   const raw = Array.isArray(view) ? view[0] : view;
 
   if (isAdminView(raw)) {
