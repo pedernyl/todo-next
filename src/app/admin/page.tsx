@@ -29,10 +29,22 @@ const adminViews: Array<{ key: AdminView; label: string }> = [
   { key: "about", label: "About" },
 ];
 
+const navigableAdminViews: AdminView[] = adminViews
+  .map((item) => item.key)
+  .filter((key): key is Exclude<AdminView, "home"> => key !== "home");
+
+function isNavigableAdminView(value: string | undefined): value is Exclude<AdminView, "home"> {
+  if (!value) {
+    return false;
+  }
+
+  return navigableAdminViews.includes(value as Exclude<AdminView, "home">);
+}
+
 function getActiveView(view: string | string[] | undefined): AdminView {
   const raw = Array.isArray(view) ? view[0] : view;
 
-  if (raw === "settings" || raw === "database-copy" || raw === "updates" || raw === "users" || raw === "about") {
+  if (isNavigableAdminView(raw)) {
     return raw;
   }
 
