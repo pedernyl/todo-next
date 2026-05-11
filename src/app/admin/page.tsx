@@ -29,7 +29,7 @@ const adminViews: Array<{ key: AdminView; label: string }> = [
   { key: "about", label: "About" },
 ];
 
-function isNavigableAdminView(value: string | undefined): value is AdminView {
+function isAdminView(value: string | undefined): value is AdminView {
   if (!value) {
     return false;
   }
@@ -40,7 +40,7 @@ function isNavigableAdminView(value: string | undefined): value is AdminView {
 function getActiveView(view: string | string[] | undefined): AdminView {
   const raw = Array.isArray(view) ? view[0] : view;
 
-  if (isNavigableAdminView(raw)) {
+  if (isAdminView(raw)) {
     return raw;
   }
 
