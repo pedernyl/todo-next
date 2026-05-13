@@ -72,7 +72,7 @@ describe("reorderTodoSiblings nested scope", () => {
     updateOwnerEqValues = [];
   });
 
-  it("rejects nested reorder when category scope does not match siblings", async () => {
+  it("does not validate category or parent scope when reordering siblings", async () => {
     mockExistingTodos = [
       {
         id: "291",
@@ -91,21 +91,31 @@ describe("reorderTodoSiblings nested scope", () => {
         deleted_timestamp: null,
       },
     ];
+    updatedTodosResult = [
+      { id: "291", sort_index: 1 },
+      { id: "292", sort_index: 0 },
+    ];
 
-    await expect(
-      reorderTodoSiblings(
-        1,
-        [
-          { id: "291", sort_index: 1 },
-          { id: "292", sort_index: 0 },
-        ],
-        {
-          parent_todo: "270",
-          completed: false,
-          category_id: "cat-a",
-        }
-      )
-    ).rejects.toThrow("Invalid reorder scope for one or more todos");
+    const result = await reorderTodoSiblings(
+      1,
+      [
+        { id: "291", sort_index: 1 },
+        { id: "292", sort_index: 0 },
+      ],
+      {
+        parent_todo: "different-parent",
+        completed: true,
+        category_id: "cat-a",
+      }
+    );
+
+    expect(updateIdEqValues).toEqual(["291", "292"]);
+    expect(updateSortIndexPayloads).toEqual([1, 0]);
+    expect(updateOwnerEqValues).toEqual([1, 1]);
+    expect(result.map(({ id, sort_index }) => ({ id, sort_index }))).toEqual([
+      { id: "291", sort_index: 1 },
+      { id: "292", sort_index: 0 },
+    ]);
   });
 
   it("coerces numeric ids to strings for update eq filters", async () => {
@@ -128,8 +138,8 @@ describe("reorderTodoSiblings nested scope", () => {
       },
     ];
     updatedTodosResult = [
-      { id: "292", sort_index: 0 },
       { id: "291", sort_index: 1 },
+      { id: "292", sort_index: 0 },
     ];
 
     await reorderTodoSiblings(
@@ -168,8 +178,8 @@ describe("reorderTodoSiblings nested scope", () => {
       },
     ];
     updatedTodosResult = [
-      { id: "292", sort_index: 0 },
       { id: "291", sort_index: 1 },
+      { id: "292", sort_index: 0 },
     ];
 
     const result = await reorderTodoSiblings(

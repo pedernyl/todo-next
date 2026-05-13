@@ -26,7 +26,7 @@ describe("applyHierarchicalTodoLimit", () => {
 
     const limited = applyHierarchicalTodoLimit(todos, 10);
 
-    expect(limited.map((t) => t.id)).toEqual(["1", "3", "2"]);
+    expect(limited.map((t) => t.id)).toEqual(["2", "1", "3"]);
   });
 
   it("counts parent and children toward the same limit", () => {
@@ -41,7 +41,7 @@ describe("applyHierarchicalTodoLimit", () => {
 
     const limited = applyHierarchicalTodoLimit(todos, 5);
 
-    expect(limited.map((t) => t.id)).toEqual(["100", "101", "102", "103", "104"]);
+    expect(limited.map((t) => t.id)).toEqual(["100", "105", "104", "103", "102"]);
   });
 
   it("does not return orphan roots before available roots", () => {

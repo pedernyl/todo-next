@@ -118,24 +118,23 @@ describe("New top-level todo sorts at the top", () => {
     }
   });
 
-  it("creates a top-level todo with sort_index 0 (ensuring it sorts first)", () => {
+  it("creates a top-level todo with the first descending gap-based sort_index", () => {
     expect(insertedTodo).toBeTruthy();
     expect(insertedTodo?.title).toBe("NewSort_toplevel");
     expect(insertedTodo?.parent_todo).toBeNull();
-    expect(insertedTodo?.sort_index).toBe(0);
+    expect(insertedTodo?.sort_index).toBe(1000);
   });
 
   it("new top-level todo appears first in the fetched list", () => {
     expect(insertedTodo).toBeTruthy();
     expect(fetchedTodos.length).toBeGreaterThan(0);
-    // Verify that the new todo has sort_index 0 (first position)
     const topLevelTodos = fetchedTodos.filter(
       (todo) => todo.parent_todo === null && todo.category_id === null
     );
     expect(topLevelTodos.length).toBeGreaterThan(0);
-    // Find the todo with minimum sort_index - should be our newly created one
-    const minSortIndex = Math.min(...topLevelTodos.map(t => t.sort_index ?? Number.MAX_SAFE_INTEGER));
-    expect(insertedTodo?.sort_index).toBe(minSortIndex);
+    expect(topLevelTodos[0]?.id).toBe(insertedTodo?.id);
+    const maxSortIndex = Math.max(...topLevelTodos.map(t => t.sort_index ?? Number.MIN_SAFE_INTEGER));
+    expect(insertedTodo?.sort_index).toBe(maxSortIndex);
   });
 });
 
@@ -250,10 +249,17 @@ describe("New subtodo sorts at the top of the parent subtodo list", () => {
     ]);
   });
 
-  it("new subtodo appears first in the parent's subtodo list", () => {
+  it("new subtodo gets the next owner-wide gap-based sort_index and appears first", () => {
     expect(newSubtodo).toBeTruthy();
-    // Verify that the new subtodo was created with sort_index 0 (first position)
-    expect(newSubtodo?.sort_index).toBe(0);
+    expect(newSubtodo?.sort_index).toBeGreaterThan(
+      Math.max(
+        parentTodo?.sort_index ?? Number.MIN_SAFE_INTEGER,
+        ...existingSubtodos.map((todo) => todo.sort_index ?? Number.MIN_SAFE_INTEGER)
+      )
+    );
+    expect((newSubtodo?.sort_index ?? 0) % 1000).toBe(0);
+    const priorMax = Math.max(...existingSubtodos.map((todo) => todo.sort_index ?? Number.MIN_SAFE_INTEGER));
+    expect(newSubtodo?.sort_index).toBeGreaterThan(priorMax);
   });
 });
 
@@ -445,15 +451,27 @@ describe("New todo in category and new subtodo each sort at the top", () => {
     expect(allSubtodos).toHaveLength(25);
   });
 
-  it("new todo in category appears first in the category list", () => {
+  it("new todo in category gets the next owner-wide gap-based sort_index", () => {
     expect(newCategoryTodo).toBeTruthy();
-    // Verify that the new todo was created with sort_index 0 (first position)
-    expect(newCategoryTodo?.sort_index).toBe(0);
+    expect(newCategoryTodo?.sort_index).toBeGreaterThan(
+      Math.max(
+        ...categoryTodos.map((todo) => todo.sort_index ?? Number.MIN_SAFE_INTEGER),
+        ...allSubtodos.map((todo) => todo.sort_index ?? Number.MIN_SAFE_INTEGER)
+      )
+    );
+    expect((newCategoryTodo?.sort_index ?? 0) % 1000).toBe(0);
+    expect(fetchedCategoryTodos[0]?.id).toBe(newCategoryTodo?.id);
   });
 
-  it("new subtodo appears first in the chosen parent's subtodo list", () => {
+  it("new subtodo under the chosen parent gets the next owner-wide gap-based sort_index", () => {
     expect(newSubtodo).toBeTruthy();
-    // Verify that the new subtodo was created with sort_index 0 (first position)
-    expect(newSubtodo?.sort_index).toBe(0);
+    expect(newSubtodo?.sort_index).toBeGreaterThan(
+      Math.max(
+        newCategoryTodo?.sort_index ?? Number.MIN_SAFE_INTEGER,
+        ...categoryTodos.map((todo) => todo.sort_index ?? Number.MIN_SAFE_INTEGER),
+        ...allSubtodos.map((todo) => todo.sort_index ?? Number.MIN_SAFE_INTEGER)
+      )
+    );
+    expect((newSubtodo?.sort_index ?? 0) % 1000).toBe(0);
   });
 });
