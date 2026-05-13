@@ -210,7 +210,7 @@ function computeSiblingReorder(
   if (movedParent !== targetParent) return null;
   if (Boolean(movedTodo.completed) !== Boolean(targetTodo.completed)) return null;
 
-  const siblings = todos
+  const siblings = allTodosFromTree
     .filter((todo) => {
       if ((normalizeTodoId(todo.parent_todo) || null) !== movedParent) return false;
       if (typeof categoryId !== "undefined") {
@@ -232,16 +232,86 @@ function computeSiblingReorder(
 
   const reorderedSiblings = arrayMove(siblings, fromIndex, insertionIndex);
 
-  const updates = reorderedSiblings.map((todo, index) => ({
-    id: normalizeTodoId(todo.id),
-    sort_index: index,
-  }));
+  const reorderedMovedTodo = reorderedSiblings.find((todo) => normalizeTodoId(todo.id) === movedId);
+  if (!reorderedMovedTodo) return null;
 
-  const updatesMap = new Map(updates.map((item) => [item.id, item.sort_index]));
+  const globalOrder = [...allTodosFromTree].sort(compareTodoOrder);
+  const globalFromIndex = globalOrder.findIndex((todo) => normalizeTodoId(todo.id) === movedId);
+  const globalTargetIndex = globalOrder.findIndex((todo) => normalizeTodoId(todo.id) === targetId);
+  if (globalFromIndex < 0 || globalTargetIndex < 0) return null;
+
+  let globalInsertionIndex = globalTargetIndex + (dropPosition === "after" ? 1 : 0);
+  if (globalFromIndex < globalInsertionIndex) {
+    globalInsertionIndex -= 1;
+  }
+  if (globalFromIndex === globalInsertionIndex) return null;
+
+  let reorderedGlobal = arrayMove(globalOrder, globalFromIndex, globalInsertionIndex);
+  let movedGlobalIndex = reorderedGlobal.findIndex((todo) => normalizeTodoId(todo.id) === movedId);
+  if (movedGlobalIndex < 0) return null;
+
+  function getReindexedGlobalOrder(items: Todo[]): Todo[] {
+    const total = items.length;
+    return items.map((todo, index) => ({
+      ...todo,
+      sort_index: (total - index) * 1000,
+    }));
+  }
+
+  function getSortIndexForMove(items: Todo[], movedIndex: number): number {
+    const above = movedIndex > 0 ? items[movedIndex - 1] : null;
+    const below = movedIndex < items.length - 1 ? items[movedIndex + 1] : null;
+
+    if (!above && below) {
+      return getNormalizedSortIndex(below) + 1000;
+    }
+
+    if (above && !below) {
+      return Math.max(getNormalizedSortIndex(above) - 1000, 0);
+    }
+
+    if (above && below) {
+      return Math.round((getNormalizedSortIndex(above) + getNormalizedSortIndex(below)) / 2);
+    }
+
+    const current = items[movedIndex];
+    return Math.max(getNormalizedSortIndex(current), 0);
+  }
+
+  let nextSortIndex = getSortIndexForMove(reorderedGlobal, movedGlobalIndex);
+  const aboveNeighbor = movedGlobalIndex > 0 ? reorderedGlobal[movedGlobalIndex - 1] : null;
+  const belowNeighbor = movedGlobalIndex < reorderedGlobal.length - 1 ? reorderedGlobal[movedGlobalIndex + 1] : null;
+  const midpointCollision =
+    (aboveNeighbor && nextSortIndex === getNormalizedSortIndex(aboveNeighbor)) ||
+    (belowNeighbor && nextSortIndex === getNormalizedSortIndex(belowNeighbor));
+
+  if (midpointCollision) {
+    reorderedGlobal = getReindexedGlobalOrder(reorderedGlobal);
+    movedGlobalIndex = reorderedGlobal.findIndex((todo) => normalizeTodoId(todo.id) === movedId);
+    if (movedGlobalIndex < 0) return null;
+    nextSortIndex = getSortIndexForMove(reorderedGlobal, movedGlobalIndex);
+  }
+
+  const updates = [{ id: movedId, sort_index: nextSortIndex }];
+
+  const reindexedMap = new Map(
+    reorderedGlobal.map((todo) => [normalizeTodoId(todo.id), getNormalizedSortIndex(todo)])
+  );
+
   const nextTodos = todos.map((todo) => {
-    const nextSortIndex = updatesMap.get(normalizeTodoId(todo.id));
-    if (typeof nextSortIndex !== "number") return todo;
-    return { ...todo, sort_index: nextSortIndex };
+    const todoId = normalizeTodoId(todo.id);
+    if (todoId === movedId) {
+      return { ...todo, sort_index: nextSortIndex };
+    }
+
+    if (midpointCollision) {
+      const reindexedSort = reindexedMap.get(todoId);
+      if (typeof reindexedSort === "number" && Number.isFinite(reindexedSort)) {
+        return { ...todo, sort_index: reindexedSort };
+      }
+    }
+
+    return todo;
   });
 
   const scope = {
