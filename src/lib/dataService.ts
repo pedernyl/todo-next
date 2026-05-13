@@ -92,7 +92,7 @@ function compareTodosForDisplayOrder(a: Todo, b: Todo): number {
   const completedDiff = Number(a.completed) - Number(b.completed);
   if (completedDiff !== 0) return completedDiff;
 
-  const sortDiff = normalizeSortIndex(a.sort_index) - normalizeSortIndex(b.sort_index);
+  const sortDiff = normalizeSortIndex(b.sort_index) - normalizeSortIndex(a.sort_index);
   if (sortDiff !== 0) return sortDiff;
 
   const aNum = Number(a.id);
@@ -232,7 +232,7 @@ export async function getTodos(
         .eq('owner_id', userId)
         .is('deleted_timestamp', null)
         .eq('completed', false)
-        .order('sort_index', { ascending: true })
+        .order('sort_index', { ascending: false })
         .order('id', { ascending: true });
 
       if (category_id) {
@@ -258,7 +258,7 @@ export async function getTodos(
       .eq('owner_id', userId)
       .is('deleted_timestamp', null)
       .order('completed', { ascending: true })
-      .order('sort_index', { ascending: true })
+      .order('sort_index', { ascending: false })
       .order('id', { ascending: true });
 
     if (!showCompleted) {
@@ -475,7 +475,7 @@ export async function reorderTodoSiblings(
       .select('*')
       .eq('owner_id', userId)
       .in('id', ids)
-      .order('sort_index', { ascending: true })
+      .order('sort_index', { ascending: false })
       .order('id', { ascending: true })
   );
 
