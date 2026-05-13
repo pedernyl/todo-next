@@ -11,7 +11,8 @@ import * as update_reassignSortIndexDescendingWithGaps_1778658241_5 from "./reas
 import * as update_reindexTodoSortIndexPerScope_1777482600_6 from "./reindexTodoSortIndexPerScope_1777482600";
 import * as update_renameTodosTableToTodos_1777392359_7 from "./renameTodosTableToTodos_1777392359";
 import * as update_renameUserTableToUsers_1777361949_8 from "./renameUserTableToUsers_1777361949";
-import * as update_setTodoSortIndexToMinusOne_1776152030_9 from "./setTodoSortIndexToMinusOne_1776152030";
+import * as update_replaceInsertTodoAtTop_1778661608_9 from "./replaceInsertTodoAtTop_1778661608";
+import * as update_setTodoSortIndexToMinusOne_1776152030_10 from "./setTodoSortIndexToMinusOne_1776152030";
 import type { RegisteredAdminUpdate } from "./registry";
 
 export const adminUpdateRegistry: RegisteredAdminUpdate[] = [
@@ -52,7 +53,11 @@ export const adminUpdateRegistry: RegisteredAdminUpdate[] = [
     module: update_renameUserTableToUsers_1777361949_8,
   },
   {
+    fileName: "replaceInsertTodoAtTop_1778661608.ts",
+    module: update_replaceInsertTodoAtTop_1778661608_9,
+  },
+  {
     fileName: "setTodoSortIndexToMinusOne_1776152030.ts",
-    module: update_setTodoSortIndexToMinusOne_1776152030_9,
+    module: update_setTodoSortIndexToMinusOne_1776152030_10,
   },
 ];
