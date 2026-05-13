@@ -18,9 +18,6 @@ type ReorderScope = {
 type ReorderExistingTodoRow = {
   id: string | number;
   owner_id: number;
-  parent_todo: string | null;
-  completed: boolean;
-  category_id: string | null;
   deleted_timestamp: number | null;
 };
 
@@ -428,7 +425,7 @@ export async function reorderTodoSiblings(
   const { data: existing, error: existingError } = await runTodosQueryWithFallback((tableName) =>
     supabase
       .from(tableName)
-      .select('id, owner_id, parent_todo, completed, category_id, deleted_timestamp')
+      .select('id, owner_id, deleted_timestamp')
       .eq('owner_id', userId)
       .in('id', ids)
   );
@@ -440,19 +437,9 @@ export async function reorderTodoSiblings(
     throw new Error('Some todos are missing or unauthorized');
   }
 
-  const parentValue = normalizeComparableId(scope.parent_todo);
-  const categoryValue = normalizeComparableId(scope.category_id);
-  const invalidScopeTodo = existingRows.find((todo) => {
-    const sameParent = normalizeComparableId(todo.parent_todo) === parentValue;
-    const sameCompleted = Boolean(todo.completed) === scope.completed;
-    const sameCategory = typeof scope.category_id === 'undefined'
-      ? true
-      : normalizeComparableId(todo.category_id) === categoryValue;
-    return !sameParent || !sameCompleted || !sameCategory || todo.deleted_timestamp !== null;
-  });
-
-  if (invalidScopeTodo) {
-    throw new Error('Invalid reorder scope for one or more todos');
+  const deletedTodo = existingRows.find((todo) => todo.deleted_timestamp !== null);
+  if (deletedTodo) {
+    throw new Error('Cannot reorder deleted todos');
   }
 
   await Promise.all(
