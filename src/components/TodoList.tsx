@@ -123,7 +123,7 @@ function compareTodoOrder(a: Todo, b: Todo): number {
   const completedDiff = Number(a.completed) - Number(b.completed);
   if (completedDiff !== 0) return completedDiff;
 
-  const sortDiff = getNormalizedSortIndex(a) - getNormalizedSortIndex(b);
+  const sortDiff = getNormalizedSortIndex(b) - getNormalizedSortIndex(a);
   if (sortDiff !== 0) return sortDiff;
 
   const aNum = Number(a.id);
@@ -131,7 +131,7 @@ function compareTodoOrder(a: Todo, b: Todo): number {
   if (Number.isNaN(aNum) || Number.isNaN(bNum)) {
     return a.id.localeCompare(b.id);
   }
-  return aNum - bNum;
+  return bNum - aNum;
 
 }
 
@@ -207,6 +207,7 @@ function computeSiblingReorder(
 
   const movedParent = normalizeTodoId(movedTodo.parent_todo) || null;
   const targetParent = normalizeTodoId(targetTodo.parent_todo) || null;
+  const currentMovedTodo = movedTodo;
   if (movedParent !== targetParent) return null;
   if (Boolean(movedTodo.completed) !== Boolean(targetTodo.completed)) return null;
 
@@ -232,23 +233,15 @@ function computeSiblingReorder(
 
   const reorderedSiblings = arrayMove(siblings, fromIndex, insertionIndex);
 
-  const reorderedMovedTodo = reorderedSiblings.find((todo) => normalizeTodoId(todo.id) === movedId);
-  if (!reorderedMovedTodo) return null;
-
   const globalOrder = [...allTodosFromTree].sort(compareTodoOrder);
-  const globalFromIndex = globalOrder.findIndex((todo) => normalizeTodoId(todo.id) === movedId);
-  const globalTargetIndex = globalOrder.findIndex((todo) => normalizeTodoId(todo.id) === targetId);
-  if (globalFromIndex < 0 || globalTargetIndex < 0) return null;
+  const movedSiblingIndex = reorderedSiblings.findIndex((todo) => normalizeTodoId(todo.id) === movedId);
+  if (movedSiblingIndex < 0) return null;
 
-  let globalInsertionIndex = globalTargetIndex + (dropPosition === "after" ? 1 : 0);
-  if (globalFromIndex < globalInsertionIndex) {
-    globalInsertionIndex -= 1;
-  }
-  if (globalFromIndex === globalInsertionIndex) return null;
-
-  let reorderedGlobal = arrayMove(globalOrder, globalFromIndex, globalInsertionIndex);
-  let movedGlobalIndex = reorderedGlobal.findIndex((todo) => normalizeTodoId(todo.id) === movedId);
-  if (movedGlobalIndex < 0) return null;
+  const aboveSibling = movedSiblingIndex > 0 ? reorderedSiblings[movedSiblingIndex - 1] : null;
+  const belowSibling =
+    movedSiblingIndex < reorderedSiblings.length - 1
+      ? reorderedSiblings[movedSiblingIndex + 1]
+      : null;
 
   function getReindexedGlobalOrder(items: Todo[]): Todo[] {
     const total = items.length;
@@ -258,45 +251,56 @@ function computeSiblingReorder(
     }));
   }
 
-  function getSortIndexForMove(items: Todo[], movedIndex: number): number {
-    const above = movedIndex > 0 ? items[movedIndex - 1] : null;
-    const below = movedIndex < items.length - 1 ? items[movedIndex + 1] : null;
+  function getSortIndexForMove(
+    sortIndexById: Map<string, number>,
+    above: Todo | null,
+    below: Todo | null
+  ): number {
+    const aboveSortIndex = above ? sortIndexById.get(normalizeTodoId(above.id)) : undefined;
+    const belowSortIndex = below ? sortIndexById.get(normalizeTodoId(below.id)) : undefined;
 
-    if (!above && below) {
-      return getNormalizedSortIndex(below) + 1000;
+    if (!above && typeof belowSortIndex === "number") {
+      return belowSortIndex + 1000;
     }
 
-    if (above && !below) {
-      return Math.max(getNormalizedSortIndex(above) - 1000, 0);
+    if (typeof aboveSortIndex === "number" && !below) {
+      return Math.max(aboveSortIndex - 1000, 0);
     }
 
-    if (above && below) {
-      return Math.round((getNormalizedSortIndex(above) + getNormalizedSortIndex(below)) / 2);
+    if (typeof aboveSortIndex === "number" && typeof belowSortIndex === "number") {
+      return Math.round((aboveSortIndex + belowSortIndex) / 2);
     }
 
-    const current = items[movedIndex];
-    return Math.max(getNormalizedSortIndex(current), 0);
+    return Math.max(getNormalizedSortIndex(currentMovedTodo), 0);
   }
 
-  let nextSortIndex = getSortIndexForMove(reorderedGlobal, movedGlobalIndex);
-  const aboveNeighbor = movedGlobalIndex > 0 ? reorderedGlobal[movedGlobalIndex - 1] : null;
-  const belowNeighbor = movedGlobalIndex < reorderedGlobal.length - 1 ? reorderedGlobal[movedGlobalIndex + 1] : null;
-  const midpointCollision =
-    (aboveNeighbor && nextSortIndex === getNormalizedSortIndex(aboveNeighbor)) ||
-    (belowNeighbor && nextSortIndex === getNormalizedSortIndex(belowNeighbor));
+  let sortIndexById = new Map(
+    globalOrder.map((todo) => [normalizeTodoId(todo.id), getNormalizedSortIndex(todo)])
+  );
 
+  let nextSortIndex = getSortIndexForMove(sortIndexById, aboveSibling, belowSibling);
+  const aboveNeighborSortIndex = aboveSibling
+    ? sortIndexById.get(normalizeTodoId(aboveSibling.id))
+    : undefined;
+  const belowNeighborSortIndex = belowSibling
+    ? sortIndexById.get(normalizeTodoId(belowSibling.id))
+    : undefined;
+  const midpointCollision =
+    (typeof aboveNeighborSortIndex === "number" && nextSortIndex === aboveNeighborSortIndex) ||
+    (typeof belowNeighborSortIndex === "number" && nextSortIndex === belowNeighborSortIndex);
+
+  let reindexedMap = sortIndexById;
   if (midpointCollision) {
-    reorderedGlobal = getReindexedGlobalOrder(reorderedGlobal);
-    movedGlobalIndex = reorderedGlobal.findIndex((todo) => normalizeTodoId(todo.id) === movedId);
-    if (movedGlobalIndex < 0) return null;
-    nextSortIndex = getSortIndexForMove(reorderedGlobal, movedGlobalIndex);
+    reindexedMap = new Map(
+      getReindexedGlobalOrder(globalOrder).map((todo) => [
+        normalizeTodoId(todo.id),
+        getNormalizedSortIndex(todo),
+      ])
+    );
+    nextSortIndex = getSortIndexForMove(reindexedMap, aboveSibling, belowSibling);
   }
 
   const updates = [{ id: movedId, sort_index: nextSortIndex }];
-
-  const reindexedMap = new Map(
-    reorderedGlobal.map((todo) => [normalizeTodoId(todo.id), getNormalizedSortIndex(todo)])
-  );
 
   const nextTodos = todos.map((todo) => {
     const todoId = normalizeTodoId(todo.id);
