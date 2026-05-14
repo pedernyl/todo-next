@@ -8,6 +8,6 @@ export async function runAdminUpdate() {
   }
 
   return {
-    message: "Altered sort_index column to integer to support larger gap values (now supports ~32,000 todos per user).",
+    message: "Altered sort_index column to integer to support larger gap values (now supports ~2.1 million todos per user).",
   };
 }
