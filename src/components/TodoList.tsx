@@ -60,9 +60,9 @@ type SortableTodoItemProps = {
   overTodoId: string | null;
 };
 
-function getNormalizedSortIndex(todo: Todo): number {
+function getNormalizedSortIndex(todo: Todo): number | null {
   if (typeof todo.sort_index !== "number" || !Number.isFinite(todo.sort_index)) {
-    return Number.MAX_SAFE_INTEGER;
+    return null;
   }
   return todo.sort_index;
 }
@@ -96,12 +96,20 @@ export function insertTodoAtTop(prev: Todo[], newTodo: Todo): Todo[] {
   ];
 }
 
-function compareTodoOrder(a: Todo, b: Todo): number {
+export function compareTodoOrder(a: Todo, b: Todo): number {
   const completedDiff = Number(a.completed) - Number(b.completed);
   if (completedDiff !== 0) return completedDiff;
 
-  const sortDiff = getNormalizedSortIndex(b) - getNormalizedSortIndex(a);
-  if (sortDiff !== 0) return sortDiff;
+  const aSortIndex = getNormalizedSortIndex(a);
+  const bSortIndex = getNormalizedSortIndex(b);
+
+  if (aSortIndex === null && bSortIndex !== null) return 1;
+  if (aSortIndex !== null && bSortIndex === null) return -1;
+
+  if (aSortIndex !== null && bSortIndex !== null) {
+    const sortDiff = bSortIndex - aSortIndex;
+    if (sortDiff !== 0) return sortDiff;
+  }
 
   const aNum = Number(a.id);
   const bNum = Number(b.id);
@@ -229,7 +237,7 @@ function computeSiblingReorder(
   }
 
   function getSortIndexForMove(
-    sortIndexById: Map<string, number>,
+    sortIndexById: Map<string, number | null>,
     above: Todo | null,
     below: Todo | null
   ): number {
@@ -248,10 +256,11 @@ function computeSiblingReorder(
       return Math.round((aboveSortIndex + belowSortIndex) / 2);
     }
 
-    return Math.max(getNormalizedSortIndex(currentMovedTodo), 0);
+    const currentSortIndex = getNormalizedSortIndex(currentMovedTodo);
+    return currentSortIndex === null ? 0 : Math.max(currentSortIndex, 0);
   }
 
-  let sortIndexById = new Map(
+  let sortIndexById = new Map<string, number | null>(
     globalOrder.map((todo) => [normalizeTodoId(todo.id), getNormalizedSortIndex(todo)])
   );
 
