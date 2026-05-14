@@ -76,7 +76,7 @@ function normalizeNullableId(id: string | number | null | undefined): string | n
   return normalized.length > 0 ? normalized : null;
 }
 
-export function applyOptimisticTodoInsert(prev: Todo[], newTodo: Todo): Todo[] {
+export function insertTodoAtTop(prev: Todo[], newTodo: Todo): Todo[] {
   const maxSortIndex = prev.reduce((currentMax, todo) => {
     const sortIndex = todo.sort_index;
 
@@ -575,7 +575,7 @@ export default function TodoList({ initialTodos, selectedCategory }: TodoListPro
   };
 
   const handleTodoAdded = (newTodo: Todo) => {
-    setTodos((prev: Todo[]) => applyOptimisticTodoInsert(prev, newTodo));
+    setTodos((prev: Todo[]) => insertTodoAtTop(prev, newTodo));
     setEditTodo(null);
     setParentTodo(null);
     setShowAddForm(false);

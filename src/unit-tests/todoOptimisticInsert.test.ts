@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Todo } from '../../types';
-import { applyOptimisticTodoInsert } from '../components/TodoList';
+import { insertTodoAtTop } from '../components/TodoList';
 
 function makeTodo(overrides: Partial<Todo>): Todo {
   return {
@@ -33,7 +33,7 @@ describe('applyOptimisticTodoInsert', () => {
       completed: false,
     });
 
-    const next = applyOptimisticTodoInsert(prev, newTodo);
+    const next = insertTodoAtTop(prev, newTodo);
 
     expect(next[0]?.id).toBe('99');
     expect(next.find((t) => t.id === '99')?.sort_index).toBe(2000);
@@ -59,7 +59,7 @@ describe('applyOptimisticTodoInsert', () => {
       completed: false,
     });
 
-    const next = applyOptimisticTodoInsert(prev, newSubtodo);
+    const next = insertTodoAtTop(prev, newSubtodo);
 
     expect(next[0]?.id).toBe('100');
     expect(next.find((t) => t.id === '100')?.sort_index).toBe(4000);
@@ -84,7 +84,7 @@ describe('applyOptimisticTodoInsert', () => {
       completed: false,
     });
 
-    const next = applyOptimisticTodoInsert(prev, newCatTodo);
+    const next = insertTodoAtTop(prev, newCatTodo);
 
     expect(next[0]?.id).toBe('200');
     expect(next.find((t) => t.id === '200')?.sort_index).toBe(6000);
@@ -108,7 +108,7 @@ describe('applyOptimisticTodoInsert', () => {
       completed: false,
     });
 
-    const next = applyOptimisticTodoInsert(prev, newTodo);
+    const next = insertTodoAtTop(prev, newTodo);
 
     expect(next.find((t) => t.id === '383')?.sort_index).toBe(5000);
     expect(next.find((t) => t.id === '379')?.sort_index).toBe(3000);
@@ -136,7 +136,7 @@ describe('applyOptimisticTodoInsert', () => {
       completed: false,
     });
 
-    const next = applyOptimisticTodoInsert(prev, newTodo);
+    const next = insertTodoAtTop(prev, newTodo);
 
   expect(next.find((t) => t.id === '300')?.sort_index).toBe(3000);
   expect(next.find((t) => t.id === '30')?.sort_index).toBe(2000);
