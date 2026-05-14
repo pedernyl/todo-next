@@ -63,7 +63,7 @@ vi.mock("../lib/supabaseClient", () => {
 
 import { reorderTodoSiblings } from "../lib/dataService";
 
-describe("reorderTodoSiblings nested scope", () => {
+describe("reorderTodoSiblings", () => {
   beforeEach(() => {
     mockExistingTodos = [];
     updatedTodosResult = [];
@@ -72,7 +72,7 @@ describe("reorderTodoSiblings nested scope", () => {
     updateOwnerEqValues = [];
   });
 
-  it("does not validate category or parent scope when reordering siblings", async () => {
+  it("does not validate category or parent constraints when reordering siblings", async () => {
     mockExistingTodos = [
       {
         id: "291",
@@ -101,12 +101,7 @@ describe("reorderTodoSiblings nested scope", () => {
       [
         { id: "291", sort_index: 1 },
         { id: "292", sort_index: 0 },
-      ],
-      {
-        parent_todo: "different-parent",
-        completed: true,
-        category_id: "cat-a",
-      }
+      ]
     );
 
     expect(updateIdEqValues).toEqual(["291", "292"]);
@@ -147,18 +142,13 @@ describe("reorderTodoSiblings nested scope", () => {
       [
         { id: 291 as unknown as string, sort_index: 1 },
         { id: "292", sort_index: 0 },
-      ],
-      {
-        parent_todo: "270",
-        completed: false,
-        category_id: "cat-a",
-      }
+      ]
     );
 
     expect(updateIdEqValues).toEqual(["291", "292"]);
   });
 
-  it("applies expected sort_index writes for a valid scoped reorder", async () => {
+  it("applies expected sort_index writes for a valid reorder", async () => {
     mockExistingTodos = [
       {
         id: "291",
@@ -187,12 +177,7 @@ describe("reorderTodoSiblings nested scope", () => {
       [
         { id: 292 as unknown as string, sort_index: 0 },
         { id: "291", sort_index: 1 },
-      ],
-      {
-        parent_todo: "270",
-        completed: false,
-        category_id: "cat-a",
-      }
+      ]
     );
 
     expect(updateIdEqValues).toEqual(["292", "291"]);
@@ -208,12 +193,7 @@ describe("reorderTodoSiblings nested scope", () => {
     await expect(
       reorderTodoSiblings(
         1,
-        [{ id: "291", sort_index: Number.NaN }],
-        {
-          parent_todo: "270",
-          completed: false,
-          category_id: "cat-a",
-        }
+        [{ id: "291", sort_index: Number.NaN }]
       )
     ).rejects.toThrow("sort_index must be a finite non-negative number");
   });

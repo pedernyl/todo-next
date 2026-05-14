@@ -9,12 +9,6 @@ type ReorderUpdateInput = {
   sort_index: number;
 };
 
-type ReorderScope = {
-  parent_todo: string | null;
-  completed: boolean;
-  category_id?: string | null;
-};
-
 type ReorderExistingTodoRow = {
   id: string | number;
   owner_id: number;
@@ -400,8 +394,7 @@ export async function softDeleteTodo(id: string, userId: string | number): Promi
 
 export async function reorderTodoSiblings(
   userId: number,
-  updates: ReorderUpdateInput[],
-  scope: ReorderScope
+  updates: ReorderUpdateInput[]
 ): Promise<Todo[]> {
   if (!updates.length) return [];
 

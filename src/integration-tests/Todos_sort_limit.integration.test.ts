@@ -132,11 +132,7 @@ describe("Todos_sort_limit", () => {
 
     const reorderedChildren = await reorderTodoSiblings(
       TEST_OWNER_ID,
-      sortUpdates,
-      {
-        parent_todo: String(insertedTodo.id),
-        completed: false,
-      }
+      sortUpdates
     );
 
     orderedChildrenAfterSort = reorderedChildren.map((todo) => ({
