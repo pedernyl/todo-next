@@ -286,19 +286,35 @@ function computeSiblingReorder(
     nextSortIndex = getSortIndexForMove(reindexedMap, aboveSibling, belowSibling);
   }
 
-  const updates = [{ id: movedId, sort_index: nextSortIndex }];
+  const updatedSortIndexById = new Map<string, number>([[movedId, nextSortIndex]]);
+
+  if (midpointCollision) {
+    todos.forEach((todo) => {
+      const todoId = normalizeTodoId(todo.id);
+      if (!todoId || todoId === movedId) {
+        return;
+      }
+
+      const reindexedSort = reindexedMap.get(todoId);
+      if (typeof reindexedSort !== "number" || !Number.isFinite(reindexedSort)) {
+        return;
+      }
+
+      const currentSortIndex = getNormalizedSortIndex(todo);
+      if (currentSortIndex !== reindexedSort) {
+        updatedSortIndexById.set(todoId, reindexedSort);
+      }
+    });
+  }
+
+  const updates = Array.from(updatedSortIndexById, ([id, sort_index]) => ({ id, sort_index }));
 
   const nextTodos = todos.map((todo) => {
     const todoId = normalizeTodoId(todo.id);
-    if (todoId === movedId) {
-      return { ...todo, sort_index: nextSortIndex };
-    }
+    const updatedSortIndex = updatedSortIndexById.get(todoId);
 
-    if (midpointCollision) {
-      const reindexedSort = reindexedMap.get(todoId);
-      if (typeof reindexedSort === "number" && Number.isFinite(reindexedSort)) {
-        return { ...todo, sort_index: reindexedSort };
-      }
+    if (typeof updatedSortIndex === "number" && Number.isFinite(updatedSortIndex)) {
+      return { ...todo, sort_index: updatedSortIndex };
     }
 
     return todo;
