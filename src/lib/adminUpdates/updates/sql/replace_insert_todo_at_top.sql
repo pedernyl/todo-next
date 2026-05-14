@@ -35,7 +35,8 @@ BEGIN
     EXECUTE format(
       'SELECT COALESCE(MAX(sort_index), 0) + 1000
        FROM public.%s
-       WHERE owner_id = $1',
+       WHERE owner_id = $1 
+        AND deleted_timestamp IS NULL',
       tbl
     ) INTO v_next_sort_index
       USING p_owner_id;
