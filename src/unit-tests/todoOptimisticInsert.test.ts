@@ -16,7 +16,7 @@ function makeTodo(overrides: Partial<Todo>): Todo {
   };
 }
 
-describe('applyOptimisticTodoInsert', () => {
+describe('insertTodoAtTop', () => {
   it('keeps existing todos unchanged and inserts a new top-level todo with a higher sort_index', () => {
     const prev = [
       makeTodo({ id: '1', title: 'A', sort_index: 0, parent_todo: null, category_id: null }),
