@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Todo } from '../../types';
-import { applyOptimisticTodoInsert } from '../components/TodoList';
+import { insertTodoAtTop } from '../components/TodoList';
 
 function makeTodo(overrides: Partial<Todo>): Todo {
   return {
@@ -16,11 +16,11 @@ function makeTodo(overrides: Partial<Todo>): Todo {
   };
 }
 
-describe('applyOptimisticTodoInsert', () => {
-  it('inserts a new top-level todo and increments top-level sibling sort indexes', () => {
+describe('insertTodoAtTop', () => {
+  it('keeps existing todos unchanged and inserts a new top-level todo with a higher sort_index', () => {
     const prev = [
       makeTodo({ id: '1', title: 'A', sort_index: 0, parent_todo: null, category_id: null }),
-      makeTodo({ id: '2', title: 'B', sort_index: 1, parent_todo: null, category_id: null }),
+      makeTodo({ id: '2', title: 'B', sort_index: 1000, parent_todo: null, category_id: null }),
       makeTodo({ id: '3', title: 'Child', sort_index: 0, parent_todo: '1', category_id: null }),
     ];
 
@@ -33,20 +33,21 @@ describe('applyOptimisticTodoInsert', () => {
       completed: false,
     });
 
-    const next = applyOptimisticTodoInsert(prev, newTodo);
+    const next = insertTodoAtTop(prev, newTodo);
 
     expect(next[0]?.id).toBe('99');
-    expect(next.find((t) => t.id === '1')?.sort_index).toBe(1);
-    expect(next.find((t) => t.id === '2')?.sort_index).toBe(2);
+    expect(next.find((t) => t.id === '99')?.sort_index).toBe(2000);
+    expect(next.find((t) => t.id === '1')?.sort_index).toBe(0);
+    expect(next.find((t) => t.id === '2')?.sort_index).toBe(1000);
     expect(next.find((t) => t.id === '3')?.sort_index).toBe(0);
   });
 
-  it('only increments siblings in the same parent scope for subtodos', () => {
+  it('assigns a new subtodo sort_index from the owner-wide maximum without changing siblings', () => {
     const prev = [
       makeTodo({ id: '10', title: 'P', sort_index: 0, parent_todo: null }),
-      makeTodo({ id: '11', title: 'C1', sort_index: 0, parent_todo: '10', category_id: null }),
-      makeTodo({ id: '12', title: 'C2', sort_index: 1, parent_todo: '10', category_id: null }),
-      makeTodo({ id: '13', title: 'OtherRoot', sort_index: 2, parent_todo: null, category_id: null }),
+      makeTodo({ id: '11', title: 'C1', sort_index: 1000, parent_todo: '10', category_id: null }),
+      makeTodo({ id: '12', title: 'C2', sort_index: 2000, parent_todo: '10', category_id: null }),
+      makeTodo({ id: '13', title: 'OtherRoot', sort_index: 3000, parent_todo: null, category_id: null }),
     ];
 
     const newSubtodo = makeTodo({
@@ -58,19 +59,20 @@ describe('applyOptimisticTodoInsert', () => {
       completed: false,
     });
 
-    const next = applyOptimisticTodoInsert(prev, newSubtodo);
+    const next = insertTodoAtTop(prev, newSubtodo);
 
     expect(next[0]?.id).toBe('100');
-    expect(next.find((t) => t.id === '11')?.sort_index).toBe(1);
-    expect(next.find((t) => t.id === '12')?.sort_index).toBe(2);
-    expect(next.find((t) => t.id === '13')?.sort_index).toBe(2);
+    expect(next.find((t) => t.id === '100')?.sort_index).toBe(4000);
+    expect(next.find((t) => t.id === '11')?.sort_index).toBe(1000);
+    expect(next.find((t) => t.id === '12')?.sort_index).toBe(2000);
+    expect(next.find((t) => t.id === '13')?.sort_index).toBe(3000);
   });
 
-  it('respects completed scope but not category scope for top-level todos when shifting siblings', () => {
+  it('uses the owner-wide maximum regardless of completed or category scope', () => {
     const prev = [
-      makeTodo({ id: '20', title: 'Cat A active', sort_index: 0, parent_todo: null, category_id: 'cat-a', completed: false }),
-      makeTodo({ id: '21', title: 'Cat A done', sort_index: 0, parent_todo: null, category_id: 'cat-a', completed: true }),
-      makeTodo({ id: '22', title: 'No Cat active', sort_index: 0, parent_todo: null, category_id: null, completed: false }),
+      makeTodo({ id: '20', title: 'Cat A active', sort_index: 1000, parent_todo: null, category_id: 'cat-a', completed: false }),
+      makeTodo({ id: '21', title: 'Cat A done', sort_index: 5000, parent_todo: null, category_id: 'cat-a', completed: true }),
+      makeTodo({ id: '22', title: 'No Cat active', sort_index: 3000, parent_todo: null, category_id: null, completed: false }),
     ];
 
     const newCatTodo = makeTodo({
@@ -82,22 +84,19 @@ describe('applyOptimisticTodoInsert', () => {
       completed: false,
     });
 
-    const next = applyOptimisticTodoInsert(prev, newCatTodo);
+    const next = insertTodoAtTop(prev, newCatTodo);
 
     expect(next[0]?.id).toBe('200');
-    // All top-level active siblings (regardless of category) must be shifted
-    expect(next.find((t) => t.id === '20')?.sort_index).toBe(1);
-    expect(next.find((t) => t.id === '22')?.sort_index).toBe(1);
-    // Completed todos are not shifted (different completed scope)
-    expect(next.find((t) => t.id === '21')?.sort_index).toBe(0);
+    expect(next.find((t) => t.id === '200')?.sort_index).toBe(6000);
+    expect(next.find((t) => t.id === '20')?.sort_index).toBe(1000);
+    expect(next.find((t) => t.id === '21')?.sort_index).toBe(5000);
+    expect(next.find((t) => t.id === '22')?.sort_index).toBe(3000);
   });
 
-  it('shifts cross-category top-level siblings to prevent sort_index collisions', () => {
-    // Regression test: adding a no-category todo must also shift categorised top-level
-    // todos so that their relative visual order is preserved in the global view.
+  it('appends above cross-category top-level siblings using a gap-based sort_index', () => {
     const prev = [
-      makeTodo({ id: '379', title: 'hello', sort_index: 3, parent_todo: null, category_id: null, completed: false }),
-      makeTodo({ id: '247', title: 'SIKT', sort_index: 4, parent_todo: null, category_id: 'cat-19', completed: false }),
+      makeTodo({ id: '379', title: 'hello', sort_index: 3000, parent_todo: null, category_id: null, completed: false }),
+      makeTodo({ id: '247', title: 'SIKT', sort_index: 4000, parent_todo: null, category_id: 'cat-19', completed: false }),
     ];
 
     const newTodo = makeTodo({
@@ -109,20 +108,19 @@ describe('applyOptimisticTodoInsert', () => {
       completed: false,
     });
 
-    const next = applyOptimisticTodoInsert(prev, newTodo);
+    const next = insertTodoAtTop(prev, newTodo);
 
-    // Both siblings must be shifted; no sort_index collision between hello and SIKT
-    expect(next.find((t) => t.id === '379')?.sort_index).toBe(4);
-    expect(next.find((t) => t.id === '247')?.sort_index).toBe(5);
-    // SIKT keeps its position after hello (higher sort_index)
+    expect(next.find((t) => t.id === '383')?.sort_index).toBe(5000);
+    expect(next.find((t) => t.id === '379')?.sort_index).toBe(3000);
+    expect(next.find((t) => t.id === '247')?.sort_index).toBe(4000);
     const helloIdx = next.findIndex((t) => t.id === '379');
     const siktIdx = next.findIndex((t) => t.id === '247');
     expect(helloIdx).toBeLessThan(siktIdx);
   });
 
-  it('only shifts siblings with finite non-negative numeric sort_index values', () => {
+  it('uses the highest finite owner-wide sort_index when inserting', () => {
     const prev = [
-      makeTodo({ id: '30', title: 'Valid', sort_index: 0, parent_todo: null, category_id: null, completed: false }),
+      makeTodo({ id: '30', title: 'Valid', sort_index: 2000, parent_todo: null, category_id: null, completed: false }),
       makeTodo({ id: '31', title: 'Null', sort_index: null, parent_todo: null, category_id: null, completed: false }),
       makeTodo({ id: '32', title: 'Negative', sort_index: -1, parent_todo: null, category_id: null, completed: false }),
       makeTodo({ id: '33', title: 'NaN', sort_index: Number.NaN, parent_todo: null, category_id: null, completed: false }),
@@ -138,9 +136,10 @@ describe('applyOptimisticTodoInsert', () => {
       completed: false,
     });
 
-    const next = applyOptimisticTodoInsert(prev, newTodo);
+    const next = insertTodoAtTop(prev, newTodo);
 
-    expect(next.find((t) => t.id === '30')?.sort_index).toBe(1);
+  expect(next.find((t) => t.id === '300')?.sort_index).toBe(3000);
+  expect(next.find((t) => t.id === '30')?.sort_index).toBe(2000);
     expect(next.find((t) => t.id === '31')?.sort_index).toBeNull();
     expect(next.find((t) => t.id === '32')?.sort_index).toBe(-1);
     expect(next.find((t) => t.id === '33')?.sort_index).toBeNaN();

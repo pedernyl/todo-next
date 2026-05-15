@@ -60,9 +60,9 @@ type SortableTodoItemProps = {
   overTodoId: string | null;
 };
 
-function getNormalizedSortIndex(todo: Todo): number {
+function getNormalizedSortIndex(todo: Todo): number | null {
   if (typeof todo.sort_index !== "number" || !Number.isFinite(todo.sort_index)) {
-    return Number.MAX_SAFE_INTEGER;
+    return null;
   }
   return todo.sort_index;
 }
@@ -76,62 +76,47 @@ function normalizeNullableId(id: string | number | null | undefined): string | n
   return normalized.length > 0 ? normalized : null;
 }
 
-export function applyOptimisticTodoInsert(prev: Todo[], newTodo: Todo): Todo[] {
-  // Keep client state consistent with server-side createTodo ordering:
-  // new todos are inserted with sort_index = 0, and existing siblings are shifted down.
-  //
-  // For top-level todos (no parent_todo), ALL top-level todos in the same completed
-  // scope are shifted regardless of category_id. This is because top-level todos from
-  // all categories share the same sort_index space in the global view.
-  // For child todos (has parent_todo), siblings are scoped to the same category_id.
-  const newParentId = normalizeNullableId(newTodo.parent_todo);
-  const newCategoryId = normalizeNullableId(newTodo.category_id);
-  const newCompleted = Boolean(newTodo.completed);
-  const isTopLevel = newParentId === null;
+export function insertTodoAtTop(prev: Todo[], newTodo: Todo): Todo[] {
+  const maxSortIndex = prev.reduce((currentMax, todo) => {
+    const sortIndex = todo.sort_index;
 
-  const nextTodos = prev.map((todo) => {
-    const sameParent = normalizeNullableId(todo.parent_todo) === newParentId;
-    const sameCompleted = Boolean(todo.completed) === newCompleted;
-    // For top-level todos, category does not limit the shift scope.
-    const sameCategory = isTopLevel || normalizeNullableId(todo.category_id) === newCategoryId;
-
-    if (!sameParent || !sameCategory || !sameCompleted) {
-      return todo;
+    if (typeof sortIndex !== "number" || !Number.isFinite(sortIndex) || sortIndex < 0) {
+      return currentMax;
     }
 
-    const canShiftSortIndex =
-      typeof todo.sort_index === "number" &&
-      Number.isFinite(todo.sort_index) &&
-      todo.sort_index >= 0;
+    return Math.max(currentMax, sortIndex);
+  }, 0);
 
-    if (!canShiftSortIndex) {
-      return todo;
-    }
-
-    const currentSortIndex = Number(todo.sort_index);
-
-    return {
-      ...todo,
-      sort_index: currentSortIndex + 1,
-    };
-  });
-
-  return [newTodo, ...nextTodos];
+  return [
+    {
+      ...newTodo,
+      sort_index: maxSortIndex + 1000,
+    },
+    ...prev,
+  ];
 }
 
-function compareTodoOrder(a: Todo, b: Todo): number {
+export function compareTodoOrder(a: Todo, b: Todo): number {
   const completedDiff = Number(a.completed) - Number(b.completed);
   if (completedDiff !== 0) return completedDiff;
 
-  const sortDiff = getNormalizedSortIndex(a) - getNormalizedSortIndex(b);
-  if (sortDiff !== 0) return sortDiff;
+  const aSortIndex = getNormalizedSortIndex(a);
+  const bSortIndex = getNormalizedSortIndex(b);
+
+  if (aSortIndex === null && bSortIndex !== null) return 1;
+  if (aSortIndex !== null && bSortIndex === null) return -1;
+
+  if (aSortIndex !== null && bSortIndex !== null) {
+    const sortDiff = bSortIndex - aSortIndex;
+    if (sortDiff !== 0) return sortDiff;
+  }
 
   const aNum = Number(a.id);
   const bNum = Number(b.id);
   if (Number.isNaN(aNum) || Number.isNaN(bNum)) {
     return a.id.localeCompare(b.id);
   }
-  return aNum - bNum;
+  return bNum - aNum;
 
 }
 
@@ -207,10 +192,11 @@ function computeSiblingReorder(
 
   const movedParent = normalizeTodoId(movedTodo.parent_todo) || null;
   const targetParent = normalizeTodoId(targetTodo.parent_todo) || null;
+  const currentMovedTodo = movedTodo;
   if (movedParent !== targetParent) return null;
   if (Boolean(movedTodo.completed) !== Boolean(targetTodo.completed)) return null;
 
-  const siblings = todos
+  const siblings = allTodosFromTree
     .filter((todo) => {
       if ((normalizeTodoId(todo.parent_todo) || null) !== movedParent) return false;
       if (typeof categoryId !== "undefined") {
@@ -232,16 +218,106 @@ function computeSiblingReorder(
 
   const reorderedSiblings = arrayMove(siblings, fromIndex, insertionIndex);
 
-  const updates = reorderedSiblings.map((todo, index) => ({
-    id: normalizeTodoId(todo.id),
-    sort_index: index,
-  }));
+  const globalOrder = [...allTodosFromTree].sort(compareTodoOrder);
+  const movedSiblingIndex = reorderedSiblings.findIndex((todo) => normalizeTodoId(todo.id) === movedId);
+  if (movedSiblingIndex < 0) return null;
 
-  const updatesMap = new Map(updates.map((item) => [item.id, item.sort_index]));
+  const aboveSibling = movedSiblingIndex > 0 ? reorderedSiblings[movedSiblingIndex - 1] : null;
+  const belowSibling =
+    movedSiblingIndex < reorderedSiblings.length - 1
+      ? reorderedSiblings[movedSiblingIndex + 1]
+      : null;
+
+  function getReindexedGlobalOrder(items: Todo[]): Todo[] {
+    const total = items.length;
+    return items.map((todo, index) => ({
+      ...todo,
+      sort_index: (total - index) * 1000,
+    }));
+  }
+
+  function getSortIndexForMove(
+    sortIndexById: Map<string, number | null>,
+    above: Todo | null,
+    below: Todo | null
+  ): number {
+    const aboveSortIndex = above ? sortIndexById.get(normalizeTodoId(above.id)) : undefined;
+    const belowSortIndex = below ? sortIndexById.get(normalizeTodoId(below.id)) : undefined;
+
+    if (!above && typeof belowSortIndex === "number") {
+      return belowSortIndex + 1000;
+    }
+
+    if (typeof aboveSortIndex === "number" && !below) {
+      return Math.max(aboveSortIndex - 1000, 0);
+    }
+
+    if (typeof aboveSortIndex === "number" && typeof belowSortIndex === "number") {
+      return Math.round((aboveSortIndex + belowSortIndex) / 2);
+    }
+
+    const currentSortIndex = getNormalizedSortIndex(currentMovedTodo);
+    return currentSortIndex === null ? 0 : Math.max(currentSortIndex, 0);
+  }
+
+  let sortIndexById = new Map<string, number | null>(
+    globalOrder.map((todo) => [normalizeTodoId(todo.id), getNormalizedSortIndex(todo)])
+  );
+
+  let nextSortIndex = getSortIndexForMove(sortIndexById, aboveSibling, belowSibling);
+  const aboveNeighborSortIndex = aboveSibling
+    ? sortIndexById.get(normalizeTodoId(aboveSibling.id))
+    : undefined;
+  const belowNeighborSortIndex = belowSibling
+    ? sortIndexById.get(normalizeTodoId(belowSibling.id))
+    : undefined;
+  const midpointCollision =
+    (typeof aboveNeighborSortIndex === "number" && nextSortIndex === aboveNeighborSortIndex) ||
+    (typeof belowNeighborSortIndex === "number" && nextSortIndex === belowNeighborSortIndex);
+
+  let reindexedMap = sortIndexById;
+  if (midpointCollision) {
+    reindexedMap = new Map(
+      getReindexedGlobalOrder(globalOrder).map((todo) => [
+        normalizeTodoId(todo.id),
+        getNormalizedSortIndex(todo),
+      ])
+    );
+    nextSortIndex = getSortIndexForMove(reindexedMap, aboveSibling, belowSibling);
+  }
+
+  const updatedSortIndexById = new Map<string, number>([[movedId, nextSortIndex]]);
+
+  if (midpointCollision) {
+    todos.forEach((todo) => {
+      const todoId = normalizeTodoId(todo.id);
+      if (!todoId || todoId === movedId) {
+        return;
+      }
+
+      const reindexedSort = reindexedMap.get(todoId);
+      if (typeof reindexedSort !== "number" || !Number.isFinite(reindexedSort)) {
+        return;
+      }
+
+      const currentSortIndex = getNormalizedSortIndex(todo);
+      if (currentSortIndex !== reindexedSort) {
+        updatedSortIndexById.set(todoId, reindexedSort);
+      }
+    });
+  }
+
+  const updates = Array.from(updatedSortIndexById, ([id, sort_index]) => ({ id, sort_index }));
+
   const nextTodos = todos.map((todo) => {
-    const nextSortIndex = updatesMap.get(normalizeTodoId(todo.id));
-    if (typeof nextSortIndex !== "number") return todo;
-    return { ...todo, sort_index: nextSortIndex };
+    const todoId = normalizeTodoId(todo.id);
+    const updatedSortIndex = updatedSortIndexById.get(todoId);
+
+    if (typeof updatedSortIndex === "number" && Number.isFinite(updatedSortIndex)) {
+      return { ...todo, sort_index: updatedSortIndex };
+    }
+
+    return todo;
   });
 
   const scope = {
@@ -524,7 +600,7 @@ export default function TodoList({ initialTodos, selectedCategory }: TodoListPro
   };
 
   const handleTodoAdded = (newTodo: Todo) => {
-    setTodos((prev: Todo[]) => applyOptimisticTodoInsert(prev, newTodo));
+    setTodos((prev: Todo[]) => insertTodoAtTop(prev, newTodo));
     setEditTodo(null);
     setParentTodo(null);
     setShowAddForm(false);

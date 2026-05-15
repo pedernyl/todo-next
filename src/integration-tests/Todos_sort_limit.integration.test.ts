@@ -124,20 +124,15 @@ describe("Todos_sort_limit", () => {
     }
 
     const sortUpdates = [
-      { id: String(child5.id), sort_index: 0 },
-      { id: String(child1.id), sort_index: 1 },
-      { id: String(child2.id), sort_index: 2 },
-      { id: String(child3.id), sort_index: 3 },
-      { id: String(child4.id), sort_index: 4 },
+      {
+        id: String(child1.id),
+        sort_index: (child5.sort_index ?? 0) + 1000,
+      },
     ];
 
     const reorderedChildren = await reorderTodoSiblings(
       TEST_OWNER_ID,
-      sortUpdates,
-      {
-        parent_todo: String(insertedTodo.id),
-        completed: false,
-      }
+      sortUpdates
     );
 
     orderedChildrenAfterSort = reorderedChildren.map((todo) => ({
@@ -209,7 +204,7 @@ describe("Todos_sort_limit", () => {
   it("adds one todo named Todo_sort_limit in test database", () => {
     expect(insertedTodo).toBeTruthy();
     expect(insertedTodo?.title).toBe("Todo_sort_limit");
-    expect(insertedTodo?.sort_index).toBe(0);  // New todos get sort_index 0
+    expect(insertedTodo?.sort_index).toBe(1000);
     expect(insertedChildren).toHaveLength(5);
     expect(insertedChildren.map((child) => child.title)).toEqual([
       "Todo_sort_limit_c1",
@@ -218,27 +213,24 @@ describe("Todos_sort_limit", () => {
       "Todo_sort_limit_c4",
       "Todo_sort_limit_c5",
     ]);
-    expect(orderedChildrenAfterSort).toHaveLength(5);
+    expect(orderedChildrenAfterSort).toHaveLength(1);
     expect(orderedChildrenAfterSort.map((child) => child.title)).toEqual([
-      "Todo_sort_limit_c5",
       "Todo_sort_limit_c1",
-      "Todo_sort_limit_c2",
-      "Todo_sort_limit_c3",
-      "Todo_sort_limit_c4",
     ]);
+    expect(orderedChildrenAfterSort[0]?.sort_index).toBe(7000);
     expect(limitedTodosFromFetch).toHaveLength(5);
     expect(limitedTodosFromFetch.map((todo) => todo.title)).toEqual([
       "Todo_sort_limit",
-      "Todo_sort_limit_c5",
       "Todo_sort_limit_c1",
-      "Todo_sort_limit_c2",
+      "Todo_sort_limit_c5",
+      "Todo_sort_limit_c4",
       "Todo_sort_limit_c3",
     ]);
 
     expect(offsetTodosFromFetch).toHaveLength(3);
     expect(offsetTodosFromFetch.map((todo) => todo.title)).toEqual([
-      "Todo_sort_limit_c1",
-      "Todo_sort_limit_c2",
+      "Todo_sort_limit_c5",
+      "Todo_sort_limit_c4",
       "Todo_sort_limit_c3",
     ]);
   });

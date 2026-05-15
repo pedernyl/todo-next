@@ -63,7 +63,7 @@ vi.mock("../lib/supabaseClient", () => {
 
 import { reorderTodoSiblings } from "../lib/dataService";
 
-describe("reorderTodoSiblings nested scope", () => {
+describe("reorderTodoSiblings", () => {
   beforeEach(() => {
     mockExistingTodos = [];
     updatedTodosResult = [];
@@ -72,7 +72,7 @@ describe("reorderTodoSiblings nested scope", () => {
     updateOwnerEqValues = [];
   });
 
-  it("rejects nested reorder when category scope does not match siblings", async () => {
+  it("does not validate category or parent constraints when reordering siblings", async () => {
     mockExistingTodos = [
       {
         id: "291",
@@ -91,21 +91,26 @@ describe("reorderTodoSiblings nested scope", () => {
         deleted_timestamp: null,
       },
     ];
+    updatedTodosResult = [
+      { id: "291", sort_index: 1 },
+      { id: "292", sort_index: 0 },
+    ];
 
-    await expect(
-      reorderTodoSiblings(
-        1,
-        [
-          { id: "291", sort_index: 1 },
-          { id: "292", sort_index: 0 },
-        ],
-        {
-          parent_todo: "270",
-          completed: false,
-          category_id: "cat-a",
-        }
-      )
-    ).rejects.toThrow("Invalid reorder scope for one or more todos");
+    const result = await reorderTodoSiblings(
+      1,
+      [
+        { id: "291", sort_index: 1 },
+        { id: "292", sort_index: 0 },
+      ]
+    );
+
+    expect(updateIdEqValues).toEqual(["291", "292"]);
+    expect(updateSortIndexPayloads).toEqual([1, 0]);
+    expect(updateOwnerEqValues).toEqual([1, 1]);
+    expect(result.map(({ id, sort_index }) => ({ id, sort_index }))).toEqual([
+      { id: "291", sort_index: 1 },
+      { id: "292", sort_index: 0 },
+    ]);
   });
 
   it("coerces numeric ids to strings for update eq filters", async () => {
@@ -128,8 +133,8 @@ describe("reorderTodoSiblings nested scope", () => {
       },
     ];
     updatedTodosResult = [
-      { id: "292", sort_index: 0 },
       { id: "291", sort_index: 1 },
+      { id: "292", sort_index: 0 },
     ];
 
     await reorderTodoSiblings(
@@ -137,18 +142,13 @@ describe("reorderTodoSiblings nested scope", () => {
       [
         { id: 291 as unknown as string, sort_index: 1 },
         { id: "292", sort_index: 0 },
-      ],
-      {
-        parent_todo: "270",
-        completed: false,
-        category_id: "cat-a",
-      }
+      ]
     );
 
     expect(updateIdEqValues).toEqual(["291", "292"]);
   });
 
-  it("applies expected sort_index writes for a valid scoped reorder", async () => {
+  it("applies expected sort_index writes for a valid reorder", async () => {
     mockExistingTodos = [
       {
         id: "291",
@@ -168,8 +168,8 @@ describe("reorderTodoSiblings nested scope", () => {
       },
     ];
     updatedTodosResult = [
-      { id: "292", sort_index: 0 },
       { id: "291", sort_index: 1 },
+      { id: "292", sort_index: 0 },
     ];
 
     const result = await reorderTodoSiblings(
@@ -177,12 +177,7 @@ describe("reorderTodoSiblings nested scope", () => {
       [
         { id: 292 as unknown as string, sort_index: 0 },
         { id: "291", sort_index: 1 },
-      ],
-      {
-        parent_todo: "270",
-        completed: false,
-        category_id: "cat-a",
-      }
+      ]
     );
 
     expect(updateIdEqValues).toEqual(["292", "291"]);
@@ -198,12 +193,7 @@ describe("reorderTodoSiblings nested scope", () => {
     await expect(
       reorderTodoSiblings(
         1,
-        [{ id: "291", sort_index: Number.NaN }],
-        {
-          parent_todo: "270",
-          completed: false,
-          category_id: "cat-a",
-        }
+        [{ id: "291", sort_index: Number.NaN }]
       )
     ).rejects.toThrow("sort_index must be a finite non-negative number");
   });

@@ -9,18 +9,9 @@ type ReorderUpdateInput = {
   sort_index: number;
 };
 
-type ReorderScope = {
-  parent_todo: string | null;
-  completed: boolean;
-  category_id?: string | null;
-};
-
 type ReorderExistingTodoRow = {
   id: string | number;
   owner_id: number;
-  parent_todo: string | null;
-  completed: boolean;
-  category_id: string | null;
   deleted_timestamp: number | null;
 };
 
@@ -92,7 +83,7 @@ function compareTodosForDisplayOrder(a: Todo, b: Todo): number {
   const completedDiff = Number(a.completed) - Number(b.completed);
   if (completedDiff !== 0) return completedDiff;
 
-  const sortDiff = normalizeSortIndex(a.sort_index) - normalizeSortIndex(b.sort_index);
+  const sortDiff = normalizeSortIndex(b.sort_index) - normalizeSortIndex(a.sort_index);
   if (sortDiff !== 0) return sortDiff;
 
   const aNum = Number(a.id);
@@ -232,7 +223,7 @@ export async function getTodos(
         .eq('owner_id', userId)
         .is('deleted_timestamp', null)
         .eq('completed', false)
-        .order('sort_index', { ascending: true })
+        .order('sort_index', { ascending: false })
         .order('id', { ascending: true });
 
       if (category_id) {
@@ -258,7 +249,7 @@ export async function getTodos(
       .eq('owner_id', userId)
       .is('deleted_timestamp', null)
       .order('completed', { ascending: true })
-      .order('sort_index', { ascending: true })
+      .order('sort_index', { ascending: false })
       .order('id', { ascending: true });
 
     if (!showCompleted) {
@@ -403,8 +394,7 @@ export async function softDeleteTodo(id: string, userId: string | number): Promi
 
 export async function reorderTodoSiblings(
   userId: number,
-  updates: ReorderUpdateInput[],
-  scope: ReorderScope
+  updates: ReorderUpdateInput[]
 ): Promise<Todo[]> {
   if (!updates.length) return [];
 
@@ -428,7 +418,7 @@ export async function reorderTodoSiblings(
   const { data: existing, error: existingError } = await runTodosQueryWithFallback((tableName) =>
     supabase
       .from(tableName)
-      .select('id, owner_id, parent_todo, completed, category_id, deleted_timestamp')
+      .select('id, owner_id, deleted_timestamp')
       .eq('owner_id', userId)
       .in('id', ids)
   );
@@ -440,19 +430,9 @@ export async function reorderTodoSiblings(
     throw new Error('Some todos are missing or unauthorized');
   }
 
-  const parentValue = normalizeComparableId(scope.parent_todo);
-  const categoryValue = normalizeComparableId(scope.category_id);
-  const invalidScopeTodo = existingRows.find((todo) => {
-    const sameParent = normalizeComparableId(todo.parent_todo) === parentValue;
-    const sameCompleted = Boolean(todo.completed) === scope.completed;
-    const sameCategory = typeof scope.category_id === 'undefined'
-      ? true
-      : normalizeComparableId(todo.category_id) === categoryValue;
-    return !sameParent || !sameCompleted || !sameCategory || todo.deleted_timestamp !== null;
-  });
-
-  if (invalidScopeTodo) {
-    throw new Error('Invalid reorder scope for one or more todos');
+  const deletedTodo = existingRows.find((todo) => todo.deleted_timestamp !== null);
+  if (deletedTodo) {
+    throw new Error('Cannot reorder deleted todos');
   }
 
   await Promise.all(
@@ -475,7 +455,7 @@ export async function reorderTodoSiblings(
       .select('*')
       .eq('owner_id', userId)
       .in('id', ids)
-      .order('sort_index', { ascending: true })
+      .order('sort_index', { ascending: false })
       .order('id', { ascending: true })
   );
 
