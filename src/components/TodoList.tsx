@@ -715,53 +715,31 @@ export default function TodoList({ initialTodos, selectedCategory }: TodoListPro
 
   const handleDragOver = (event: DragOverEvent) => {
     const rawOverId = event.over ? String(event.over.id) : null;
-    if (!rawOverId) return;
+    if (!rawOverId || !activeTodoId) return;
 
-    let nextOverId = rawOverId;
-    let resolvedViaAncestorWalk = false;
-    if (activeTodoId) {
-      const todoById = new Map(todos.map((todo) => [normalizeTodoId(todo.id), todo]));
-      const activeTodo = todoById.get(activeTodoId);
-      const overTodo = todoById.get(rawOverId);
+    const todoById = new Map(todos.map((todo) => [normalizeTodoId(todo.id), todo]));
+    const activeTodo = todoById.get(activeTodoId);
+    const overTodo = todoById.get(rawOverId);
+    if (!activeTodo || !overTodo) return;
 
-      if (activeTodo && overTodo) {
-        const activeParentId = normalizeNullableId(activeTodo.parent_todo);
-        let candidate: Todo | undefined = overTodo;
-        const visitedIds = new Set<string>();
-        let walkedToAncestor = false;
+    const activeParentId = normalizeNullableId(activeTodo.parent_todo);
 
-        while (candidate && normalizeNullableId(candidate.parent_todo) !== activeParentId) {
-          const parentId = normalizeNullableId(candidate.parent_todo);
-          if (!parentId || visitedIds.has(parentId)) {
-            break;
-          }
-
-          visitedIds.add(parentId);
-          candidate = todoById.get(parentId);
-          walkedToAncestor = true;
-        }
-
-        if (
-          walkedToAncestor &&
-          candidate &&
-          normalizeNullableId(candidate.parent_todo) === activeParentId
-        ) {
-          nextOverId = normalizeTodoId(candidate.id);
-          resolvedViaAncestorWalk = true;
-        }
-      }
+    // Walk up from overTodo until we reach the same parent scope as activeTodo.
+    let candidate: Todo | undefined = overTodo;
+    const visited = new Set<string>();
+    while (candidate && normalizeNullableId(candidate.parent_todo) !== activeParentId) {
+      const parentId = normalizeNullableId(candidate.parent_todo);
+      if (!parentId || visited.has(parentId)) { candidate = undefined; break; }
+      visited.add(parentId);
+      candidate = todoById.get(parentId);
     }
 
-    if (!resolvedViaAncestorWalk && nextOverId === activeTodoId) return;
+    if (!candidate || normalizeNullableId(candidate.parent_todo) !== activeParentId) return;
 
-    if (resolvedViaAncestorWalk) {
-      if (nextOverId !== activeTodoId) {
-        setOverTodoId(nextOverId);
-      }
-      return;
+    const nextOverId = normalizeTodoId(candidate.id);
+    if (nextOverId !== activeTodoId) {
+      setOverTodoId(nextOverId);
     }
-
-    setOverTodoId(nextOverId);
   };
 
   const handleDragCancel = () => {
@@ -775,33 +753,24 @@ export default function TodoList({ initialTodos, selectedCategory }: TodoListPro
     const fallbackTargetId = overTodoId && overTodoId !== movedId ? overTodoId : "";
     const initialTargetId = rawTargetId && rawTargetId !== movedId ? rawTargetId : fallbackTargetId;
 
+    // Resolve targetId to same-scope sibling (handles drop landing on a descendant).
     let targetId = initialTargetId;
-    let targetResolvedFromDescendant = false;
     if (targetId) {
       const todoById = new Map(todos.map((todo) => [normalizeTodoId(todo.id), todo]));
       const movedTodo = todoById.get(movedId);
       const targetTodo = todoById.get(targetId);
-
       if (movedTodo && targetTodo) {
         const movedParentId = normalizeNullableId(movedTodo.parent_todo);
         let candidate: Todo | undefined = targetTodo;
-        const visitedIds = new Set<string>();
-        let walkedToAncestor = false;
-
+        const visited = new Set<string>();
         while (candidate && normalizeNullableId(candidate.parent_todo) !== movedParentId) {
           const parentId = normalizeNullableId(candidate.parent_todo);
-          if (!parentId || visitedIds.has(parentId)) {
-            break;
-          }
-
-          visitedIds.add(parentId);
+          if (!parentId || visited.has(parentId)) { candidate = undefined; break; }
+          visited.add(parentId);
           candidate = todoById.get(parentId);
-          walkedToAncestor = true;
         }
-
         if (candidate && normalizeNullableId(candidate.parent_todo) === movedParentId) {
           targetId = normalizeTodoId(candidate.id);
-          targetResolvedFromDescendant = walkedToAncestor;
         }
       }
     }
@@ -812,13 +781,13 @@ export default function TodoList({ initialTodos, selectedCategory }: TodoListPro
     const activeMiddleY = event.active.rect.current.translated
       ? event.active.rect.current.translated.top + event.active.rect.current.translated.height / 2
       : null;
-    const dropPosition: DropPosition = targetResolvedFromDescendant
+    // When the drop resolved via a descendant hit, prefer the stored overTodoId position.
+    const resolvedTarget = targetId !== initialTargetId ? targetId : null;
+    const dropPosition: DropPosition = resolvedTarget
       ? "before"
-      : (
-        overMiddleY !== null && activeMiddleY !== null && activeMiddleY > overMiddleY
-          ? "after"
-          : (event.delta.y > 0 ? "after" : "before")
-      );
+      : overMiddleY !== null && activeMiddleY !== null && activeMiddleY > overMiddleY
+      ? "after"
+      : event.delta.y > 0 ? "after" : "before";
 
     setActiveTodoId(null);
     setOverTodoId(null);
