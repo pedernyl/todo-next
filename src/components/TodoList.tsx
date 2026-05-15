@@ -714,8 +714,53 @@ export default function TodoList({ initialTodos, selectedCategory }: TodoListPro
   };
 
   const handleDragOver = (event: DragOverEvent) => {
-    const nextOverId = event.over ? String(event.over.id) : null;
-    if (nextOverId && nextOverId === activeTodoId) return;
+    const rawOverId = event.over ? String(event.over.id) : null;
+    if (!rawOverId) return;
+
+    let nextOverId = rawOverId;
+    let resolvedViaAncestorWalk = false;
+    if (activeTodoId) {
+      const todoById = new Map(todos.map((todo) => [normalizeTodoId(todo.id), todo]));
+      const activeTodo = todoById.get(activeTodoId);
+      const overTodo = todoById.get(rawOverId);
+
+      if (activeTodo && overTodo) {
+        const activeParentId = normalizeNullableId(activeTodo.parent_todo);
+        let candidate: Todo | undefined = overTodo;
+        const visitedIds = new Set<string>();
+        let walkedToAncestor = false;
+
+        while (candidate && normalizeNullableId(candidate.parent_todo) !== activeParentId) {
+          const parentId = normalizeNullableId(candidate.parent_todo);
+          if (!parentId || visitedIds.has(parentId)) {
+            break;
+          }
+
+          visitedIds.add(parentId);
+          candidate = todoById.get(parentId);
+          walkedToAncestor = true;
+        }
+
+        if (
+          walkedToAncestor &&
+          candidate &&
+          normalizeNullableId(candidate.parent_todo) === activeParentId
+        ) {
+          nextOverId = normalizeTodoId(candidate.id);
+          resolvedViaAncestorWalk = true;
+        }
+      }
+    }
+
+    if (!resolvedViaAncestorWalk && nextOverId === activeTodoId) return;
+
+    if (resolvedViaAncestorWalk) {
+      if (nextOverId !== activeTodoId) {
+        setOverTodoId(nextOverId);
+      }
+      return;
+    }
+
     setOverTodoId(nextOverId);
   };
 
@@ -728,7 +773,38 @@ export default function TodoList({ initialTodos, selectedCategory }: TodoListPro
     const movedId = String(event.active.id);
     const rawTargetId = event.over ? String(event.over.id) : "";
     const fallbackTargetId = overTodoId && overTodoId !== movedId ? overTodoId : "";
-    const targetId = rawTargetId && rawTargetId !== movedId ? rawTargetId : fallbackTargetId;
+    const initialTargetId = rawTargetId && rawTargetId !== movedId ? rawTargetId : fallbackTargetId;
+
+    let targetId = initialTargetId;
+    let targetResolvedFromDescendant = false;
+    if (targetId) {
+      const todoById = new Map(todos.map((todo) => [normalizeTodoId(todo.id), todo]));
+      const movedTodo = todoById.get(movedId);
+      const targetTodo = todoById.get(targetId);
+
+      if (movedTodo && targetTodo) {
+        const movedParentId = normalizeNullableId(movedTodo.parent_todo);
+        let candidate: Todo | undefined = targetTodo;
+        const visitedIds = new Set<string>();
+        let walkedToAncestor = false;
+
+        while (candidate && normalizeNullableId(candidate.parent_todo) !== movedParentId) {
+          const parentId = normalizeNullableId(candidate.parent_todo);
+          if (!parentId || visitedIds.has(parentId)) {
+            break;
+          }
+
+          visitedIds.add(parentId);
+          candidate = todoById.get(parentId);
+          walkedToAncestor = true;
+        }
+
+        if (candidate && normalizeNullableId(candidate.parent_todo) === movedParentId) {
+          targetId = normalizeTodoId(candidate.id);
+          targetResolvedFromDescendant = walkedToAncestor;
+        }
+      }
+    }
 
     const overMiddleY = event.over
       ? event.over.rect.top + event.over.rect.height / 2
@@ -736,10 +812,13 @@ export default function TodoList({ initialTodos, selectedCategory }: TodoListPro
     const activeMiddleY = event.active.rect.current.translated
       ? event.active.rect.current.translated.top + event.active.rect.current.translated.height / 2
       : null;
-    const dropPosition: DropPosition =
-      overMiddleY !== null && activeMiddleY !== null && activeMiddleY > overMiddleY
-        ? "after"
-        : (event.delta.y > 0 ? "after" : "before");
+    const dropPosition: DropPosition = targetResolvedFromDescendant
+      ? "before"
+      : (
+        overMiddleY !== null && activeMiddleY !== null && activeMiddleY > overMiddleY
+          ? "after"
+          : (event.delta.y > 0 ? "after" : "before")
+      );
 
     setActiveTodoId(null);
     setOverTodoId(null);
