@@ -4,7 +4,7 @@ import { useUserId } from "../context/UserIdContext";
 import { Todo } from "../../types";
 import AddTodo from "./AddTodo";
 import {
-  closestCenter,
+  rectIntersection,
   DndContext,
   DragEndEvent,
   DragOverEvent,
@@ -844,6 +844,7 @@ export default function TodoList({ initialTodos, selectedCategory }: TodoListPro
           when dropping on a todo with 3+ children. Can be removed if no issues arise. */}
       <DndContext
         sensors={sensors}
+        collisionDetection={rectIntersection}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragCancel={handleDragCancel}
