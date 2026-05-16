@@ -840,9 +840,10 @@ export default function TodoList({ initialTodos, selectedCategory }: TodoListPro
       )}
 
       {/* Nested Todo list with indented sub-todos */}
+      {/* TODO: collisionDetection={closestCenter} was removed to fix bug where drop area wasn't marked
+          when dropping on a todo with 3+ children. Can be removed if no issues arise. */}
       <DndContext
         sensors={sensors}
-        collisionDetection={closestCenter}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragCancel={handleDragCancel}
