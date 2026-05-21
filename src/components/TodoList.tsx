@@ -46,6 +46,18 @@ type ReorderComputation = {
 
 type DropPosition = "before" | "after";
 
+export function resolveDropPosition(
+  overMiddleY: number | null,
+  activeMiddleY: number | null,
+  deltaY: number
+): DropPosition {
+  if (overMiddleY !== null && activeMiddleY !== null) {
+    return activeMiddleY > overMiddleY ? "after" : "before";
+  }
+
+  return deltaY > 0 ? "after" : "before";
+}
+
 type SortableTodoItemProps = {
   todo: TodoTreeNode;
   level: number;
@@ -799,13 +811,8 @@ export default function TodoList({ initialTodos, selectedCategory }: TodoListPro
     const activeMiddleY = event.active.rect.current.translated
       ? event.active.rect.current.translated.top + event.active.rect.current.translated.height / 2
       : null;
-    // When the drop resolved via a descendant hit, prefer the stored overTodoId position.
-    const resolvedTarget = targetId !== initialTargetId ? targetId : null;
-    const dropPosition: DropPosition = resolvedTarget
-      ? "before"
-      : overMiddleY !== null && activeMiddleY !== null && activeMiddleY > overMiddleY
-      ? "after"
-      : event.delta.y > 0 ? "after" : "before";
+    // Keep before/after intent heuristic consistent for both direct and descendant-resolved targets.
+    const dropPosition = resolveDropPosition(overMiddleY, activeMiddleY, event.delta.y);
 
     setActiveTodoId(null);
     setOverTodoId(null);
