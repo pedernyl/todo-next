@@ -550,6 +550,10 @@ export default function TodoList({ initialTodos, selectedCategory }: TodoListPro
 
   const [todos, setTodos] = React.useState(initialTodos);
   const [openDescriptions, setOpenDescriptions] = React.useState<{ [id: string]: boolean }>({});
+  const todoById = React.useMemo(
+    () => new Map(todos.map((todo) => [normalizeTodoId(todo.id), todo])),
+    [todos]
+  );
 
   React.useEffect(() => {
     setTodos(initialTodos);
@@ -723,7 +727,7 @@ export default function TodoList({ initialTodos, selectedCategory }: TodoListPro
       setOverTodoId(null);
       return;
     }
-    const todoById = new Map(todos.map((todo) => [normalizeTodoId(todo.id), todo]));
+
     const activeTodo = todoById.get(activeTodoId);
     const overTodo = todoById.get(rawOverId);
     if (!activeTodo || !overTodo) return;
@@ -762,7 +766,6 @@ export default function TodoList({ initialTodos, selectedCategory }: TodoListPro
     // Resolve targetId to same-scope sibling (handles drop landing on a descendant).
     let targetId = initialTargetId;
     if (targetId) {
-      const todoById = new Map(todos.map((todo) => [normalizeTodoId(todo.id), todo]));
       const movedTodo = todoById.get(movedId);
       const targetTodo = todoById.get(targetId);
       if (movedTodo && targetTodo) {
@@ -802,9 +805,7 @@ export default function TodoList({ initialTodos, selectedCategory }: TodoListPro
   };
 
   const todoTree = buildTodoTree([...todos]);
-  const activeTodo = activeTodoId
-    ? todos.find((todo) => normalizeTodoId(todo.id) === activeTodoId)
-    : null;
+  const activeTodo = activeTodoId ? todoById.get(activeTodoId) ?? null : null;
 
   return (
     <div className="space-y-4">
