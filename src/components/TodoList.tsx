@@ -715,8 +715,14 @@ export default function TodoList({ initialTodos, selectedCategory }: TodoListPro
 
   const handleDragOver = (event: DragOverEvent) => {
     const rawOverId = event.over ? String(event.over.id) : null;
-    if (!rawOverId || !activeTodoId) return;
-
+    if (!rawOverId || !activeTodoId) {
+      setOverTodoId(null); // Clear highlight and state
+      return;
+    }
+    if (rawOverId === activeTodoId) {
+      setOverTodoId(null);
+      return;
+    }
     const todoById = new Map(todos.map((todo) => [normalizeTodoId(todo.id), todo]));
     const activeTodo = todoById.get(activeTodoId);
     const overTodo = todoById.get(rawOverId);
