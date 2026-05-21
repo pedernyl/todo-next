@@ -4,7 +4,7 @@ import { useUserId } from "../context/UserIdContext";
 import { Todo } from "../../types";
 import AddTodo from "./AddTodo";
 import {
-  closestCenter,
+  rectIntersection,
   DndContext,
   DragEndEvent,
   DragOverEvent,
@@ -46,6 +46,18 @@ type ReorderComputation = {
 
 type DropPosition = "before" | "after";
 
+export function resolveDropPosition(
+  overMiddleY: number | null,
+  activeMiddleY: number | null,
+  deltaY: number
+): DropPosition {
+  if (overMiddleY !== null && activeMiddleY !== null) {
+    return activeMiddleY > overMiddleY ? "after" : "before";
+  }
+
+  return deltaY > 0 ? "after" : "before";
+}
+
 type SortableTodoItemProps = {
   todo: TodoTreeNode;
   level: number;
@@ -74,6 +86,45 @@ function normalizeTodoId(id: string | number | null | undefined): string {
 function normalizeNullableId(id: string | number | null | undefined): string | null {
   const normalized = normalizeTodoId(id);
   return normalized.length > 0 ? normalized : null;
+}
+
+function resolveSameScopeTargetId(
+  todoById: Map<string, Todo>,
+  movedId: string,
+  rawTargetId: string | null
+): string | null {
+  const normalizedMovedId = normalizeTodoId(movedId);
+  const normalizedTargetId = normalizeTodoId(rawTargetId);
+
+  if (!normalizedMovedId || !normalizedTargetId || normalizedMovedId === normalizedTargetId) {
+    return null;
+  }
+  
+  const movedTodo = todoById.get(normalizedMovedId);
+  const targetTodo = todoById.get(normalizedTargetId);
+  if (!movedTodo || !targetTodo) {
+    return null;
+  }
+
+  const movedParentId = normalizeNullableId(movedTodo.parent_todo);
+  let candidate: Todo | undefined = targetTodo;
+  const visited = new Set<string>();
+
+  while (candidate && normalizeNullableId(candidate.parent_todo) !== movedParentId) {
+    const parentId = normalizeNullableId(candidate.parent_todo);
+    if (!parentId || visited.has(parentId)) {
+      return null;
+    }
+    visited.add(parentId);
+    candidate = todoById.get(parentId);
+  }
+
+  if (!candidate || normalizeNullableId(candidate.parent_todo) !== movedParentId) {
+    return null;
+  }
+
+  const resolvedId = normalizeTodoId(candidate.id);
+  return resolvedId && resolvedId !== normalizedMovedId ? resolvedId : null;
 }
 
 export function insertTodoAtTop(prev: Todo[], newTodo: Todo): Todo[] {
@@ -550,6 +601,10 @@ export default function TodoList({ initialTodos, selectedCategory }: TodoListPro
 
   const [todos, setTodos] = React.useState(initialTodos);
   const [openDescriptions, setOpenDescriptions] = React.useState<{ [id: string]: boolean }>({});
+  const todoById = React.useMemo(
+    () => new Map(todos.map((todo) => [normalizeTodoId(todo.id), todo])),
+    [todos]
+  );
 
   React.useEffect(() => {
     setTodos(initialTodos);
@@ -714,8 +769,19 @@ export default function TodoList({ initialTodos, selectedCategory }: TodoListPro
   };
 
   const handleDragOver = (event: DragOverEvent) => {
-    const nextOverId = event.over ? String(event.over.id) : null;
-    if (nextOverId && nextOverId === activeTodoId) return;
+    const rawOverId = event.over ? String(event.over.id) : null;
+    if (!rawOverId || !activeTodoId) {
+      setOverTodoId(null); // Clear highlight and state
+      return;
+    }
+    if (rawOverId === activeTodoId) {
+      setOverTodoId(null);
+      return;
+    }
+
+    const nextOverId = resolveSameScopeTargetId(todoById, activeTodoId, rawOverId);
+    if (!nextOverId) return;
+
     setOverTodoId(nextOverId);
   };
 
@@ -728,7 +794,16 @@ export default function TodoList({ initialTodos, selectedCategory }: TodoListPro
     const movedId = String(event.active.id);
     const rawTargetId = event.over ? String(event.over.id) : "";
     const fallbackTargetId = overTodoId && overTodoId !== movedId ? overTodoId : "";
-    const targetId = rawTargetId && rawTargetId !== movedId ? rawTargetId : fallbackTargetId;
+    const initialTargetId = rawTargetId && rawTargetId !== movedId ? rawTargetId : fallbackTargetId;
+
+    // Resolve targetId to same-scope sibling (handles drop landing on a descendant).
+    let targetId = initialTargetId;
+    if (targetId) {
+      const resolvedTargetId = resolveSameScopeTargetId(todoById, movedId, targetId);
+      if (resolvedTargetId) {
+        targetId = resolvedTargetId;
+      }
+    }
 
     const overMiddleY = event.over
       ? event.over.rect.top + event.over.rect.height / 2
@@ -736,10 +811,8 @@ export default function TodoList({ initialTodos, selectedCategory }: TodoListPro
     const activeMiddleY = event.active.rect.current.translated
       ? event.active.rect.current.translated.top + event.active.rect.current.translated.height / 2
       : null;
-    const dropPosition: DropPosition =
-      overMiddleY !== null && activeMiddleY !== null && activeMiddleY > overMiddleY
-        ? "after"
-        : (event.delta.y > 0 ? "after" : "before");
+    // Keep before/after intent heuristic consistent for both direct and descendant-resolved targets.
+    const dropPosition = resolveDropPosition(overMiddleY, activeMiddleY, event.delta.y);
 
     setActiveTodoId(null);
     setOverTodoId(null);
@@ -748,9 +821,7 @@ export default function TodoList({ initialTodos, selectedCategory }: TodoListPro
   };
 
   const todoTree = buildTodoTree([...todos]);
-  const activeTodo = activeTodoId
-    ? todos.find((todo) => normalizeTodoId(todo.id) === activeTodoId)
-    : null;
+  const activeTodo = activeTodoId ? todoById.get(activeTodoId) ?? null : null;
 
   return (
     <div className="space-y-4">
@@ -792,9 +863,11 @@ export default function TodoList({ initialTodos, selectedCategory }: TodoListPro
       )}
 
       {/* Nested Todo list with indented sub-todos */}
+      {/* TODO: collisionDetection={closestCenter} was removed to fix bug where drop area wasn't marked
+          when dropping on a todo with 3+ children. Can be removed if no issues arise. */}
       <DndContext
         sensors={sensors}
-        collisionDetection={closestCenter}
+        collisionDetection={rectIntersection}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragCancel={handleDragCancel}
