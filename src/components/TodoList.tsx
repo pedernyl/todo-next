@@ -76,6 +76,45 @@ function normalizeNullableId(id: string | number | null | undefined): string | n
   return normalized.length > 0 ? normalized : null;
 }
 
+function resolveSameScopeTargetId(
+  todoById: Map<string, Todo>,
+  movedId: string,
+  rawTargetId: string | null
+): string | null {
+  const normalizedMovedId = normalizeTodoId(movedId);
+  const normalizedTargetId = normalizeTodoId(rawTargetId);
+
+  if (!normalizedMovedId || !normalizedTargetId || normalizedMovedId === normalizedTargetId) {
+    return null;
+  }
+  
+  const movedTodo = todoById.get(normalizedMovedId);
+  const targetTodo = todoById.get(normalizedTargetId);
+  if (!movedTodo || !targetTodo) {
+    return null;
+  }
+
+  const movedParentId = normalizeNullableId(movedTodo.parent_todo);
+  let candidate: Todo | undefined = targetTodo;
+  const visited = new Set<string>();
+
+  while (candidate && normalizeNullableId(candidate.parent_todo) !== movedParentId) {
+    const parentId = normalizeNullableId(candidate.parent_todo);
+    if (!parentId || visited.has(parentId)) {
+      return null;
+    }
+    visited.add(parentId);
+    candidate = todoById.get(parentId);
+  }
+
+  if (!candidate || normalizeNullableId(candidate.parent_todo) !== movedParentId) {
+    return null;
+  }
+
+  const resolvedId = normalizeTodoId(candidate.id);
+  return resolvedId && resolvedId !== normalizedMovedId ? resolvedId : null;
+}
+
 export function insertTodoAtTop(prev: Todo[], newTodo: Todo): Todo[] {
   const maxSortIndex = prev.reduce((currentMax, todo) => {
     const sortIndex = todo.sort_index;
@@ -728,28 +767,10 @@ export default function TodoList({ initialTodos, selectedCategory }: TodoListPro
       return;
     }
 
-    const activeTodo = todoById.get(activeTodoId);
-    const overTodo = todoById.get(rawOverId);
-    if (!activeTodo || !overTodo) return;
+    const nextOverId = resolveSameScopeTargetId(todoById, activeTodoId, rawOverId);
+    if (!nextOverId) return;
 
-    const activeParentId = normalizeNullableId(activeTodo.parent_todo);
-
-    // Walk up from overTodo until we reach the same parent scope as activeTodo.
-    let candidate: Todo | undefined = overTodo;
-    const visited = new Set<string>();
-    while (candidate && normalizeNullableId(candidate.parent_todo) !== activeParentId) {
-      const parentId = normalizeNullableId(candidate.parent_todo);
-      if (!parentId || visited.has(parentId)) { candidate = undefined; break; }
-      visited.add(parentId);
-      candidate = todoById.get(parentId);
-    }
-
-    if (!candidate || normalizeNullableId(candidate.parent_todo) !== activeParentId) return;
-
-    const nextOverId = normalizeTodoId(candidate.id);
-    if (nextOverId !== activeTodoId) {
-      setOverTodoId(nextOverId);
-    }
+    setOverTodoId(nextOverId);
   };
 
   const handleDragCancel = () => {
@@ -766,21 +787,9 @@ export default function TodoList({ initialTodos, selectedCategory }: TodoListPro
     // Resolve targetId to same-scope sibling (handles drop landing on a descendant).
     let targetId = initialTargetId;
     if (targetId) {
-      const movedTodo = todoById.get(movedId);
-      const targetTodo = todoById.get(targetId);
-      if (movedTodo && targetTodo) {
-        const movedParentId = normalizeNullableId(movedTodo.parent_todo);
-        let candidate: Todo | undefined = targetTodo;
-        const visited = new Set<string>();
-        while (candidate && normalizeNullableId(candidate.parent_todo) !== movedParentId) {
-          const parentId = normalizeNullableId(candidate.parent_todo);
-          if (!parentId || visited.has(parentId)) { candidate = undefined; break; }
-          visited.add(parentId);
-          candidate = todoById.get(parentId);
-        }
-        if (candidate && normalizeNullableId(candidate.parent_todo) === movedParentId) {
-          targetId = normalizeTodoId(candidate.id);
-        }
+      const resolvedTargetId = resolveSameScopeTargetId(todoById, movedId, targetId);
+      if (resolvedTargetId) {
+        targetId = resolvedTargetId;
       }
     }
 
