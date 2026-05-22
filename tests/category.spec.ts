@@ -16,6 +16,7 @@ async function createCategory(page: import('@playwright/test').Page, categoryNam
 	await expect(page.locator(`select option:has-text("${categoryName}")`)).toHaveCount(1, { timeout: 15000 });
 	await page.selectOption('select', { label: categoryName });
 	await expect(page.locator('select')).toHaveValue(/^(?!__create__$).+/);
+	await expect(page.getByRole('button', { name: 'Add Todo', exact: true })).toBeVisible();
 }
 
 async function createTodo(page: import('@playwright/test').Page, title: string, description: string) {
@@ -49,10 +50,12 @@ test.describe('Category E2E', () => {
 		await createTodo(page, todoB, 'belongs to B');
 
 		await page.selectOption('select', { label: categoryA });
+		await expect(page.getByRole('button', { name: 'Add Todo', exact: true })).toBeVisible();
 		await expect(page.locator(`li:has-text("${todoA}")`)).toBeVisible();
 		await expect(page.locator(`li:has-text("${todoB}")`)).toHaveCount(0);
 
 		await page.selectOption('select', { label: categoryB });
+		await expect(page.getByRole('button', { name: 'Add Todo', exact: true })).toBeVisible();
 		await expect(page.locator(`li:has-text("${todoB}")`)).toBeVisible();
 		await expect(page.locator(`li:has-text("${todoA}")`)).toHaveCount(0);
 	});
