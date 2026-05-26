@@ -9,10 +9,12 @@ cp .env.local.example .env.local
 # edit .env.local and fill in GitHub + Supabase values
 ```
 
-Install app 
+```Install app 
 npm install
-
-Then start dev:
+```
+```
+Start development server
+```
 
 ```bash
 npm run dev

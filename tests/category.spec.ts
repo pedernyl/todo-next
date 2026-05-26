@@ -24,8 +24,8 @@ async function createTodo(page: import('@playwright/test').Page, title: string, 
 	if (await addTodoButton.isVisible()) {
 		await addTodoButton.click();
 	}
-	await page.fill('input[placeholder="Title"]', title);
-	await page.fill('textarea[placeholder="Description"]', description);
+	await page.fill('input[name="title"]', title);
+	await page.fill('textarea[name="description"]', description);
 	await Promise.all([
 		page.waitForResponse((res) => res.url().includes('/api/todos') && res.request().method() === 'POST' && res.ok()),
 		page.click('button:has-text("Save Todo")'),
