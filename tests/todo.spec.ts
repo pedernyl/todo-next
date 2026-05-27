@@ -66,16 +66,4 @@ test.describe('Todo App E2E', () => {
     await expect(title).toHaveClass(/line-through/);
   });
 
-  // test('should delete a todo', async ({ page }) => {
-  //   await page.goto(BASE_URL);
-  //   // Find the todo by text and click its delete button (adjust selector as needed)
-  //   const todo = page.locator('text=Playwright Todo');
-  //   await expect(todo).toBeVisible();
-  //   // Click the delete button (adjust selector to match your UI)
-  //   await todo.locator('button[aria-label="Delete"]').click();
-  //   // Confirm deletion if prompted
-  //   // await page.click('button:has-text("Confirm")'); // Uncomment if you have a confirm dialog
-  //   // Check that the todo is gone
-  //   await expect(page.locator('text=Playwright Todo')).not.toBeVisible();
-  // });
 });
