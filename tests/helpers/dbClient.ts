@@ -11,10 +11,10 @@ export function createTestDbClient(): SupabaseClient {
   const serviceRoleKeyTest = process.env.SUPABASE_TEST_SERVICE_ROLE_KEY;
 
   if (!supabaseTestUrl) {
-    throw new Error('NEXT_PUBLIC_SUPABASE_URL is not set — cannot create test DB client for cleanup');
+    throw new Error('NEXT_PUBLIC_SUPABASE_TEST_URL is not set — cannot create test DB client for cleanup');
   }
   if (!serviceRoleKeyTest) {
-    throw new Error('SUPABASE_SERVICE_ROLE_KEY is not set — cannot create test DB client for cleanup');
+    throw new Error('SUPABASE_TEST_SERVICE_ROLE_KEY is not set — cannot create test DB client for cleanup');
   }
 
   return createClient(supabaseTestUrl, serviceRoleKeyTest, {
