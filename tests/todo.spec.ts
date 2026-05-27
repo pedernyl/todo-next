@@ -12,7 +12,6 @@ test.describe('Todo App E2E', () => {
   const createdTodoTitles: string[] = [];
 
   test.afterAll(async () => {
-    console.log('Cleaning up created todos:', createdTodoTitles); 
     const db = createTestDbClient();
     await deleteTodosByTitle(db, createdTodoTitles);
   });

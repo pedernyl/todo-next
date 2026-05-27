@@ -27,8 +27,7 @@ export async function deleteTodosByTitle(
           console.error(`[cleanup] deleteTodosByTitle failed on ${tableName}:`, error.message);
         }
       } else {
-        console.log(`[cleanup] deleteTodosByTitle succeeded on ${tableName}`);
-        break;
+        break; // If delete succeeded on "Todos", no need to try "todos"
       }
     } catch (error) {
       // Network/runtime failures are thrown and must be handled separately.
@@ -50,12 +49,10 @@ export async function deleteCategoriesByName(
 ): Promise<void> {
   if (names.length === 0) return;
   try {
-    const { error } = await db.from('Category').delete().in('name', names);
+    const { error } = await db.from('Category').delete().in('title', names);
     if (error) {
       console.error('[cleanup] deleteCategoriesByName failed on Category:', error.message);
-    } else {
-      console.log('[cleanup] deleteCategoriesByName succeeded on Category for names:', names);
-    }
+    } 
   } catch (error) {
     if (error instanceof Error) {
       console.error('[cleanup] deleteCategoriesByName threw on Category:', error.message);
