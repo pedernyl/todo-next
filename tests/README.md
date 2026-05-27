@@ -6,9 +6,10 @@ Before running Playwright, start Next.js with test database mapping:
 
 ```
 npm run dev:testDb
-To ensure more stable tests use
-npm run build:testDb and npm run start:testDb 
-Dev server can report errors if there is some addons that add html
+For a more stable test environment, use:
+npm run build:testDb && npm run start:testDb
+
+The dev server can be disturbed by browser addons that inject HTML.
 ```
 
 Playwright now runs a global fail-fast guard before any test starts.
@@ -46,3 +47,4 @@ npx playwright test tests/*.spec.ts --headed
 - Do not commit `storageState.json` to version control (it is in `.gitignore`).
 - Only run the login script when you need to refresh your authentication state.
 - Remember to set csp to dev, off or report-only
+- For the most stable Playwright runs, prefer `npm run build:testDb && npm run start:testDb` over `npm run dev:testDb`.

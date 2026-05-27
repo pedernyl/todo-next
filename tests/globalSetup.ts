@@ -21,7 +21,7 @@ function buildMismatchError(baseUrl: string): Error {
       `Playwright test DB guard blocked this run: app at ${baseUrl} is not using the test database.`,
       'Recovery:',
       '1. Stop the current app server.',
-      '2. Start with test DB mapping: npm run build:testDb && npm run start:testDb',
+      '2. Start with test DB mapping for a more stable environment: npm run build:testDb && npm run start:testDb',
       '3. Run Playwright again.',
     ].join('\n')
   );

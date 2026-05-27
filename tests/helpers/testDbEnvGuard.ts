@@ -19,7 +19,7 @@ export function assertRequiredTestDbEnv(context: string): void {
     [
       `${context}: missing required test database environment variables.`,
       ...missingVars.map((name) => `- ${name}`),
-      'Start the app with test DB mapping before running Playwright: npm run dev:testDb',
+      'Start the app with test DB mapping before running Playwright: npm run build:testDb && npm run start:testDb',
     ].join('\n')
   );
 }
