@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { createTestDbClient } from './helpers/dbClient';
-import { deleteTodosByTitle, deleteCategoriesByName } from './helpers/cleanupHelpers';
+import { deleteTodosByTitle, deleteCategoriesByName, deleteCategoriesByTitle } from './helpers/cleanupHelpers';
 
 const BASE_URL = 'http://localhost:3000';
 test.use({ storageState: 'storageState.json' });
@@ -45,7 +45,7 @@ test.describe('Category E2E', () => {
 	test.afterAll(async () => {
 		const db = createTestDbClient();
 		await deleteTodosByTitle(db, [todoA, todoB]);
-		await deleteCategoriesByName(db, [categoryA, categoryB]);
+		await deleteCategoriesByTitle(db, [categoryA, categoryB]);
 	});
 
 	test('shows only todos for the selected category', async ({ page }) => {

@@ -1,8 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 /**
- * Deletes todos by their exact titles. Silently ignores errors so a missing
- * row never causes cleanup to fail.
+ * Deletes todos by their exact titles.
+ * Errors are logged for visibility, but cleanup does not throw.
  */
 export async function deleteTodosByTitle(
   db: SupabaseClient,
@@ -41,23 +41,24 @@ export async function deleteTodosByTitle(
 }
 
 /**
- * Deletes categories by their exact names. Silently ignores errors.
+ * Deletes categories by their exact titles.
+ * Errors are logged for visibility, but cleanup does not throw.
  */
-export async function deleteCategoriesByName(
+export async function deleteCategoriesByTitle(
   db: SupabaseClient,
-  names: string[]
+  titles: string[]
 ): Promise<void> {
-  if (names.length === 0) return;
+  if (titles.length === 0) return;
   try {
-    const { error } = await db.from('Category').delete().in('title', names);
+    const { error } = await db.from('Category').delete().in('title', titles);
     if (error) {
-      console.error('[cleanup] deleteCategoriesByName failed on Category:', error.message);
+      console.error('[cleanup] deleteCategoriesByTitle failed on Category:', error.message);
     } 
   } catch (error) {
     if (error instanceof Error) {
-      console.error('[cleanup] deleteCategoriesByName threw on Category:', error.message);
+      console.error('[cleanup] deleteCategoriesByTitle threw on Category:', error.message);
     } else {
-      console.error('[cleanup] deleteCategoriesByName threw on Category:', String(error));
+      console.error('[cleanup] deleteCategoriesByTitle threw on Category:', String(error));
     }
   }
 }
