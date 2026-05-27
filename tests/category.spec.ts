@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { createTestDbClient } from './helpers/dbClient';
-import { deleteTodosByTitle, deleteCategoriesByName, deleteCategoriesByTitle } from './helpers/cleanupHelpers';
+import { deleteTodosByTitle, deleteCategoriesByTitle } from './helpers/cleanupHelpers';
 
 const BASE_URL = 'http://localhost:3000';
 test.use({ storageState: 'storageState.json' });
