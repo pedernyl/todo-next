@@ -14,11 +14,13 @@ NEXT_CSP_MODE=report-only npm run build
 NEXT_CSP_MODE=report-only npm run start
 ```
 
-Dev mode (relaxed):
+Relaxed CSP for Playwright testing:
 
 ```bash
-NEXT_CSP_MODE=dev npm run dev
+NEXT_CSP_MODE=dev npm run build:testDb && npm run start:testDb
 ```
+
+If you specifically need live reload while iterating on CSP, use `npm run dev:testDb` instead.
 
 Notes
 
