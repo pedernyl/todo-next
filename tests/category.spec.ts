@@ -1,4 +1,6 @@
 import { test, expect } from '@playwright/test';
+import { createTestDbClient } from './helpers/dbClient';
+import { deleteTodosByTitle, deleteCategoriesByTitle } from './helpers/cleanupHelpers';
 
 const BASE_URL = 'http://localhost:3000';
 test.use({ storageState: 'storageState.json' });
@@ -34,13 +36,19 @@ async function createTodo(page: import('@playwright/test').Page, title: string, 
 }
 
 test.describe('Category E2E', () => {
-	test('shows only todos for the selected category', async ({ page }) => {
-		const seed = Date.now();
-		const categoryA = `PW Category A ${seed}`;
-		const categoryB = `PW Category B ${seed}`;
-		const todoA = `PW Todo in A ${seed}`;
-		const todoB = `PW Todo in B ${seed}`;
+	const seed = Date.now();
+	const categoryA = `PW Category A ${seed}`;
+	const categoryB = `PW Category B ${seed}`;
+	const todoA = `PW Todo in A ${seed}`;
+	const todoB = `PW Todo in B ${seed}`;
 
+	test.afterAll(async () => {
+		const db = createTestDbClient();
+		await deleteTodosByTitle(db, [todoA, todoB]);
+		await deleteCategoriesByTitle(db, [categoryA, categoryB]);
+	});
+
+	test('shows only todos for the selected category', async ({ page }) => {
 		await page.goto(BASE_URL);
 
 		await createCategory(page, categoryA);

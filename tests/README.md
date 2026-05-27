@@ -1,5 +1,25 @@
 # Playwright E2E Testing Instructions
 
+## 0. Start app with test DB mapping
+
+Before running Playwright, start Next.js with test database mapping:
+
+```
+npm run dev:testDb
+For a more stable test environment, use:
+npm run build:testDb && npm run start:testDb
+
+The dev server can be disturbed by browser addons that inject HTML.
+```
+
+Playwright now runs a global fail-fast guard before any test starts.
+The guard aborts if:
+- required test DB vars are missing
+- the app is not reachable
+- the running app is not mapped to test DB
+
+If blocked, restart the app with `npm run dev:testDb` and rerun Playwright.
+
 ## 1. Authenticate and Create `storageState.json`
 Before running any E2E tests, you must set csp to off, start server and log in and save your authentication state:
 
@@ -27,3 +47,4 @@ npx playwright test tests/*.spec.ts --headed
 - Do not commit `storageState.json` to version control (it is in `.gitignore`).
 - Only run the login script when you need to refresh your authentication state.
 - Remember to set csp to dev, off or report-only
+- For the most stable Playwright runs, prefer `npm run build:testDb && npm run start:testDb` over `npm run dev:testDb`.
