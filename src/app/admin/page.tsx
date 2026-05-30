@@ -88,6 +88,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
             {adminViews.map((item) => (
               <Link
                 key={item.key}
+                data-testid={`admin-link-${item.key}`}
                 href={item.key === "home" ? "/admin" : `/admin?view=${item.key}`}
                 className={`mb-1 block rounded px-3 py-2 text-sm transition ${
                   activeView === item.key
@@ -104,7 +105,15 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         <section className="flex min-h-screen flex-col">
           <header className={`sticky top-0 z-20 flex h-14 items-center justify-between border-b px-4 sm:px-6 ${headerClassName}`}>
             <h1 className="text-2xl font-semibold">{getDevTitle(activeLabel)}</h1>
-            <Link href="/" prefetch={false} className={`text-sm font-semibold hover:underline ${testDbActive ? 'text-white' : 'text-blue-700'}`}>
+            <Link 
+              href="/" 
+              prefetch={false} 
+              className={`
+                text-sm font-semibold hover:underline 
+                ${testDbActive ? 'text-white' : 'text-blue-700'}
+                `}
+              data-testid="admin-link-todos"
+              >
               Todos
             </Link>
           </header>

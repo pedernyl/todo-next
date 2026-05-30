@@ -467,7 +467,10 @@ function SortableTodoItem({
           >
             ::
           </button>
-          <span className={todo.completed ? "line-through text-gray-400" : ""}>
+          <span 
+            className={todo.completed ? "line-through text-gray-400" : ""}
+            data-testid={todo.completed ? `completed-${todo.title}` : `uncompleted-${todo.title}`}
+          >
             {todo.title}
           </span>
         </div>
@@ -829,6 +832,7 @@ export default function TodoList({ initialTodos, selectedCategory }: TodoListPro
       <div className="flex justify-end">
         <button
           onClick={handleToggleShowCompleted}
+          data-testid="toggleShowCompleted"
           className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition text-sm"
         >
           {showCompleted ? "Hide completed" : "Show completed"}
@@ -888,7 +892,8 @@ export default function TodoList({ initialTodos, selectedCategory }: TodoListPro
         </ul>
         <DragOverlay>
           {activeTodo ? (
-            <div className="p-3 rounded-lg bg-white shadow-lg ring-2 ring-blue-300 text-sm">
+            <div 
+              className="p-3 rounded-lg bg-white shadow-lg ring-2 ring-blue-300 text-sm">
               {activeTodo.title}
             </div>
           ) : null}
