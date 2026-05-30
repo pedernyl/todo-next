@@ -287,6 +287,7 @@ export default function AdminSettingsView() {
                     <div className="mt-4">
                       <button
                         type="button"
+                        data-testid={`save-setting-${key}`}
                         onClick={() => void saveSetting(setting)}
                         disabled={!dirty || savingSettingKey === key}
                         className="rounded bg-sky-700 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-sky-800 disabled:cursor-not-allowed disabled:bg-slate-400"
