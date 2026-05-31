@@ -51,3 +51,7 @@ export type AdminSettingsTypeGroup = {
   type: string;
   settings: AdminSettingsGroupState[];
 };
+
+export type FindSettingsByKeyRow = Pick<AdminSettingsStoredRow, 'id' | 'settings'>;
+export type FindSettingsByKeyResult = FindSettingsByKeyRow[];
+

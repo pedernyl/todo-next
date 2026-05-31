@@ -1,4 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import type { FindSettingsByKeyResult } from '@/lib/adminSettings/types';
+
 
 /**
  * Deletes todos by their exact titles.
@@ -63,19 +65,24 @@ export async function deleteCategoriesByTitle(
   }
 }
 
+type SettingsRow = {
+  id: number;
+  settings: Record<string, unknown> | null;
+};
+
 /** 
  * Fetch settings value from database before tests change this  
  */
 export async function getSettingValue(
   db: SupabaseClient,
   key: string
-): Promise<number | undefined | null> {
-  if (key.length === 0) return;
+): Promise<FindSettingsByKeyResult | undefined> {
+  if (key.length === 0) return undefined;
   try {
    const { data, error } = await db
     .rpc('find_settings_by_key', { search_key: 'maxLoadLimit' });
 
-    return data?.[0]?.settings ?? null;
+    return data;
    
 
   } catch (error) {
@@ -83,6 +90,32 @@ export async function getSettingValue(
       console.error('[cleanup] getSettingValue threw on ${key}:', error.message);
     } else {
       console.error('[cleanup] getSettingValue threw on ${key}:', String(error));
+    }
+  }
+}
+
+// Write setting value back to database after test. This is important to avoid side effects on other tests and local development.
+export async function setSettingValue(
+  db: SupabaseClient,
+  settings: Record<string, unknown> | null,
+  id: number
+): Promise<void> {
+  if (id <= 0) return;
+  try {
+   const { data, error } = await db
+    .from('Settings')
+    .update({ settings: settings })
+    .eq('id', id); 
+
+    if (error) {
+      console.error('[cleanup] setSettingValue failed on ${key}:', error.message);
+    }
+   
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error('[cleanup] setSettingValue threw on ${key}:', error.message);
+    } else {
+      console.error('[cleanup] setSettingValue threw on ${key}:', String(error));
     }
   }
 }
