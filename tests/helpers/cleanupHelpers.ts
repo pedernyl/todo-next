@@ -62,3 +62,31 @@ export async function deleteCategoriesByTitle(
     }
   }
 }
+
+/** 
+ * Fetch settings value from database before tests change this  
+ */
+export async function getSettingValue(
+  db: SupabaseClient,
+  key: string
+): Promise<number | undefined | null> {
+  if (key.length === 0) return;
+  try {
+   const { data, error } = await db
+    .rpc('find_settings_by_key', { search_key: 'maxLoadLimit' });
+
+    return data?.[0]?.settings ?? null;
+   
+
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error('[cleanup] getSettingValue threw on ${key}:', error.message);
+    } else {
+      console.error('[cleanup] getSettingValue threw on ${key}:', String(error));
+    }
+  }
+}
+
+
+
+
