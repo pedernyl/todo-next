@@ -1,25 +1,24 @@
 import page from '@/app/login/page';
 import { test, expect } from '@playwright/test';
 import { createTestDbClient } from './helpers/dbClient';
-import { getSettingValue } from './helpers/cleanupHelpers';
+import { getSettingValue, setSettingValue } from './helpers/cleanupHelpers';
+import type { FindSettingsByKeyResult } from '@/lib/adminSettings/types';
+
 
 const BASE_URL = 'http://localhost:3000';
 test.use({ storageState: 'storageState.json' });
 
 test.describe('Hide/Show Todos E2E', () => {
+    let db = createTestDbClient();
+    let fieldKey = 'defaultLoadLimit';
+    let originalSettingsRow: FindSettingsByKeyResult | undefined | null;
 
     test.beforeAll(async () => {
-        // Fet current value of load limit setting before test, so we can put it back after test.
-        const db = createTestDbClient();
-        const fieldKey = 'defaultLoadLimit';
-
-        const currentValue = await getSettingValue(db, fieldKey);
-        
+        // Fetch current value of load limit setting before test, so we can put it back after test.
+        originalSettingsRow = await getSettingValue(db, fieldKey);
     });
 
     test('should hide completed todos when clicked and scrolling', async ({ page }) => {
-        test.expect(true).toBe(true); // passerar alltid
-        return; // resten körs inte
         await page.goto(BASE_URL);
         // Go to admin page
         await page.getByTestId('admin-link').click();
@@ -27,8 +26,6 @@ test.describe('Hide/Show Todos E2E', () => {
         // Change number of todos to load to 10
         await page.getByTestId('admin-link-settings').click();
 
-        // Get number of todos to load before change
-        // @todo we need to put back this value after test. 
         const loadLimitInput = 
             await page.locator('[id="App::todos--defaultLoadLimit"]').inputValue();
 
@@ -58,8 +55,18 @@ test.describe('Hide/Show Todos E2E', () => {
         await expect(page.getByTestId(/^completed-/)).toHaveCount(0);
     });
 
+    test.afterAll(async () => {
+        // Put back original value of load limit setting after test.
+        if (originalSettingsRow !== undefined && originalSettingsRow !== null) {
+            console.log('Restoring original setting value for ${fieldKey}:', originalSettingsRow);
+            const id = originalSettingsRow[0].id; 
+            const settings = originalSettingsRow[0].settings; 
+            await setSettingValue(db, settings, id);
+        }
+    });
+
 });    
 
 
-
+    
 
