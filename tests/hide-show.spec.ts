@@ -58,7 +58,6 @@ test.describe('Hide/Show Todos E2E', () => {
     test.afterAll(async () => {
         // Put back original value of load limit setting after test.
         if (originalSettingsRow !== undefined && originalSettingsRow !== null) {
-            console.log('Restoring original setting value for ${fieldKey}:', originalSettingsRow);
             const id = originalSettingsRow[0].id; 
             const settings = originalSettingsRow[0].settings; 
             await setSettingValue(db, settings, id);
