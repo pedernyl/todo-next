@@ -1,10 +1,17 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { FindSettingsByKeyResult } from '@/lib/adminSettings/types';
+import { readFile } from 'fs/promises';
+import { parseAdminSettingsDefinitionYaml } from '@/lib/adminSettings/loader';
+import { AdminSettingsDefinition } from '@/lib/adminSettings/types';
 
 
 /**
  * Deletes todos by their exact titles.
  * Errors are logged for visibility, but cleanup does not throw.
+ * 
+ * @param db Supabase client instance
+ * @param titles Array of todo titles to delete
+ * @returns void  
  */
 export async function deleteTodosByTitle(
   db: SupabaseClient,
@@ -45,6 +52,10 @@ export async function deleteTodosByTitle(
 /**
  * Deletes categories by their exact titles.
  * Errors are logged for visibility, but cleanup does not throw.
+ * 
+ * @param db Supabase client instance
+ * @param titles Array of category titles to delete
+ * @returns void  
  */
 export async function deleteCategoriesByTitle(
   db: SupabaseClient,
@@ -65,13 +76,13 @@ export async function deleteCategoriesByTitle(
   }
 }
 
-type SettingsRow = {
-  id: number;
-  settings: Record<string, unknown> | null;
-};
 
 /** 
- * Fetch settings value from database before tests change this  
+ * Fetch settings value from database 
+ * 
+ * @param db Supabase client instance
+ * @param key 
+ * @returns FindSettingsByKeyResult | undefined 
  */
 export async function getSettingValue(
   db: SupabaseClient,
@@ -80,7 +91,7 @@ export async function getSettingValue(
   if (key.length === 0) return undefined;
   try {
    const { data, error } = await db
-    .rpc('find_settings_by_key', { search_key: 'maxLoadLimit' });
+    .rpc('find_settings_by_key', { search_key: key });
 
     return data;
    
@@ -94,7 +105,27 @@ export async function getSettingValue(
   }
 }
 
-// Write setting value back to database after test. This is important to avoid side effects on other tests and local development.
+/**
+ * Get AdminSettingsDefinition from yaml file. 
+ * @param fileName 
+ * @returns AdminSettingsDefinition 
+ *
+ */
+export async function getAdminSettingsFromYamlFile(
+  fileName: string
+): Promise<AdminSettingsDefinition> {
+  const rawYaml = await readFile(fileName, "utf-8");
+  return parseAdminSettingsDefinitionYaml(rawYaml, fileName);
+}
+
+/**
+ * Write setting value back to database
+ * 
+ * @param db Supabase client instance
+ * @param settings 
+ * @param id 
+ * @returns void
+ */
 export async function setSettingValue(
   db: SupabaseClient,
   settings: Record<string, unknown> | null,
