@@ -28,6 +28,8 @@ import { useGlobalBlockingLoader } from "../context/GlobalBlockingLoaderContext"
 interface TodoListProps {
   initialTodos: Todo[];
   selectedCategory?: Category | null;
+  showCompleted: boolean;
+  handleToggleShowCompleted: () => void;
 }
 
 interface TodoTreeNode extends Todo {
@@ -570,7 +572,12 @@ function getIndentClass(level: number): string {
   return map[idx];
 }
 
-export default function TodoList({ initialTodos, selectedCategory }: TodoListProps) {
+export default function TodoList(
+  { 
+    initialTodos, selectedCategory, 
+    showCompleted, handleToggleShowCompleted 
+  
+  }: TodoListProps) {
   const { userId } = useUserId();
   const { runBlockingFetch } = useGlobalBlockingLoader();
   const [activeTodoId, setActiveTodoId] = React.useState<string | null>(null);
@@ -613,7 +620,6 @@ export default function TodoList({ initialTodos, selectedCategory }: TodoListPro
     setTodos(initialTodos);
   }, [initialTodos]);
 
-  const [showCompleted, setShowCompleted] = React.useState(true);
   const [showAddForm, setShowAddForm] = React.useState(false);
   const [editTodo, setEditTodo] = React.useState<Todo | null>(null);
   const [parentTodo, setParentTodo] = React.useState<Todo | null>(null);
@@ -646,15 +652,6 @@ export default function TodoList({ initialTodos, selectedCategory }: TodoListPro
       }
       // error intentionally ignored
     }
-  };
-
-  // Toggle show/hide completed todos
-  const handleToggleShowCompleted = () => {
-    setShowCompleted((prev) => {
-      const newValue = !prev;
-      fetchTodos(newValue);
-      return newValue;
-    });
   };
 
   const handleTodoAdded = (newTodo: Todo) => {
@@ -826,12 +823,14 @@ export default function TodoList({ initialTodos, selectedCategory }: TodoListPro
   const todoTree = buildTodoTree([...todos]);
   const activeTodo = activeTodoId ? todoById.get(activeTodoId) ?? null : null;
 
+   //onClick={/*handleToggleShowCompleted @todo send this as prop */ hide/show butto}
+
   return (
     <div className="space-y-4">
       {/* Toggle show/hide completed todos, placed above and right */}
       <div className="flex justify-end">
         <button
-          onClick={handleToggleShowCompleted}
+          onClick={() => handleToggleShowCompleted()}
           data-testid="toggleShowCompleted"
           className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition text-sm"
         >
