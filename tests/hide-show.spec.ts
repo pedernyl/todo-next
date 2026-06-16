@@ -8,6 +8,7 @@ import {
     setSettingValue,
 } from './helpers/cleanupHelpers';
 import type { FindSettingsByKeyResult, AdminSettingsDefinition } from '@/lib/adminSettings/types';
+import { DROPDOWN_OPTIONS } from '@/constants/dropdowns/categoryDropDown';
 
 
 const BASE_URL = 'http://localhost:3000';
@@ -86,7 +87,7 @@ test.describe('Hide/Show Todos E2E', () => {
             return Boolean(select && (select as HTMLSelectElement).options.length >= 2);
         }, { timeout: 15000 });
         
-        await page.getByTestId('category-select').selectOption('__create__');
+        await page.getByTestId('category-select').selectOption(DROPDOWN_OPTIONS.CREATE_CATEGORY.value);
         await page.getByTestId('new-category-input').fill(categoryTitle);
         await page.getByTestId('new-category-description').fill(`Created by Playwright: ${categoryTitle}`);
         await page.getByTestId('create-category-button').click();
@@ -94,7 +95,7 @@ test.describe('Hide/Show Todos E2E', () => {
             page.getByTestId('category-select').locator(`option:has-text("${categoryTitle}")`)
         ).toHaveCount(1);
         await page.getByTestId('category-select').selectOption({ label: categoryTitle });
-        await expect(page.getByTestId('category-select')).toHaveValue(/^(?!__create__$).+/);
+        await expect(page.getByTestId('category-select')).not.toHaveValue(DROPDOWN_OPTIONS.CREATE_CATEGORY.value);
 
         // Add a todo in the created category.
         const addTodoButton = page.getByTestId('toggleAddTodoForm');
@@ -115,7 +116,7 @@ test.describe('Hide/Show Todos E2E', () => {
         await expect(page.getByTestId(`completed-${todoTitle}`)).toHaveCount(1);
 
         // Change to all categories.
-        await page.getByTestId('category-select').selectOption('');
+        await page.getByTestId('category-select').selectOption(DROPDOWN_OPTIONS.ALL_CATEGORIES.value);
 
         // Hide completed in all categories.
         await page.getByTestId('toggleShowCompleted').click();

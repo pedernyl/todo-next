@@ -4,6 +4,7 @@ import CategoryDropdown from "./CategoryDropdown";
 import { useUserId } from "../context/UserIdContext";
 import { getCategories, createCategory, Category } from "../lib/categoryService";
 import { useGlobalBlockingLoader } from "../context/GlobalBlockingLoaderContext";
+import { DROPDOWN_OPTIONS } from "../constants/dropdowns/categoryDropDown";
 
 interface CategoryDropdownWrapperProps {
   onCategoryChange: (category: Category | null) => void;
@@ -27,8 +28,8 @@ const CategoryDropdownWrapper: React.FC<CategoryDropdownWrapperProps> = ({ onCat
   }, [userId, runBlocking]);
 
   const handleCategorySelect = (categoryId: string) => {
-    if (categoryId === "__create__") {
-      setSelectedCategory("__create__");
+    if (categoryId === DROPDOWN_OPTIONS.CREATE_CATEGORY.value) {
+      setSelectedCategory(DROPDOWN_OPTIONS.CREATE_CATEGORY.value);
     } else {
       setSelectedCategory(categoryId);
       const cat = categories.find(c => String(c.id) === String(categoryId)) || null;

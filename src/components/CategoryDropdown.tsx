@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { DROPDOWN_OPTIONS } from "../constants/dropdowns/categoryDropDown";
 
 
 interface CategoryDropdownProps {
@@ -33,13 +34,23 @@ const CategoryDropdown: React.FC<CategoryDropdownProps> = ({
         onChange={e => onCategorySelect(e.target.value)}
         data-testid="category-select"
       >
-        <option value="" data-testid="all-categories">All Categories</option>
+        <option
+          value={DROPDOWN_OPTIONS.ALL_CATEGORIES.value}
+          data-testid={DROPDOWN_OPTIONS.ALL_CATEGORIES.testId}
+        >
+          {DROPDOWN_OPTIONS.ALL_CATEGORIES.label}
+        </option>
         {categories.map((cat) => (
           <option key={cat.id} value={cat.id}>{cat.title}</option>
         ))}
-        <option value="__create__" data-testid="create-category">+ Create new category</option>
+        <option
+          value={DROPDOWN_OPTIONS.CREATE_CATEGORY.value}
+          data-testid={DROPDOWN_OPTIONS.CREATE_CATEGORY.testId}
+        >
+          {DROPDOWN_OPTIONS.CREATE_CATEGORY.label}
+        </option>
       </select>
-      {selectedCategory === "__create__" && (
+      {selectedCategory === DROPDOWN_OPTIONS.CREATE_CATEGORY.value && (
         <div className="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded shadow p-2 z-20">
           <div className="flex justify-end">
             <button
@@ -49,7 +60,7 @@ const CategoryDropdown: React.FC<CategoryDropdownProps> = ({
               onClick={() => {
                 setNewCategory("");
                 setNewDescription("");
-                onCategorySelect("");
+                onCategorySelect(DROPDOWN_OPTIONS.ALL_CATEGORIES.value);
               }}
             >
               &times;
