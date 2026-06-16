@@ -481,6 +481,7 @@ function SortableTodoItem({
             type="button"
             onClick={() => toggleDescription(todo.id)}
             className="text-blue-600 hover:underline text-sm cursor-pointer"
+            data-testid={`toggle-description-${todo.title}`}
           >
             {openDescriptions[todoId] ? "Hide Description" : "Show Description"}
           </button>
@@ -500,12 +501,14 @@ function SortableTodoItem({
             <button
               onClick={() => toggleTodo(todo.id, !todo.completed)}
               className="px-3 py-1 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition"
+              data-testid={`toggle-complete-${todo.title}`}
             >
               {todo.completed ? "Undo" : "Complete"}
             </button>
             <button
               onClick={() => handleCreateSubTodo(todo)}
               className="px-2 py-1 rounded-lg border border-blue-500 bg-blue-50 hover:bg-blue-100 text-blue-700 text-sm"
+              data-testid={`create-subtodo-${todo.title}`}
             >
               Create subTodo
             </button>
@@ -823,8 +826,6 @@ export default function TodoList(
   const todoTree = buildTodoTree([...todos]);
   const activeTodo = activeTodoId ? todoById.get(activeTodoId) ?? null : null;
 
-   //onClick={/*handleToggleShowCompleted @todo send this as prop */ hide/show butto}
-
   return (
     <div className="space-y-4">
       {/* Toggle show/hide completed todos, placed above and right */}
@@ -843,6 +844,7 @@ export default function TodoList(
         <button
           onClick={() => setShowAddForm((prev) => !prev)}
           className="text-blue-600 hover:underline text-sm mb-2"
+          data-testid="toggleAddTodoForm"
         >
           {showAddForm ? "Hide Add Todo" : "Add Todo"}
         </button>
