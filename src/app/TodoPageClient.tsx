@@ -128,8 +128,6 @@ export default function TodoPageClient({ initialTodos }: { initialTodos: Todo[] 
     setOffset(0);
     setHasMore(true);
    
-
-    // @todo need to have hide/completed category changed in the query params as well to avoid stale data when user toggles those filters and then changes category before the toggle request completes.
     const params = new URLSearchParams({
       showCompleted: String(showCompletedRef.current),
     });
