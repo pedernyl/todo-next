@@ -145,8 +145,9 @@ test.describe('Hide/Show Todos E2E', () => {
         }
         // If no original value was found in database, try to put back default value from yaml file, so that we don't 
         // leave side effects for local development and other tests.
-        const id = originalSettingsRow && originalSettingsRow[0] ? originalSettingsRow[0].id : -1; 
-        
+        const currentRow = await getSettingValue(db, fieldKey);
+        const id = currentRow && currentRow[0] ? currentRow[0].id : -1;
+
         const defaultSettings: Record<string, unknown> = Object.fromEntries(
             defaultValue.fields
                 .filter((field) => field.default !== undefined)

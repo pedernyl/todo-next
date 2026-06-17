@@ -138,14 +138,14 @@ export async function setSettingValue(
     .eq('id', id); 
 
     if (error) {
-      console.error('[cleanup] setSettingValue failed on ${key}:', error.message);
+      console.error(`[cleanup] setSettingValue failed on ${id}:`, error.message);
     }
    
   } catch (error) {
     if (error instanceof Error) {
-      console.error('[cleanup] setSettingValue threw on ${key}:', error.message);
+      console.error(`[cleanup] setSettingValue threw on ${id}:`, error.message);
     } else {
-      console.error('[cleanup] setSettingValue threw on ${key}:', String(error));
+      console.error(`[cleanup] setSettingValue threw on ${id}:`, String(error));
     }
   }
 }
