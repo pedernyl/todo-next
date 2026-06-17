@@ -28,6 +28,8 @@ import { useGlobalBlockingLoader } from "../context/GlobalBlockingLoaderContext"
 interface TodoListProps {
   initialTodos: Todo[];
   selectedCategory?: Category | null;
+  showCompleted: boolean;
+  handleToggleShowCompleted: () => void;
 }
 
 interface TodoTreeNode extends Todo {
@@ -467,7 +469,10 @@ function SortableTodoItem({
           >
             ::
           </button>
-          <span className={todo.completed ? "line-through text-gray-400" : ""}>
+          <span 
+            className={todo.completed ? "line-through text-gray-400" : ""}
+            data-testid={todo.completed ? `completed-${todoId}` : `uncompleted-${todoId}`}
+          >
             {todo.title}
           </span>
         </div>
@@ -476,6 +481,7 @@ function SortableTodoItem({
             type="button"
             onClick={() => toggleDescription(todo.id)}
             className="text-blue-600 hover:underline text-sm cursor-pointer"
+            data-testid={`toggle-description-${todoId}`}
           >
             {openDescriptions[todoId] ? "Hide Description" : "Show Description"}
           </button>
@@ -495,12 +501,14 @@ function SortableTodoItem({
             <button
               onClick={() => toggleTodo(todo.id, !todo.completed)}
               className="px-3 py-1 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition"
+              data-testid={`toggle-complete-${todoId}`}
             >
               {todo.completed ? "Undo" : "Complete"}
             </button>
             <button
               onClick={() => handleCreateSubTodo(todo)}
               className="px-2 py-1 rounded-lg border border-blue-500 bg-blue-50 hover:bg-blue-100 text-blue-700 text-sm"
+              data-testid={`create-subtodo-${todoId}`}
             >
               Create subTodo
             </button>
@@ -567,7 +575,12 @@ function getIndentClass(level: number): string {
   return map[idx];
 }
 
-export default function TodoList({ initialTodos, selectedCategory }: TodoListProps) {
+export default function TodoList(
+  { 
+    initialTodos, selectedCategory, 
+    showCompleted, handleToggleShowCompleted 
+  
+  }: TodoListProps) {
   const { userId } = useUserId();
   const { runBlockingFetch } = useGlobalBlockingLoader();
   const [activeTodoId, setActiveTodoId] = React.useState<string | null>(null);
@@ -610,7 +623,6 @@ export default function TodoList({ initialTodos, selectedCategory }: TodoListPro
     setTodos(initialTodos);
   }, [initialTodos]);
 
-  const [showCompleted, setShowCompleted] = React.useState(true);
   const [showAddForm, setShowAddForm] = React.useState(false);
   const [editTodo, setEditTodo] = React.useState<Todo | null>(null);
   const [parentTodo, setParentTodo] = React.useState<Todo | null>(null);
@@ -643,15 +655,6 @@ export default function TodoList({ initialTodos, selectedCategory }: TodoListPro
       }
       // error intentionally ignored
     }
-  };
-
-  // Toggle show/hide completed todos
-  const handleToggleShowCompleted = () => {
-    setShowCompleted((prev) => {
-      const newValue = !prev;
-      fetchTodos(newValue);
-      return newValue;
-    });
   };
 
   const handleTodoAdded = (newTodo: Todo) => {
@@ -828,7 +831,8 @@ export default function TodoList({ initialTodos, selectedCategory }: TodoListPro
       {/* Toggle show/hide completed todos, placed above and right */}
       <div className="flex justify-end">
         <button
-          onClick={handleToggleShowCompleted}
+          onClick={() => handleToggleShowCompleted()}
+          data-testid="toggleShowCompleted"
           className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition text-sm"
         >
           {showCompleted ? "Hide completed" : "Show completed"}
@@ -840,6 +844,7 @@ export default function TodoList({ initialTodos, selectedCategory }: TodoListPro
         <button
           onClick={() => setShowAddForm((prev) => !prev)}
           className="text-blue-600 hover:underline text-sm mb-2"
+          data-testid="toggleAddTodoForm"
         >
           {showAddForm ? "Hide Add Todo" : "Add Todo"}
         </button>
@@ -888,7 +893,8 @@ export default function TodoList({ initialTodos, selectedCategory }: TodoListPro
         </ul>
         <DragOverlay>
           {activeTodo ? (
-            <div className="p-3 rounded-lg bg-white shadow-lg ring-2 ring-blue-300 text-sm">
+            <div 
+              className="p-3 rounded-lg bg-white shadow-lg ring-2 ring-blue-300 text-sm">
               {activeTodo.title}
             </div>
           ) : null}

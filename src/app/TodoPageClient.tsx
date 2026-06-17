@@ -21,6 +21,7 @@ export default function TodoPageClient({ initialTodos }: { initialTodos: Todo[] 
   const [hasMore, setHasMore] = useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
+  const [showCompleted, setShowCompleted] = useState<boolean>(true);
   const { userId } = useUserId();
   const { runBlockingFetch } = useGlobalBlockingLoader();
   const sentinelRef = useRef<HTMLDivElement | null>(null);
@@ -31,6 +32,7 @@ export default function TodoPageClient({ initialTodos }: { initialTodos: Todo[] 
   const hasMoreRef = useRef<boolean>(hasMore);
   const isRefreshingRef = useRef<boolean>(false);
   const refreshSeqRef = useRef<number>(0);
+  const showCompletedRef = useRef<boolean>(showCompleted);
   const selectedCategoryIdRef = useRef<string | null>(selectedCategory?.id ?? null);
 
   useEffect(() => {
@@ -70,6 +72,7 @@ export default function TodoPageClient({ initialTodos }: { initialTodos: Todo[] 
       const params = new URLSearchParams({
         offset: String(currentOffset),
         limit: String(currentPageSize),
+        showCompleted: String(showCompletedRef.current),
       });
 
       if (categoryId) {
@@ -105,6 +108,15 @@ export default function TodoPageClient({ initialTodos }: { initialTodos: Todo[] 
   }, [userId]);
 
   useEffect(() => {
+    showCompletedRef.current = showCompleted;
+  }, [showCompleted]);
+
+   // Toggle show/hide completed todos
+    const handleToggleShowCompleted = () => { 
+      setShowCompleted((prev) => !prev);
+    };
+
+  useEffect(() => {
     if (!userId) return;
     const currentRefreshSeq = ++refreshSeqRef.current;
 
@@ -115,11 +127,17 @@ export default function TodoPageClient({ initialTodos }: { initialTodos: Todo[] 
     // Reset paging before category refresh to avoid stale offsets during in-flight loads.
     setOffset(0);
     setHasMore(true);
+   
+    const params = new URLSearchParams({
+      showCompleted: String(showCompletedRef.current),
+    });
 
-    let url = "/api/todos";
     if (selectedCategory && selectedCategory.id) {
-      url += `?category_id=${selectedCategory.id}`;
+      params.set("category_id", selectedCategory.id);
     }
+
+    const url = `/api/todos?${params.toString()}`;
+
     runBlockingFetch(url, undefined, {
       label: "Loading todos...",
       cancellable: true,
@@ -150,7 +168,7 @@ export default function TodoPageClient({ initialTodos }: { initialTodos: Todo[] 
           setIsRefreshing(false);
         }
       });
-  }, [selectedCategory, userId, runBlockingFetch]);
+  }, [selectedCategory, userId, showCompleted, runBlockingFetch]);
 
   useEffect(() => {
     if (isRefreshing) return;
@@ -176,7 +194,12 @@ export default function TodoPageClient({ initialTodos }: { initialTodos: Todo[] 
       <div className="absolute right-10 top-2 z-10">
         <CategoryDropdownWrapper onCategoryChange={setSelectedCategory} />
       </div>
-      <TodoList initialTodos={todos} selectedCategory={selectedCategory} />
+      <TodoList 
+        initialTodos={todos} 
+        selectedCategory={selectedCategory} 
+        showCompleted={showCompleted} 
+        handleToggleShowCompleted={handleToggleShowCompleted}
+      />
       <div ref={sentinelRef} className="py-4 text-center text-sm text-gray-600">
         {isRefreshing ? "Loading todos..." : isLoadingMore ? "Loading more todos..." : !hasMore ? "All todos loaded" : ""}
       </div>

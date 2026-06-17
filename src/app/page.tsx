@@ -47,7 +47,10 @@ export default async function Home() {
       </div>
       {canAccessAdmin && (
         <div className="absolute right-10 top-12 z-10">
-          <Link href="/admin" className="text-sm font-semibold text-blue-700 hover:underline">
+          <Link href="/admin" 
+            className="text-sm font-semibold text-blue-700 hover:underline" 
+            data-testid="admin-link"
+          >
             Admin
           </Link>
         </div>

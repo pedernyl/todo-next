@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { createTestDbClient } from './helpers/dbClient';
 import { deleteTodosByTitle, deleteCategoriesByTitle } from './helpers/cleanupHelpers';
+import { DROPDOWN_OPTIONS } from '@/constants/dropdowns/categoryDropDown';
 
 const BASE_URL = 'http://localhost:3000';
 test.use({ storageState: 'storageState.json' });
@@ -11,13 +12,13 @@ async function createCategory(page: import('@playwright/test').Page, categoryNam
 		const select = document.querySelector('select');
 		return Boolean(select && select.options.length >= 3);
 	}, { timeout: 15000 });
-	await page.selectOption('select', '__create__');
+	await page.selectOption('select', DROPDOWN_OPTIONS.CREATE_CATEGORY.value);
 	await page.fill('input[placeholder="New category name"]', categoryName);
 	await page.fill('textarea[placeholder="Description (optional)"]', `Created by Playwright: ${categoryName}`);
 	await page.click('button:has-text("Create")');
 	await expect(page.locator(`select option:has-text("${categoryName}")`)).toHaveCount(1, { timeout: 15000 });
 	await page.selectOption('select', { label: categoryName });
-	await expect(page.locator('select')).toHaveValue(/^(?!__create__$).+/);
+	await expect(page.locator('select')).not.toHaveValue(DROPDOWN_OPTIONS.CREATE_CATEGORY.value);
 	await expect(page.getByRole('button', { name: 'Add Todo', exact: true })).toBeVisible();
 }
 
