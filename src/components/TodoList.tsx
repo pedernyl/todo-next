@@ -28,6 +28,8 @@ import { useGlobalBlockingLoader } from "../context/GlobalBlockingLoaderContext"
 interface TodoListProps {
   initialTodos: Todo[];
   selectedCategory?: Category | null;
+  showCompleted: boolean;
+  handleToggleShowCompleted: () => void;
 }
 
 interface TodoTreeNode extends Todo {

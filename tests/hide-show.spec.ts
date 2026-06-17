@@ -73,7 +73,6 @@ test.describe('Hide/Show Todos E2E', () => {
     });
 
     test('should keep completed todos hidden after changing category', async ({ page }) => {
-        //return;
         const seed = Date.now();
         const categoryTitle = `PW HideShow Category ${seed}`;
         const todoTitle = `PW HideShow Todo ${seed}`;
