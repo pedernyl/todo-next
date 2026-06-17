@@ -28,8 +28,6 @@ import { useGlobalBlockingLoader } from "../context/GlobalBlockingLoaderContext"
 interface TodoListProps {
   initialTodos: Todo[];
   selectedCategory?: Category | null;
-  showCompleted: boolean;
-  handleToggleShowCompleted: () => void;
 }
 
 interface TodoTreeNode extends Todo {
@@ -471,7 +469,7 @@ function SortableTodoItem({
           </button>
           <span 
             className={todo.completed ? "line-through text-gray-400" : ""}
-            data-testid={todo.completed ? `completed-${todo.title}` : `uncompleted-${todo.title}`}
+            data-testid={todo.completed ? `completed-${todoId}` : `uncompleted-${todoId}`}
           >
             {todo.title}
           </span>
@@ -481,7 +479,7 @@ function SortableTodoItem({
             type="button"
             onClick={() => toggleDescription(todo.id)}
             className="text-blue-600 hover:underline text-sm cursor-pointer"
-            data-testid={`toggle-description-${todo.title}`}
+            data-testid={`toggle-description-${todoId}`}
           >
             {openDescriptions[todoId] ? "Hide Description" : "Show Description"}
           </button>
@@ -501,14 +499,14 @@ function SortableTodoItem({
             <button
               onClick={() => toggleTodo(todo.id, !todo.completed)}
               className="px-3 py-1 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition"
-              data-testid={`toggle-complete-${todo.title}`}
+              data-testid={`toggle-complete-${todoId}`}
             >
               {todo.completed ? "Undo" : "Complete"}
             </button>
             <button
               onClick={() => handleCreateSubTodo(todo)}
               className="px-2 py-1 rounded-lg border border-blue-500 bg-blue-50 hover:bg-blue-100 text-blue-700 text-sm"
-              data-testid={`create-subtodo-${todo.title}`}
+              data-testid={`create-subtodo-${todoId}`}
             >
               Create subTodo
             </button>
