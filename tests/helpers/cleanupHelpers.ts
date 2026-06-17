@@ -1,8 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { FindSettingsByKeyResult } from '@/lib/adminSettings/types';
+import type { AdminSettingsDefinition, FindSettingsByKeyResult } from '@/lib/adminSettings/types';
 import { readFile } from 'fs/promises';
 import { parseAdminSettingsDefinitionYaml } from '@/lib/adminSettings/loader';
-import { AdminSettingsDefinition } from '@/lib/adminSettings/types';
 
 
 /**
