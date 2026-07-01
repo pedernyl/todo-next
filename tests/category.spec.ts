@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { createTestDbClient } from './helpers/dbClient';
 import { deleteTodosByTitle, deleteCategoriesByTitle } from './helpers/cleanupHelpers';
 import { API_PATHS } from '@/constants/api/apiPaths';
-import { DROPDOWN_OPTIONS } from '@/constants/dropdowns/categoryDropDown';
+import { CATEGORY_DROPDOWN_IDS, DROPDOWN_OPTIONS } from '@/constants/dropdowns/categoryDropDown';
 
 const BASE_URL = 'http://localhost:3000';
 test.use({ storageState: 'storageState.json' });
@@ -13,13 +13,14 @@ async function createCategory(page: import('@playwright/test').Page, categoryNam
 		const select = document.querySelector('select');
 		return Boolean(select && select.options.length >= 3);
 	}, { timeout: 15000 });
-	await page.selectOption('select', DROPDOWN_OPTIONS.CREATE_CATEGORY.value);
-	await page.fill('input[placeholder="New category name"]', categoryName);
-	await page.fill('textarea[placeholder="Description (optional)"]', `Created by Playwright: ${categoryName}`);
-	await page.click('button:has-text("Create")');
-	await expect(page.locator(`select option:has-text("${categoryName}")`)).toHaveCount(1, { timeout: 15000 });
-	await page.selectOption('select', { label: categoryName });
-	await expect(page.locator('select')).not.toHaveValue(DROPDOWN_OPTIONS.CREATE_CATEGORY.value);
+	const categorySelect = page.getByTestId(CATEGORY_DROPDOWN_IDS.SELECT);
+	await categorySelect.selectOption(DROPDOWN_OPTIONS.CREATE_CATEGORY.value);
+	await page.getByTestId(CATEGORY_DROPDOWN_IDS.NEW_CATEGORY_INPUT).fill(categoryName);
+	await page.getByTestId(CATEGORY_DROPDOWN_IDS.NEW_CATEGORY_DESCRIPTION).fill(`Created by Playwright: ${categoryName}`);
+	await page.getByTestId(CATEGORY_DROPDOWN_IDS.CREATE_BUTTON).click();
+	await expect(categorySelect.locator(`option:has-text("${categoryName}")`)).toHaveCount(1, { timeout: 15000 });
+	await categorySelect.selectOption({ label: categoryName });
+	await expect(categorySelect).not.toHaveValue(DROPDOWN_OPTIONS.CREATE_CATEGORY.value);
 	await expect(page.getByRole('button', { name: 'Add Todo', exact: true })).toBeVisible();
 }
 
@@ -59,12 +60,12 @@ test.describe('Category E2E', () => {
 		await createCategory(page, categoryB);
 		await createTodo(page, todoB, 'belongs to B');
 
-		await page.selectOption('select', { label: categoryA });
+		await page.getByTestId(CATEGORY_DROPDOWN_IDS.SELECT).selectOption({ label: categoryA });
 		await expect(page.getByRole('button', { name: 'Add Todo', exact: true })).toBeVisible();
 		await expect(page.locator(`li:has-text("${todoA}")`)).toBeVisible();
 		await expect(page.locator(`li:has-text("${todoB}")`)).toHaveCount(0);
 
-		await page.selectOption('select', { label: categoryB });
+		await page.getByTestId(CATEGORY_DROPDOWN_IDS.SELECT).selectOption({ label: categoryB });
 		await expect(page.getByRole('button', { name: 'Add Todo', exact: true })).toBeVisible();
 		await expect(page.locator(`li:has-text("${todoB}")`)).toBeVisible();
 		await expect(page.locator(`li:has-text("${todoA}")`)).toHaveCount(0);

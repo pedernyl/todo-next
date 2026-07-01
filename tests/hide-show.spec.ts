@@ -9,7 +9,7 @@ import {
 } from './helpers/cleanupHelpers';
 import type { FindSettingsByKeyResult, AdminSettingsDefinition } from '@/lib/adminSettings/types';
 import { API_PATHS } from '@/constants/api/apiPaths';
-import { DROPDOWN_OPTIONS } from '@/constants/dropdowns/categoryDropDown';
+import { CATEGORY_DROPDOWN_IDS, DROPDOWN_OPTIONS } from '@/constants/dropdowns/categoryDropDown';
 import { ADD_TODO_IDS } from '@/constants/todo/AddTodo';
 import { TODO_LIST_IDS } from '@/constants/todo/TodoList';
 
@@ -89,16 +89,16 @@ test.describe('Hide/Show Todos E2E', () => {
             return Boolean(select && (select as HTMLSelectElement).options.length >= 2);
         }, { timeout: 15000 });
         
-        await page.getByTestId('category-select').selectOption(DROPDOWN_OPTIONS.CREATE_CATEGORY.value);
-        await page.getByTestId('new-category-input').fill(categoryTitle);
-        await page.getByTestId('new-category-description').fill(`Created by Playwright: ${categoryTitle}`);
-        await page.getByTestId('create-category-button').click();
+        await page.getByTestId(CATEGORY_DROPDOWN_IDS.SELECT).selectOption(DROPDOWN_OPTIONS.CREATE_CATEGORY.value);
+        await page.getByTestId(CATEGORY_DROPDOWN_IDS.NEW_CATEGORY_INPUT).fill(categoryTitle);
+        await page.getByTestId(CATEGORY_DROPDOWN_IDS.NEW_CATEGORY_DESCRIPTION).fill(`Created by Playwright: ${categoryTitle}`);
+        await page.getByTestId(CATEGORY_DROPDOWN_IDS.CREATE_BUTTON).click();
         await expect(
-            page.getByTestId('category-select').locator(`option:has-text("${categoryTitle}")`)
+            page.getByTestId(CATEGORY_DROPDOWN_IDS.SELECT).locator(`option:has-text("${categoryTitle}")`)
         ).toHaveCount(1);
-        await page.getByTestId('category-select').selectOption({ label: categoryTitle });
+        await page.getByTestId(CATEGORY_DROPDOWN_IDS.SELECT).selectOption({ label: categoryTitle });
         await expect(
-            page.getByTestId('category-select'))
+            page.getByTestId(CATEGORY_DROPDOWN_IDS.SELECT))
             .not.toHaveValue(DROPDOWN_OPTIONS.CREATE_CATEGORY.value);
 
         // Add a todo in the created category.
@@ -121,14 +121,14 @@ test.describe('Hide/Show Todos E2E', () => {
         await expect(todoItem.getByTestId(new RegExp(`^${TODO_LIST_IDS.COMPLETED_TODO.completed}-`))).toHaveCount(1);
 
         // Change to all categories.
-        await page.getByTestId('category-select').selectOption(DROPDOWN_OPTIONS.ALL_CATEGORIES.value);
+        await page.getByTestId(CATEGORY_DROPDOWN_IDS.SELECT).selectOption(DROPDOWN_OPTIONS.ALL_CATEGORIES.value);
 
         // Hide completed in all categories.
         await page.getByTestId(TODO_LIST_IDS.TOGGLE_SHOW_COMPLETED.testId).click();
         await expect(page.getByTestId(new RegExp(`^${TODO_LIST_IDS.COMPLETED_TODO.completed}-`))).toHaveCount(0);
 
         // Select the created category again: the completed todo must stay hidden.
-        await page.getByTestId('category-select').selectOption({ label: categoryTitle });
+        await page.getByTestId(CATEGORY_DROPDOWN_IDS.SELECT).selectOption({ label: categoryTitle });
         await expect(page.locator(`li:has-text("${todoTitle}")`)).toHaveCount(0);
         await expect(page.getByTestId(new RegExp(`^${TODO_LIST_IDS.COMPLETED_TODO.completed}-`))).toHaveCount(0);
     });
