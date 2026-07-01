@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { API_PATHS } from "../../constants/api/apiPaths";
 import { useGlobalBlockingLoader } from "../../context/GlobalBlockingLoaderContext";
+import { GLOBAL } from "../../constants/global/global";
 
 type UserItem = {
   id: number;
@@ -24,7 +25,7 @@ export default function AdminUsersView() {
       const res = await runBlockingFetch(
         API_PATHS.ADMIN.USERS,
         { cache: "no-store" },
-        { label: "Loading admin users...", cancellable: true }
+        { label: GLOBAL.LOADER_LABELS.LOADING_ADMIN_USERS, cancellable: true }
       );
       const data = (await res.json()) as { users?: UserItem[]; error?: string };
 
@@ -55,8 +56,8 @@ export default function AdminUsersView() {
       <h2 className="mb-4 text-lg font-semibold text-slate-700">Users overview</h2>
       {error && <p className="mb-3 text-sm text-red-700">{error}</p>}
 
-      {isLoading && <p className="text-sm text-slate-600">Loading users...</p>}
-      {!isLoading && !hasUsers && <p className="text-sm text-slate-600">No users found.</p>}
+      {isLoading && <p className="text-sm text-slate-600">{GLOBAL.UI_TEXT.ADMIN.LOADING_USERS}</p>}
+      {!isLoading && !hasUsers && <p className="text-sm text-slate-600">{GLOBAL.UI_TEXT.ADMIN.NO_USERS_FOUND}</p>}
 
       <div className="mb-2 grid grid-cols-[80px_1fr_110px] px-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
         <span>ID</span>

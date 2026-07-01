@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { API_PATHS } from "../../constants/api/apiPaths";
 import { useGlobalBlockingLoader } from "../../context/GlobalBlockingLoaderContext";
+import { GLOBAL } from "../../constants/global/global";
 import type { AdminSettingsGroupState, AdminSettingsTypeGroup } from "../../lib/adminSettings";
 
 function settingKey(setting: Pick<AdminSettingsGroupState, "name" | "type">): string {
@@ -46,7 +47,7 @@ export default function AdminSettingsView() {
       const res = await runBlockingFetch(
         API_PATHS.ADMIN.SETTINGS,
         { cache: "no-store" },
-        { label: "Loading admin settings...", cancellable: true }
+        { label: GLOBAL.LOADER_LABELS.LOADING_ADMIN_SETTINGS, cancellable: true }
       );
 
       const data = (await res.json()) as { groups?: AdminSettingsTypeGroup[]; error?: string };
@@ -177,7 +178,7 @@ export default function AdminSettingsView() {
         <p className="rounded border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{successMessage}</p>
       )}
 
-      {isLoading && <p className="text-sm text-slate-600">Loading settings...</p>}
+      {isLoading && <p className="text-sm text-slate-600">{GLOBAL.UI_TEXT.ADMIN.LOADING_SETTINGS}</p>}
       {!isLoading && !hasSettings && (
         <p className="rounded border border-slate-300 bg-white px-5 py-4 text-sm text-slate-600">No settings definitions found.</p>
       )}

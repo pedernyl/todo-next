@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { API_PATHS } from "../constants/api/apiPaths";
+import { GLOBAL } from "../constants/global/global";
 import AdminDatabaseCopyView from "../components/admin/AdminDatabaseCopyView";
 
 const runBlockingFetchMock = vi.fn();
@@ -57,7 +58,7 @@ describe("AdminDatabaseCopyView", () => {
           method: "POST",
           body: JSON.stringify({ mode: "append" }),
         }),
-        { label: "Copying production database to test database...", cancellable: false }
+        { label: GLOBAL.LOADER_LABELS.COPYING_DATABASE, cancellable: false }
       );
     });
 

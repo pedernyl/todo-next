@@ -652,7 +652,7 @@ export default function TodoList(
       const response = await runBlockingFetch(
         `/api/todos?${params.toString()}`,
         undefined,
-        { label: "Loading todos...", cancellable: true }
+        { label: GLOBAL.LOADER_LABELS.LOADING_TODOS, cancellable: true }
       );
       if (!response.ok) throw new Error('Failed to fetch todos');
       const data = await response.json();
