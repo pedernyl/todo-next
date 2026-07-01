@@ -10,6 +10,7 @@ import {
 import type { FindSettingsByKeyResult, AdminSettingsDefinition } from '@/lib/adminSettings/types';
 import { API_PATHS } from '@/constants/api/apiPaths';
 import { ADMIN_TEST_IDS } from '@/constants/admin/adminNavigation';
+import { ADMIN_SETTINGS_TEST_IDS } from '@/constants/admin/adminSettings';
 import { CATEGORY_DROPDOWN_IDS, DROPDOWN_OPTIONS } from '@/constants/dropdowns/categoryDropDown';
 import { ADD_TODO_IDS } from '@/constants/todo/AddTodo';
 import { TODO_LIST_IDS } from '@/constants/todo/TodoList';
@@ -51,7 +52,7 @@ test.describe('Hide/Show Todos E2E', () => {
         const newLoadLimit = 10;   
         if(loadLimitInput !== newLoadLimit.toString()) {
             await page.locator('[id="App::todos--defaultLoadLimit"]').fill(newLoadLimit.toString());
-            await page.getByTestId('save-setting-App::todos').click();
+            await page.getByTestId(ADMIN_SETTINGS_TEST_IDS.saveSetting('App::todos')).click();
             await page.waitForTimeout(500);
         }
 

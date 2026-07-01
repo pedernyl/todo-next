@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { API_PATHS } from "../../constants/api/apiPaths";
 import { useGlobalBlockingLoader } from "../../context/GlobalBlockingLoaderContext";
 import { GLOBAL } from "../../constants/global/global";
+import { ADMIN_SETTINGS_TEST_IDS } from "../../constants/admin/adminSettings";
 import type { AdminSettingsGroupState, AdminSettingsTypeGroup } from "../../lib/adminSettings";
 
 function settingKey(setting: Pick<AdminSettingsGroupState, "name" | "type">): string {
@@ -289,7 +290,7 @@ export default function AdminSettingsView() {
                     <div className="mt-4">
                       <button
                         type="button"
-                        data-testid={`save-setting-${key}`}
+                        data-testid={ADMIN_SETTINGS_TEST_IDS.saveSetting(key)}
                         onClick={() => void saveSetting(setting)}
                         disabled={!dirty || savingSettingKey === key}
                         className="rounded bg-sky-700 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-sky-800 disabled:cursor-not-allowed disabled:bg-slate-400"
