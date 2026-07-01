@@ -32,3 +32,4 @@ npm run test:integration:watch
 
 - Integration tests are not part of the default `npm test` command.
 - CI workflow runs unit tests only (`npm run test:unit`).
+- Follow the constants policy from `CONTRIBUTING.md`: keep constants domain-scoped, separate IDs from user-facing text, and extract text values that are reused more than once.

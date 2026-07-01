@@ -87,6 +87,51 @@ Update dependencies
 
 Since we use squash merge, the PR title becomes the commit message on `main` — make it descriptive.
 
+## Constants Policy
+
+Use constants to keep identifiers and repeated UI text stable, testable, and easy to refactor.
+
+### 1) Organize constants by domain
+
+Place constants in domain-specific files under `src/constants`.
+
+Current examples:
+
+- `src/constants/api/apiPaths.ts` for API route paths and path helpers
+- `src/constants/todo/TodoList.ts` and `src/constants/todo/AddTodo.ts` for todo-related IDs and text
+- `src/constants/dropdowns/categoryDropDown.ts` for category dropdown values/IDs
+- `src/constants/admin/adminNavigation.ts` and `src/constants/admin/adminSettings.ts` for admin IDs/helpers
+- `src/constants/global/global.ts` for app-wide shared labels/messages used across domains
+
+Rule of thumb:
+
+- If a constant clearly belongs to one feature area, keep it in that domain file.
+- If it is reused across multiple feature areas, place it in a shared/global constants module.
+
+### 2) Separate IDs from user-facing text
+
+Keep test/DOM IDs and visible copy in separate constant groups.
+
+- IDs: `..._IDS` objects or equivalent (for example test IDs and identifier tokens)
+- Text: `..._TEXT`, `UI_TEXT`, or `LOADER_LABELS` objects (for labels/messages shown to users)
+
+This keeps selector stability concerns separate from copy/content changes.
+
+### 3) Reuse rule for text values
+
+If a text value is used more than once, extract it into a constant.
+
+- First use: inline text is acceptable.
+- Second use (or expected reuse): create a constant and migrate both usages.
+
+Applies to UI text, loader labels, and repeated test-visible strings.
+
+### 4) Tests should use constants for selectors
+
+- Prefer `getByTestId(...)` with shared constants in Playwright tests.
+- Avoid hardcoded selector strings when an existing constant already represents that identifier.
+- Reuse API and shared text constants in tests when asserting known app messages.
+
 ## Admin Settings YAML
 
 Admin settings schemas live in `src/app/admin/settings`.

@@ -9,6 +9,7 @@ import AdminUpdatesView from "@/components/admin/AdminUpdatesView";
 import AdminUsersView from "@/components/admin/AdminUsersView";
 import { getAdminAccessCheckResult } from "@/lib/adminAccess";
 import { getDevTitle, isTestDbActive } from '@/lib/environmentMode';
+import { ADMIN_TEST_IDS } from "../../constants/admin/adminNavigation";
 
 type AdminPageProps = {
   searchParams: Promise<{ view?: string | string[] }>;
@@ -88,7 +89,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
             {adminViews.map((item) => (
               <Link
                 key={item.key}
-                data-testid={`admin-link-${item.key}`}
+                data-testid={ADMIN_TEST_IDS.viewLink(item.key)}
                 href={item.key === "home" ? "/admin" : `/admin?view=${item.key}`}
                 className={`mb-1 block rounded px-3 py-2 text-sm transition ${
                   activeView === item.key
@@ -112,7 +113,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                 text-sm font-semibold hover:underline 
                 ${testDbActive ? 'text-white' : 'text-blue-700'}
                 `}
-              data-testid="admin-link-todos"
+              data-testid={ADMIN_TEST_IDS.TODOS_LINK}
               >
               Todos
             </Link>

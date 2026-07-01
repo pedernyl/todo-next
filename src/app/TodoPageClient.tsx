@@ -4,9 +4,11 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import TodoList from "../components/TodoList";
 import CategoryDropdownWrapper from "../components/CategoryDropdownWrapper";
 import { useUserId } from "../context/UserIdContext";
+import { API_PATHS } from "../constants/api/apiPaths";
 import { Todo } from "../../types";
 import type { Category } from "../lib/categoryService";
 import { useGlobalBlockingLoader } from "../context/GlobalBlockingLoaderContext";
+import { GLOBAL } from "../constants/global/global";
 
 type TodosResponse = {
   todos: Todo[];
@@ -79,7 +81,7 @@ export default function TodoPageClient({ initialTodos }: { initialTodos: Todo[] 
         params.set("category_id", categoryId);
       }
 
-      const res = await fetch(`/api/todos?${params.toString()}`, {
+      const res = await fetch(`${API_PATHS.TODOS}?${params.toString()}`, {
         method: "GET",
         cache: "no-store",
       });
@@ -136,10 +138,10 @@ export default function TodoPageClient({ initialTodos }: { initialTodos: Todo[] 
       params.set("category_id", selectedCategory.id);
     }
 
-    const url = `/api/todos?${params.toString()}`;
+    const url = `${API_PATHS.TODOS}?${params.toString()}`;
 
     runBlockingFetch(url, undefined, {
-      label: "Loading todos...",
+      label: GLOBAL.LOADER_LABELS.LOADING_TODOS,
       cancellable: true,
     })
       .then(async (res) => {
@@ -201,7 +203,7 @@ export default function TodoPageClient({ initialTodos }: { initialTodos: Todo[] 
         handleToggleShowCompleted={handleToggleShowCompleted}
       />
       <div ref={sentinelRef} className="py-4 text-center text-sm text-gray-600">
-        {isRefreshing ? "Loading todos..." : isLoadingMore ? "Loading more todos..." : !hasMore ? "All todos loaded" : ""}
+        {isRefreshing ? GLOBAL.UI_TEXT.TODOS.LOADING_STATE : isLoadingMore ? GLOBAL.UI_TEXT.TODOS.LOADING_MORE : !hasMore ? GLOBAL.UI_TEXT.TODOS.ALL_LOADED : ""}
       </div>
     </>
   );

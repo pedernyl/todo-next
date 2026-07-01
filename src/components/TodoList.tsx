@@ -3,6 +3,9 @@ import React from "react";
 import { useUserId } from "../context/UserIdContext";
 import { Todo } from "../../types";
 import AddTodo from "./AddTodo";
+import { API_PATHS } from "../constants/api/apiPaths";
+import { GLOBAL } from "../constants/global/global";
+import { TODO_LIST_IDS, TODO_LIST_TEXT } from "../constants/todo/TodoList";
 import {
   rectIntersection,
   DndContext,
@@ -462,8 +465,9 @@ function SortableTodoItem({
           <button
             type="button"
             className="cursor-grab active:cursor-grabbing text-gray-500 hover:text-gray-700 text-sm"
-            aria-label={`Drag todo ${todo.title}`}
-            title="Drag to reorder"
+            aria-label={`${TODO_LIST_TEXT.DRAG_TODO.label} ${todo.title}`}
+            title={TODO_LIST_TEXT.DRAG_TODO.label}
+            data-testid={`${TODO_LIST_IDS.DRAG_TODO.testId}-${todoId}`} 
             {...attributes}
             {...listeners}
           >
@@ -471,7 +475,10 @@ function SortableTodoItem({
           </button>
           <span 
             className={todo.completed ? "line-through text-gray-400" : ""}
-            data-testid={todo.completed ? `completed-${todoId}` : `uncompleted-${todoId}`}
+            data-testid={todo.completed ? 
+              `${TODO_LIST_IDS.COMPLETED_TODO.completed}-${todoId}` : 
+              `${TODO_LIST_IDS.COMPLETED_TODO.uncompleted}-${todoId}`
+            }
           >
             {todo.title}
           </span>
@@ -481,9 +488,9 @@ function SortableTodoItem({
             type="button"
             onClick={() => toggleDescription(todo.id)}
             className="text-blue-600 hover:underline text-sm cursor-pointer"
-            data-testid={`toggle-description-${todoId}`}
+            data-testid={`${TODO_LIST_IDS.TOGGLE_DESCRIPTION.testId}-${todoId}`}
           >
-            {openDescriptions[todoId] ? "Hide Description" : "Show Description"}
+            {openDescriptions[todoId] ? TODO_LIST_TEXT.TOGGLE_DESCRIPTION.hide : TODO_LIST_TEXT.TOGGLE_DESCRIPTION.show}
           </button>
         </div>
       </div>
@@ -501,36 +508,37 @@ function SortableTodoItem({
             <button
               onClick={() => toggleTodo(todo.id, !todo.completed)}
               className="px-3 py-1 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition"
-              data-testid={`toggle-complete-${todoId}`}
+              data-testid={`${TODO_LIST_IDS.TOGGLE_COMPLETE.testId}-${todoId}`}
             >
-              {todo.completed ? "Undo" : "Complete"}
+              {todo.completed ? TODO_LIST_TEXT.TOGGLE_COMPLETE.incomplete : TODO_LIST_TEXT.TOGGLE_COMPLETE.complete}
             </button>
             <button
               onClick={() => handleCreateSubTodo(todo)}
               className="px-2 py-1 rounded-lg border border-blue-500 bg-blue-50 hover:bg-blue-100 text-blue-700 text-sm"
-              data-testid={`create-subtodo-${todoId}`}
+              data-testid={`${TODO_LIST_IDS.CREATE_SUB_TODO.testId}-${todoId}`}
             >
-              Create subTodo
+              {TODO_LIST_TEXT.CREATE_SUB_TODO.label}
             </button>
             <button
               className="text-blue-600 hover:underline text-xs ml-2"
               onClick={() => handleEdit(todo)}
+              data-testid={`${TODO_LIST_IDS.EDIT_TODO.testId}-${todoId}`}
             >
-              Edit
+              {TODO_LIST_TEXT.EDIT_TODO.label}
             </button>
             {typeof userId === 'undefined' || userId === null ? (
-              <span className="text-gray-400 text-xs ml-2">Loading...</span>
+              <span className="text-gray-400 text-xs ml-2">{GLOBAL.LOADING_WITH_DOTS}</span>
             ) : (
               <button
                 type="button"
                 className="text-red-600 hover:underline text-xs ml-2"
                 onClick={() => {
-                  if (window.confirm("Are you sure you want to delete this todo?")) {
+                  if (window.confirm(TODO_LIST_TEXT.DELETE_TODO.confirm)) {
                     handleDelete(todo);
                   }
                 }}
               >
-                Delete
+                {TODO_LIST_TEXT.DELETE_TODO.label}
               </button>
             )}
           </div>
@@ -594,13 +602,13 @@ export default function TodoList(
     }
     try {
       const response = await runBlockingFetch(
-        "/api/todos",
+        API_PATHS.TODOS,
         {
           method: "DELETE",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ id: todo.id, deleted_by: userId }),
         },
-        { label: "Deleting todo...", cancellable: true }
+        { label: GLOBAL.LOADER_LABELS.DELETING_TODO, cancellable: true }
       );
       if (!response.ok) throw new Error("Failed to delete todo");
       setTodos((prev: Todo[]) => prev.filter((t: Todo) => t.id !== todo.id));
@@ -642,9 +650,9 @@ export default function TodoList(
         params.set("category_id", selectedCategory.id);
       }
       const response = await runBlockingFetch(
-        `/api/todos?${params.toString()}`,
+        `${API_PATHS.TODOS}?${params.toString()}`,
         undefined,
-        { label: "Loading todos...", cancellable: true }
+        { label: GLOBAL.LOADER_LABELS.LOADING_TODOS, cancellable: true }
       );
       if (!response.ok) throw new Error('Failed to fetch todos');
       const data = await response.json();
@@ -678,7 +686,7 @@ export default function TodoList(
   const toggleTodo = async (id: string, completed: boolean) => {
     try {
       const response = await runBlockingFetch(
-        "/api/todos",
+        API_PATHS.TODOS,
         {
           method: "PATCH",
           headers: {
@@ -686,7 +694,7 @@ export default function TodoList(
           },
           body: JSON.stringify({ id, completed }),
         },
-        { label: "Updating todo...", cancellable: true }
+        { label: GLOBAL.LOADER_LABELS.UPDATING_TODO, cancellable: true }
       );
 
       if (!response.ok) {
@@ -729,7 +737,7 @@ export default function TodoList(
 
     try {
       const response = await runBlockingFetch(
-        "/api/todos",
+        API_PATHS.TODOS,
         {
           method: "PATCH",
           headers: {
@@ -743,7 +751,7 @@ export default function TodoList(
             ...(typeof result.scope.category_id !== "undefined" ? { category_id: result.scope.category_id } : {}),
           }),
         },
-        { label: "Saving todo order...", cancellable: true }
+        { label: GLOBAL.LOADER_LABELS.SAVING_TODO_ORDER, cancellable: true }
       );
 
       if (!response.ok) {
@@ -832,10 +840,10 @@ export default function TodoList(
       <div className="flex justify-end">
         <button
           onClick={() => handleToggleShowCompleted()}
-          data-testid="toggleShowCompleted"
+          data-testid={TODO_LIST_IDS.TOGGLE_SHOW_COMPLETED.testId}
           className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition text-sm"
         >
-          {showCompleted ? "Hide completed" : "Show completed"}
+          {showCompleted ? TODO_LIST_TEXT.TOGGLE_SHOW_COMPLETED.hide : TODO_LIST_TEXT.TOGGLE_SHOW_COMPLETED.show}
         </button>
       </div>
 
@@ -844,7 +852,7 @@ export default function TodoList(
         <button
           onClick={() => setShowAddForm((prev) => !prev)}
           className="text-blue-600 hover:underline text-sm mb-2"
-          data-testid="toggleAddTodoForm"
+          data-testid={TODO_LIST_IDS.TOGGLE_ADD_TODO_FORM.testId}
         >
           {showAddForm ? "Hide Add Todo" : "Add Todo"}
         </button>

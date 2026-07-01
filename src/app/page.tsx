@@ -11,6 +11,7 @@ import Link from "next/link";
 import TodoPageClient from "./TodoPageClient";
 import type { Metadata } from 'next';
 import { getDevTitle, isTestDbActive } from '../lib/environmentMode';
+import { ADMIN_TEST_IDS } from '../constants/admin/adminNavigation';
 
 export const dynamic = "force-dynamic";
 
@@ -49,7 +50,7 @@ export default async function Home() {
         <div className="absolute right-10 top-12 z-10">
           <Link href="/admin" 
             className="text-sm font-semibold text-blue-700 hover:underline" 
-            data-testid="admin-link"
+            data-testid={ADMIN_TEST_IDS.ENTRY_LINK}
           >
             Admin
           </Link>

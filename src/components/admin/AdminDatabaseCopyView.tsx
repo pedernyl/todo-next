@@ -1,7 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { API_PATHS } from "../../constants/api/apiPaths";
 import { useGlobalBlockingLoader } from "../../context/GlobalBlockingLoaderContext";
+import { GLOBAL } from "../../constants/global/global";
 
 type CopyMode = "overwrite" | "append";
 
@@ -27,9 +29,9 @@ export default function AdminDatabaseCopyView() {
 
     try {
       const res = await runBlockingFetch(
-        "/api/admin/database-copy",
+        API_PATHS.ADMIN.DATABASE_COPY,
         { cache: "no-store" },
-        { label: "Loading database copy status...", cancellable: true }
+        { label: GLOBAL.LOADER_LABELS.LOADING_DATABASE_COPY_STATUS, cancellable: true }
       );
       const data = (await res.json()) as AvailabilityResponse;
 
@@ -67,7 +69,7 @@ export default function AdminDatabaseCopyView() {
 
     try {
       const res = await runBlockingFetch(
-        "/api/admin/database-copy",
+        API_PATHS.ADMIN.DATABASE_COPY,
         {
           method: "POST",
           headers: {
@@ -75,7 +77,7 @@ export default function AdminDatabaseCopyView() {
           },
           body: JSON.stringify({ mode: selectedMode }),
         },
-        { label: "Copying production database to test database...", cancellable: false }
+        { label: GLOBAL.LOADER_LABELS.COPYING_DATABASE, cancellable: false }
       );
       const data = (await res.json()) as { message?: string; error?: string };
 
@@ -118,7 +120,7 @@ export default function AdminDatabaseCopyView() {
         </p>
       )}
 
-      {isLoading && <p className="text-sm text-slate-600">Loading database copy status...</p>}
+      {isLoading && <p className="text-sm text-slate-600">{GLOBAL.UI_TEXT.ADMIN.LOADING_DATABASE_COPY}</p>}
 
       {!isLoading && !isAvailable && (
         <div className="rounded border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">

@@ -1,7 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { API_PATHS } from "../../constants/api/apiPaths";
 import { useGlobalBlockingLoader } from "../../context/GlobalBlockingLoaderContext";
+import { GLOBAL } from "../../constants/global/global";
 
 type UpdateItem = {
   fileName: string;
@@ -34,9 +36,9 @@ export default function AdminUpdatesView() {
 
     try {
       const res = await runBlockingFetch(
-        "/api/admin/updates",
+        API_PATHS.ADMIN.UPDATES,
         { cache: "no-store" },
-        { label: "Loading admin updates...", cancellable: true }
+        { label: GLOBAL.LOADER_LABELS.LOADING_ADMIN_UPDATES, cancellable: true }
       );
       const data = (await res.json()) as { updates?: UpdateItem[]; error?: string };
 
@@ -78,7 +80,7 @@ export default function AdminUpdatesView() {
 
     try {
       const res = await runBlockingFetch(
-        "/api/admin/updates",
+        API_PATHS.ADMIN.UPDATES,
         {
           method: "POST",
           headers: {
@@ -128,7 +130,7 @@ export default function AdminUpdatesView() {
 
       {/* Cards */}
       <div>
-        {isLoading && <p className="px-5 py-4 text-sm text-slate-600">Loading updates...</p>}
+        {isLoading && <p className="px-5 py-4 text-sm text-slate-600">{GLOBAL.UI_TEXT.ADMIN.LOADING_UPDATES}</p>}
         {!isLoading && !hasUpdates && (
           <p className="px-5 py-4 text-sm text-slate-600">No registered admin updates found.</p>
         )}

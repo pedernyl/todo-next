@@ -159,6 +159,7 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for branch, workflow, and versioning guidelines.
+Constants policy (domain separation, IDs vs text, and text reuse rule) is documented in the "Constants Policy" section in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 For Admin Settings YAML format and conventions, see [src/app/admin/settings/README.md](src/app/admin/settings/README.md).
 Reference-only settings examples can be placed in files prefixed with `example.` (for example `src/app/admin/settings/example.app.yaml`); these are ignored by the runtime loader.

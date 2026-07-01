@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { DROPDOWN_OPTIONS } from "../constants/dropdowns/categoryDropDown";
+import { CATEGORY_DROPDOWN_IDS, DROPDOWN_OPTIONS } from "../constants/dropdowns/categoryDropDown";
 
 
 interface CategoryDropdownProps {
@@ -32,7 +32,7 @@ const CategoryDropdown: React.FC<CategoryDropdownProps> = ({
         className="px-4 py-2 rounded-lg border border-gray-300 bg-white shadow text-sm focus:outline-none"
         value={selectedCategory}
         onChange={e => onCategorySelect(e.target.value)}
-        data-testid="category-select"
+        data-testid={CATEGORY_DROPDOWN_IDS.SELECT}
       >
         <option
           value={DROPDOWN_OPTIONS.ALL_CATEGORIES.value}
@@ -70,7 +70,7 @@ const CategoryDropdown: React.FC<CategoryDropdownProps> = ({
             type="text"
             className="w-full px-2 py-1 border rounded mb-2 text-sm"
             placeholder="New category name"
-            data-testid="new-category-input"
+            data-testid={CATEGORY_DROPDOWN_IDS.NEW_CATEGORY_INPUT}
             value={newCategory}
             onChange={e => setNewCategory(e.target.value)}
             autoFocus
@@ -78,14 +78,14 @@ const CategoryDropdown: React.FC<CategoryDropdownProps> = ({
           <textarea
             className="w-full px-2 py-1 border rounded mb-2 text-sm resize-y min-h-[48px]"
             placeholder="Description (optional)"
-            data-testid="new-category-description"
+            data-testid={CATEGORY_DROPDOWN_IDS.NEW_CATEGORY_DESCRIPTION}
             value={newDescription}
             onChange={e => setNewDescription(e.target.value)}
           />
           <button
             className="w-full bg-blue-500 text-white px-2 py-1 rounded text-sm hover:bg-blue-600"
             onClick={handleCreate}
-            data-testid="create-category-button"
+            data-testid={CATEGORY_DROPDOWN_IDS.CREATE_BUTTON}
           >
             Create
           </button>

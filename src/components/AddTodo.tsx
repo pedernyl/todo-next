@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { Todo } from '../../types';
+import { API_PATHS } from '../constants/api/apiPaths';
+import { GLOBAL } from '../constants/global/global';
+import { ADD_TODO_IDS } from '../constants/todo/AddTodo';
 import { useGlobalBlockingLoader } from '../context/GlobalBlockingLoaderContext';
 
 interface AddTodoProps {
@@ -37,13 +40,13 @@ export default function AddTodo({ onTodoAdded, editTodo, onTodoUpdated, parentTo
       // Update existing todo
       try {
         const res = await runBlockingFetch(
-          '/api/todos',
+          API_PATHS.TODOS,
           {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id: editTodo.id, title, description }),
           },
-          { label: 'Updating todo...', cancellable: true }
+          { label: GLOBAL.LOADER_LABELS.UPDATING_TODO, cancellable: true }
         );
         if (!res.ok) return;
         const updatedTodo: Todo = await res.json();
@@ -61,7 +64,7 @@ export default function AddTodo({ onTodoAdded, editTodo, onTodoUpdated, parentTo
       }
       try {
         const res = await runBlockingFetch(
-          '/api/todos',
+          API_PATHS.TODOS,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -73,7 +76,7 @@ export default function AddTodo({ onTodoAdded, editTodo, onTodoUpdated, parentTo
               ...(categoryId ? { category_id: categoryId } : {})
             }),
           },
-          { label: 'Creating todo...', cancellable: true }
+          { label: GLOBAL.LOADER_LABELS.CREATING_TODO, cancellable: true }
         );
         if (!res.ok) return;
         const newTodo: Todo = await res.json();
@@ -109,7 +112,7 @@ export default function AddTodo({ onTodoAdded, editTodo, onTodoUpdated, parentTo
         name='title'
         required
         className="p-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        data-testid="todo-title-input"
+        data-testid={ADD_TODO_IDS.TITLE_INPUT}
       />
       <textarea
         placeholder="Description"
@@ -117,12 +120,12 @@ export default function AddTodo({ onTodoAdded, editTodo, onTodoUpdated, parentTo
         name='description'
         onChange={e => setDescription(e.target.value)}
         className="p-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y min-h-[80px]"
-        data-testid="todo-description-input"
+        data-testid={ADD_TODO_IDS.DESCRIPTION_INPUT}
       />
       <button
         type="submit"
         className="bg-blue-600 text-white rounded px-4 py-2 hover:bg-blue-700 transition"
-        data-testid="save-todo-button"
+        data-testid={ADD_TODO_IDS.SAVE_BUTTON}
       >
         Save Todo
       </button>
