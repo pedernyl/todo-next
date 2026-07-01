@@ -9,6 +9,7 @@ import { TODO_LIST_IDS } from '@/constants/todo/TodoList';
 test.use({ storageState: 'storageState.json' });
 // Adjust the URL if your dev server runs on a different port
 const BASE_URL = 'http://localhost:3000';
+const title = 'Playwright Todo';
 
 test.describe('Todo App E2E', () => {
   const createdTodoTitles: string[] = [];
@@ -37,7 +38,7 @@ test.describe('Todo App E2E', () => {
   });
 
   test('should create a new todo', async ({ page }) => {
-    const title = 'Playwright Todo';
+    
     createdTodoTitles.push(title);
     await page.goto(BASE_URL);
     await page.getByTestId(TODO_LIST_IDS.TOGGLE_ADD_TODO_FORM.testId).click();
@@ -45,12 +46,12 @@ test.describe('Todo App E2E', () => {
     await page.getByTestId(ADD_TODO_IDS.DESCRIPTION_INPUT).fill('Created by Playwright');
     await page.getByTestId(ADD_TODO_IDS.SAVE_BUTTON).click();
     // Check that the new todo appears in the list
-    await expect(page.locator('text=Playwright Todo')).toBeVisible();
+    await expect(page.locator(`text=${title}`)).toBeVisible();
   });
 
   test('should complete a todo', async ({ page }) => {
     await page.goto(BASE_URL);
-    const todoItem = page.locator('li:has-text("Playwright Todo")').first();
+    const todoItem = page.locator(`li:has-text("${title}")`).first();
     await expect(todoItem).toBeVisible();
     await todoItem.getByTestId(new RegExp(`^${TODO_LIST_IDS.TOGGLE_DESCRIPTION.testId}-`)).click();
     await page.waitForTimeout(300);
