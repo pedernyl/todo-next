@@ -38,7 +38,6 @@ test.describe('Todo App E2E', () => {
   });
 
   test('should create a new todo', async ({ page }) => {
-    
     createdTodoTitles.push(title);
     await page.goto(BASE_URL);
     await page.getByTestId(TODO_LIST_IDS.TOGGLE_ADD_TODO_FORM.testId).click();
@@ -54,10 +53,13 @@ test.describe('Todo App E2E', () => {
     const todoItem = page.locator(`li:has-text("${title}")`).first();
     await expect(todoItem).toBeVisible();
     await todoItem.getByTestId(new RegExp(`^${TODO_LIST_IDS.TOGGLE_DESCRIPTION.testId}-`)).click();
-    await page.waitForTimeout(300);
-    await todoItem.getByTestId(new RegExp(`^${TODO_LIST_IDS.TOGGLE_COMPLETE.testId}-`)).click();
-    await page.waitForTimeout(300);
-    await expect(todoItem.getByTestId(new RegExp(`^${TODO_LIST_IDS.COMPLETED_TODO.completed}-`))).toHaveCount(1);
+    const completedButton = todoItem.getByTestId(new RegExp(`^${TODO_LIST_IDS.TOGGLE_COMPLETE.testId}-`));
+    await expect(completedButton).toBeVisible();
+    completedButton.click();
+    const completedTodo = todoItem.getByTestId(new RegExp(`^${TODO_LIST_IDS.COMPLETED_TODO.completed}-`));
+    await expect(completedTodo).toBeVisible();
+    await expect(completedTodo).toHaveCount(1);
+  
   });
 
 });
