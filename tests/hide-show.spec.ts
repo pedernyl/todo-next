@@ -85,13 +85,8 @@ test.describe('Hide/Show Todos E2E', () => {
         createdTodoTitles.push(todoTitle);
 
         await page.goto(BASE_URL);
-
-        // Create a category.
-        await page.waitForFunction(() => {
-            const select = document.querySelector('select');
-            return Boolean(select && (select as HTMLSelectElement).options.length >= 2);
-        }, { timeout: 15000 });
-        
+        const categorySelect = page.getByTestId(CATEGORY_DROPDOWN_IDS.SELECT);
+        await expect(categorySelect).toBeVisible();
         await page.getByTestId(CATEGORY_DROPDOWN_IDS.SELECT).selectOption(DROPDOWN_OPTIONS.CREATE_CATEGORY.value);
         await page.getByTestId(CATEGORY_DROPDOWN_IDS.NEW_CATEGORY_INPUT).fill(categoryTitle);
         await page.getByTestId(CATEGORY_DROPDOWN_IDS.NEW_CATEGORY_DESCRIPTION).fill(`Created by Playwright: ${categoryTitle}`);
@@ -118,7 +113,6 @@ test.describe('Hide/Show Todos E2E', () => {
         await expect(todoItem).toBeVisible();
 
         // Set todo to completed.
-       // await todoItem.getByTestId(/^toggleDescription-/).click();
         await todoItem.getByTestId(new RegExp(`^${TODO_LIST_IDS.TOGGLE_DESCRIPTION.testId}-`)).click();
         await todoItem.getByTestId(new RegExp(`^${TODO_LIST_IDS.TOGGLE_COMPLETE.testId}-`)).click();
         await expect(todoItem.getByTestId(new RegExp(`^${TODO_LIST_IDS.COMPLETED_TODO.completed}-`))).toHaveCount(1);
