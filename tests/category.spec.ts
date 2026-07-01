@@ -10,12 +10,8 @@ const BASE_URL = 'http://localhost:3000';
 test.use({ storageState: 'storageState.json' });
 
 async function createCategory(page: import('@playwright/test').Page, categoryName: string) {
-	// Wait for categories/user context to be initialized.
-	await page.waitForFunction(() => {
-		const select = document.querySelector('select');
-		return Boolean(select && select.options.length >= 3);
-	}, { timeout: 15000 });
 	const categorySelect = page.getByTestId(CATEGORY_DROPDOWN_IDS.SELECT);
+	await expect(categorySelect).toBeVisible();
 	await categorySelect.selectOption(DROPDOWN_OPTIONS.CREATE_CATEGORY.value);
 	await page.getByTestId(CATEGORY_DROPDOWN_IDS.NEW_CATEGORY_INPUT).fill(categoryName);
 	await page.getByTestId(CATEGORY_DROPDOWN_IDS.NEW_CATEGORY_DESCRIPTION).fill(`Created by Playwright: ${categoryName}`);
