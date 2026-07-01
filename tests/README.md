@@ -48,3 +48,17 @@ npx playwright test tests/*.spec.ts --headed
 - Only run the login script when you need to refresh your authentication state.
 - Remember to set csp to dev, off or report-only
 - For the most stable Playwright runs, prefer `npm run build:testDb && npm run start:testDb` over `npm run dev:testDb`.
+
+## Constants Policy For Playwright Tests
+
+When creating or updating Playwright tests in this folder:
+
+- Prefer domain constants from `src/constants/**` instead of hardcoded selector strings.
+- Prefer `getByTestId(...)` with shared ID constants.
+- Keep IDs and text separate:
+	- IDs from `..._IDS` constants
+	- Visible copy from `..._TEXT` / `GLOBAL.UI_TEXT` / `GLOBAL.LOADER_LABELS` when reused
+- If a text value is used more than once in tests or app code, extract it to a constant.
+- Reuse shared API route constants (`API_PATHS`) for response matching and route checks.
+
+See the full policy in the "Constants Policy" section in [CONTRIBUTING.md](../CONTRIBUTING.md).
