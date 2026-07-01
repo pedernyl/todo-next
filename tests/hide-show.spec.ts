@@ -9,6 +9,7 @@ import {
 } from './helpers/cleanupHelpers';
 import type { FindSettingsByKeyResult, AdminSettingsDefinition } from '@/lib/adminSettings/types';
 import { API_PATHS } from '@/constants/api/apiPaths';
+import { ADMIN_TEST_IDS } from '@/constants/admin/adminNavigation';
 import { CATEGORY_DROPDOWN_IDS, DROPDOWN_OPTIONS } from '@/constants/dropdowns/categoryDropDown';
 import { ADD_TODO_IDS } from '@/constants/todo/AddTodo';
 import { TODO_LIST_IDS } from '@/constants/todo/TodoList';
@@ -39,10 +40,10 @@ test.describe('Hide/Show Todos E2E', () => {
     test('should hide completed todos when clicked and scrolling', async ({ page }) => {
         await page.goto(BASE_URL);
         // Go to admin page
-        await page.getByTestId('admin-link').click();
+        await page.getByTestId(ADMIN_TEST_IDS.ENTRY_LINK).click();
 
         // Change number of todos to load to 10
-        await page.getByTestId('admin-link-settings').click();
+        await page.getByTestId(ADMIN_TEST_IDS.viewLink('settings')).click();
 
         const loadLimitInput = 
             await page.locator('[id="App::todos--defaultLoadLimit"]').inputValue();
@@ -56,7 +57,7 @@ test.describe('Hide/Show Todos E2E', () => {
 
         
         // Go back to todos page
-        await page.getByTestId('admin-link-todos').click();
+        await page.getByTestId(ADMIN_TEST_IDS.TODOS_LINK).click();
         await page.waitForTimeout(500);
 
         // Click "Hide completed" button (because default is to show completed todos)
