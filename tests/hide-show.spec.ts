@@ -10,6 +10,7 @@ import {
 import type { FindSettingsByKeyResult, AdminSettingsDefinition } from '@/lib/adminSettings/types';
 import { API_PATHS } from '@/constants/api/apiPaths';
 import { DROPDOWN_OPTIONS } from '@/constants/dropdowns/categoryDropDown';
+import { ADD_TODO_IDS } from '@/constants/todo/AddTodo';
 import { TODO_LIST_IDS } from '@/constants/todo/TodoList';
 
 
@@ -101,14 +102,14 @@ test.describe('Hide/Show Todos E2E', () => {
             .not.toHaveValue(DROPDOWN_OPTIONS.CREATE_CATEGORY.value);
 
         // Add a todo in the created category.
-        const addTodoButton = page.getByTestId('toggleAddTodoForm');
+        const addTodoButton = page.getByTestId(TODO_LIST_IDS.TOGGLE_ADD_TODO_FORM.testId);
         await addTodoButton.click();
         
-        await page.getByTestId('todo-title-input').fill(todoTitle);
-        await page.getByTestId('todo-description-input').fill(`Description for ${todoTitle}`);
+        await page.getByTestId(ADD_TODO_IDS.TITLE_INPUT).fill(todoTitle);
+        await page.getByTestId(ADD_TODO_IDS.DESCRIPTION_INPUT).fill(`Description for ${todoTitle}`);
         await Promise.all([
             page.waitForResponse((res) => res.url().includes(API_PATHS.TODOS) && res.request().method() === 'POST' && res.ok()),
-            page.getByTestId('save-todo-button').click(),
+            page.getByTestId(ADD_TODO_IDS.SAVE_BUTTON).click(),
         ]);
         const todoItem = page.locator(`li:has-text("${todoTitle}")`).first();
         await expect(todoItem).toBeVisible();

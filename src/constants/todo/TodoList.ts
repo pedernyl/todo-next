@@ -26,6 +26,9 @@ export const TODO_LIST_IDS = {
     DRAG_TODO: {
         testId: "dragTodo",
     },
+    TOGGLE_ADD_TODO_FORM: {
+        testId: "toggleAddTodoForm",
+    },
 } as const;
 
 export const TODO_LIST_TEXT = {
