@@ -608,7 +608,7 @@ export default function TodoList(
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ id: todo.id, deleted_by: userId }),
         },
-        { label: "Deleting todo...", cancellable: true }
+        { label: GLOBAL.LOADER_LABELS.DELETING_TODO, cancellable: true }
       );
       if (!response.ok) throw new Error("Failed to delete todo");
       setTodos((prev: Todo[]) => prev.filter((t: Todo) => t.id !== todo.id));
@@ -650,7 +650,7 @@ export default function TodoList(
         params.set("category_id", selectedCategory.id);
       }
       const response = await runBlockingFetch(
-        `/api/todos?${params.toString()}`,
+        `${API_PATHS.TODOS}?${params.toString()}`,
         undefined,
         { label: GLOBAL.LOADER_LABELS.LOADING_TODOS, cancellable: true }
       );
@@ -694,7 +694,7 @@ export default function TodoList(
           },
           body: JSON.stringify({ id, completed }),
         },
-        { label: "Updating todo...", cancellable: true }
+        { label: GLOBAL.LOADER_LABELS.UPDATING_TODO, cancellable: true }
       );
 
       if (!response.ok) {
@@ -751,7 +751,7 @@ export default function TodoList(
             ...(typeof result.scope.category_id !== "undefined" ? { category_id: result.scope.category_id } : {}),
           }),
         },
-        { label: "Saving todo order...", cancellable: true }
+        { label: GLOBAL.LOADER_LABELS.SAVING_TODO_ORDER, cancellable: true }
       );
 
       if (!response.ok) {
