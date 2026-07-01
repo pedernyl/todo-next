@@ -12,6 +12,7 @@ import { API_PATHS } from '@/constants/api/apiPaths';
 import { ADMIN_TEST_IDS } from '@/constants/admin/adminNavigation';
 import { ADMIN_SETTINGS_TEST_IDS } from '@/constants/admin/adminSettings';
 import { CATEGORY_DROPDOWN_IDS, DROPDOWN_OPTIONS } from '@/constants/dropdowns/categoryDropDown';
+import { GLOBAL } from '@/constants/global/global';
 import { ADD_TODO_IDS } from '@/constants/todo/AddTodo';
 import { TODO_LIST_IDS } from '@/constants/todo/TodoList';
 
@@ -66,7 +67,7 @@ test.describe('Hide/Show Todos E2E', () => {
         await page.waitForTimeout(500);
         
         while (
-            !await page.getByText('All todos loaded').isVisible() &&
+            !await page.getByText(GLOBAL.UI_TEXT.TODOS.ALL_LOADED).isVisible() &&
             !await page.getByTestId(new RegExp(`^${TODO_LIST_IDS.COMPLETED_TODO.completed}-`)).isVisible()
         ) {
             await page.mouse.wheel(0, 500);
