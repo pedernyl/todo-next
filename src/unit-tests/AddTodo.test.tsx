@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import AddTodo from '../components/AddTodo';
 import { API_PATHS } from '../constants/api/apiPaths';
+import { GLOBAL } from '../constants/global/global';
 
 const runBlockingFetchMock = vi.fn();
 
@@ -42,7 +43,7 @@ describe('AddTodo', () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       }),
-      { label: 'Creating todo...', cancellable: true }
+      { label: GLOBAL.LOADER_LABELS.CREATING_TODO, cancellable: true }
     );
 
     expect(onTodoAdded).not.toHaveBeenCalled();
@@ -76,7 +77,7 @@ describe('AddTodo', () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       }),
-      { label: 'Creating todo...', cancellable: true }
+      { label: GLOBAL.LOADER_LABELS.CREATING_TODO, cancellable: true }
     );
 
     expect(onTodoAdded).not.toHaveBeenCalled();
