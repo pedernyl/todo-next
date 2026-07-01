@@ -3,6 +3,8 @@ import React from "react";
 import { useUserId } from "../context/UserIdContext";
 import { Todo } from "../../types";
 import AddTodo from "./AddTodo";
+import { GLOBAL } from "@/constants/global/global";
+import { TODO_LIST } from "@/constants/todo/TodoList";
 import {
   rectIntersection,
   DndContext,
@@ -462,8 +464,9 @@ function SortableTodoItem({
           <button
             type="button"
             className="cursor-grab active:cursor-grabbing text-gray-500 hover:text-gray-700 text-sm"
-            aria-label={`Drag todo ${todo.title}`}
-            title="Drag to reorder"
+            aria-label={`${TODO_LIST.DRAG_TODO.label} ${todo.title}`}
+            title={TODO_LIST.DRAG_TODO.label}
+            data-testid={`${TODO_LIST.DRAG_TODO.testId}-${todoId}`} 
             {...attributes}
             {...listeners}
           >
@@ -471,7 +474,10 @@ function SortableTodoItem({
           </button>
           <span 
             className={todo.completed ? "line-through text-gray-400" : ""}
-            data-testid={todo.completed ? `completed-${todoId}` : `uncompleted-${todoId}`}
+            data-testid={todo.completed ? 
+              `${TODO_LIST.COMPLETED_TODO.completed}-${todoId}` : 
+              `${TODO_LIST.COMPLETED_TODO.uncompleted}-${todoId}`
+            }
           >
             {todo.title}
           </span>
@@ -481,9 +487,9 @@ function SortableTodoItem({
             type="button"
             onClick={() => toggleDescription(todo.id)}
             className="text-blue-600 hover:underline text-sm cursor-pointer"
-            data-testid={`toggle-description-${todoId}`}
+            data-testid={`${TODO_LIST.TOGGLE_DESCRIPTION.testId}-${todoId}`}
           >
-            {openDescriptions[todoId] ? "Hide Description" : "Show Description"}
+            {openDescriptions[todoId] ? TODO_LIST.TOGGLE_DESCRIPTION.hide : TODO_LIST.TOGGLE_DESCRIPTION.show}
           </button>
         </div>
       </div>
@@ -501,36 +507,37 @@ function SortableTodoItem({
             <button
               onClick={() => toggleTodo(todo.id, !todo.completed)}
               className="px-3 py-1 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition"
-              data-testid={`toggle-complete-${todoId}`}
+              data-testid={`${TODO_LIST.TOGGLE_COMPLETE.testId}-${todoId}`}
             >
-              {todo.completed ? "Undo" : "Complete"}
+              {todo.completed ? TODO_LIST.TOGGLE_COMPLETE.completed : TODO_LIST.TOGGLE_COMPLETE.uncompleted}
             </button>
             <button
               onClick={() => handleCreateSubTodo(todo)}
               className="px-2 py-1 rounded-lg border border-blue-500 bg-blue-50 hover:bg-blue-100 text-blue-700 text-sm"
-              data-testid={`create-subtodo-${todoId}`}
+              data-testid={`${TODO_LIST.CREATE_SUB_TODO.testId}-${todoId}`}
             >
-              Create subTodo
+              {TODO_LIST.CREATE_SUB_TODO.label}
             </button>
             <button
               className="text-blue-600 hover:underline text-xs ml-2"
               onClick={() => handleEdit(todo)}
+              data-testid={`${TODO_LIST.EDIT_TODO.testId}-${todoId}`}
             >
-              Edit
+              {TODO_LIST.EDIT_TODO.label}
             </button>
             {typeof userId === 'undefined' || userId === null ? (
-              <span className="text-gray-400 text-xs ml-2">Loading...</span>
+              <span className="text-gray-400 text-xs ml-2">{GLOBAL.LOADING_WITH_DOTS}</span>
             ) : (
               <button
                 type="button"
                 className="text-red-600 hover:underline text-xs ml-2"
                 onClick={() => {
-                  if (window.confirm("Are you sure you want to delete this todo?")) {
+                  if (window.confirm(TODO_LIST.DELETE_TODO.confirm)) {
                     handleDelete(todo);
                   }
                 }}
               >
-                Delete
+                {TODO_LIST.DELETE_TODO.label}
               </button>
             )}
           </div>
@@ -832,10 +839,10 @@ export default function TodoList(
       <div className="flex justify-end">
         <button
           onClick={() => handleToggleShowCompleted()}
-          data-testid="toggleShowCompleted"
+          data-testid={TODO_LIST.TOGGLE_SHOW_COMPLETED.testId}
           className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition text-sm"
         >
-          {showCompleted ? "Hide completed" : "Show completed"}
+          {showCompleted ? TODO_LIST.TOGGLE_SHOW_COMPLETED.label_false : TODO_LIST.TOGGLE_SHOW_COMPLETED.label_true}
         </button>
       </div>
 

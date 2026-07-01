@@ -9,6 +9,7 @@ import {
 } from './helpers/cleanupHelpers';
 import type { FindSettingsByKeyResult, AdminSettingsDefinition } from '@/lib/adminSettings/types';
 import { DROPDOWN_OPTIONS } from '@/constants/dropdowns/categoryDropDown';
+import { TODO_LIST } from '@/constants/todo/TodoList';
 
 
 const BASE_URL = 'http://localhost:3000';
@@ -31,8 +32,6 @@ test.describe('Hide/Show Todos E2E', () => {
         if ((originalSettingsRow?.length ?? 0) === 0) {
             defaultValue = await getAdminSettingsFromYamlFile('src/app/admin/settings/todos.yaml');
         }
-
-
     });
 
     test('should hide completed todos when clicked and scrolling', async ({ page }) => {
@@ -59,17 +58,18 @@ test.describe('Hide/Show Todos E2E', () => {
         await page.waitForTimeout(500);
 
         // Click "Hide completed" button (because default is to show completed todos)
-        await page.getByTestId('toggleShowCompleted').click();
-    
+        await page.getByTestId(TODO_LIST.TOGGLE_SHOW_COMPLETED.testId).click();
+        await page.waitForTimeout(500);
+        
         while (
             !await page.getByText('All todos loaded').isVisible() &&
-            !await page.getByTestId(/^completed-/).isVisible()
+            !await page.getByTestId(/^TODO_LIST.COMPLETED_TODO.completed + '-'/).isVisible()
         ) {
             await page.mouse.wheel(0, 500);
             await page.waitForTimeout(300);
         }
 
-        await expect(page.getByTestId(/^completed-/)).toHaveCount(0);
+        await expect(page.getByTestId(/^TODO_LIST.COMPLETED_TODO.completed + '-'/)).toHaveCount(0);
     });
 
     test('should keep completed todos hidden after changing category', async ({ page }) => {
@@ -95,7 +95,9 @@ test.describe('Hide/Show Todos E2E', () => {
             page.getByTestId('category-select').locator(`option:has-text("${categoryTitle}")`)
         ).toHaveCount(1);
         await page.getByTestId('category-select').selectOption({ label: categoryTitle });
-        await expect(page.getByTestId('category-select')).not.toHaveValue(DROPDOWN_OPTIONS.CREATE_CATEGORY.value);
+        await expect(
+            page.getByTestId('category-select'))
+            .not.toHaveValue(DROPDOWN_OPTIONS.CREATE_CATEGORY.value);
 
         // Add a todo in the created category.
         const addTodoButton = page.getByTestId('toggleAddTodoForm');
@@ -111,21 +113,22 @@ test.describe('Hide/Show Todos E2E', () => {
         await expect(todoItem).toBeVisible();
 
         // Set todo to completed.
-        await todoItem.getByTestId(/^toggle-description-/).click();
-        await todoItem.getByTestId(/^toggle-complete-/).click();
-        await expect(todoItem.getByTestId(/^completed-/)).toHaveCount(1);
+       // await todoItem.getByTestId(/^toggleDescription-/).click();
+        await todoItem.getByTestId(new RegExp(`^${TODO_LIST.TOGGLE_DESCRIPTION.testId}-`)).click();
+        await todoItem.getByTestId(new RegExp(`^${TODO_LIST.TOGGLE_COMPLETE.testId}-`)).click();
+        await expect(todoItem.getByTestId(new RegExp(`^${TODO_LIST.COMPLETED_TODO.completed}-`))).toHaveCount(1);
 
         // Change to all categories.
         await page.getByTestId('category-select').selectOption(DROPDOWN_OPTIONS.ALL_CATEGORIES.value);
 
         // Hide completed in all categories.
-        await page.getByTestId('toggleShowCompleted').click();
-        await expect(page.getByTestId(/^completed-/)).toHaveCount(0);
+        await page.getByTestId(TODO_LIST.TOGGLE_SHOW_COMPLETED.testId).click();
+        await expect(page.getByTestId(new RegExp(`^${TODO_LIST.COMPLETED_TODO.completed}-`))).toHaveCount(0);
 
         // Select the created category again: the completed todo must stay hidden.
         await page.getByTestId('category-select').selectOption({ label: categoryTitle });
         await expect(page.locator(`li:has-text("${todoTitle}")`)).toHaveCount(0);
-        await expect(page.getByTestId(/^completed-/)).toHaveCount(0);
+        await expect(page.getByTestId(new RegExp(`^${TODO_LIST.COMPLETED_TODO.completed}-`))).toHaveCount(0);
     });
 
     
