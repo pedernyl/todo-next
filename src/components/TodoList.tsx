@@ -4,7 +4,7 @@ import { useUserId } from "../context/UserIdContext";
 import { Todo } from "../../types";
 import AddTodo from "./AddTodo";
 import { GLOBAL } from "@/constants/global/global";
-import { TODO_LIST } from "@/constants/todo/TodoList";
+import { TODO_LIST_IDS, TODO_LIST_TEXT } from "@/constants/todo/TodoList";
 import {
   rectIntersection,
   DndContext,
@@ -464,9 +464,9 @@ function SortableTodoItem({
           <button
             type="button"
             className="cursor-grab active:cursor-grabbing text-gray-500 hover:text-gray-700 text-sm"
-            aria-label={`${TODO_LIST.DRAG_TODO.label} ${todo.title}`}
-            title={TODO_LIST.DRAG_TODO.label}
-            data-testid={`${TODO_LIST.DRAG_TODO.testId}-${todoId}`} 
+            aria-label={`${TODO_LIST_TEXT.DRAG_TODO.label} ${todo.title}`}
+            title={TODO_LIST_TEXT.DRAG_TODO.label}
+            data-testid={`${TODO_LIST_IDS.DRAG_TODO.testId}-${todoId}`} 
             {...attributes}
             {...listeners}
           >
@@ -475,8 +475,8 @@ function SortableTodoItem({
           <span 
             className={todo.completed ? "line-through text-gray-400" : ""}
             data-testid={todo.completed ? 
-              `${TODO_LIST.COMPLETED_TODO.completed}-${todoId}` : 
-              `${TODO_LIST.COMPLETED_TODO.uncompleted}-${todoId}`
+              `${TODO_LIST_IDS.COMPLETED_TODO.completed}-${todoId}` : 
+              `${TODO_LIST_IDS.COMPLETED_TODO.uncompleted}-${todoId}`
             }
           >
             {todo.title}
@@ -487,9 +487,9 @@ function SortableTodoItem({
             type="button"
             onClick={() => toggleDescription(todo.id)}
             className="text-blue-600 hover:underline text-sm cursor-pointer"
-            data-testid={`${TODO_LIST.TOGGLE_DESCRIPTION.testId}-${todoId}`}
+            data-testid={`${TODO_LIST_IDS.TOGGLE_DESCRIPTION.testId}-${todoId}`}
           >
-            {openDescriptions[todoId] ? TODO_LIST.TOGGLE_DESCRIPTION.hide : TODO_LIST.TOGGLE_DESCRIPTION.show}
+            {openDescriptions[todoId] ? TODO_LIST_TEXT.TOGGLE_DESCRIPTION.hide : TODO_LIST_TEXT.TOGGLE_DESCRIPTION.show}
           </button>
         </div>
       </div>
@@ -507,23 +507,23 @@ function SortableTodoItem({
             <button
               onClick={() => toggleTodo(todo.id, !todo.completed)}
               className="px-3 py-1 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition"
-              data-testid={`${TODO_LIST.TOGGLE_COMPLETE.testId}-${todoId}`}
+              data-testid={`${TODO_LIST_IDS.TOGGLE_COMPLETE.testId}-${todoId}`}
             >
-              {todo.completed ? TODO_LIST.TOGGLE_COMPLETE.completed : TODO_LIST.TOGGLE_COMPLETE.uncompleted}
+              {todo.completed ? TODO_LIST_TEXT.TOGGLE_COMPLETE.incomplete : TODO_LIST_TEXT.TOGGLE_COMPLETE.complete}
             </button>
             <button
               onClick={() => handleCreateSubTodo(todo)}
               className="px-2 py-1 rounded-lg border border-blue-500 bg-blue-50 hover:bg-blue-100 text-blue-700 text-sm"
-              data-testid={`${TODO_LIST.CREATE_SUB_TODO.testId}-${todoId}`}
+              data-testid={`${TODO_LIST_IDS.CREATE_SUB_TODO.testId}-${todoId}`}
             >
-              {TODO_LIST.CREATE_SUB_TODO.label}
+              {TODO_LIST_TEXT.CREATE_SUB_TODO.label}
             </button>
             <button
               className="text-blue-600 hover:underline text-xs ml-2"
               onClick={() => handleEdit(todo)}
-              data-testid={`${TODO_LIST.EDIT_TODO.testId}-${todoId}`}
+              data-testid={`${TODO_LIST_IDS.EDIT_TODO.testId}-${todoId}`}
             >
-              {TODO_LIST.EDIT_TODO.label}
+              {TODO_LIST_TEXT.EDIT_TODO.label}
             </button>
             {typeof userId === 'undefined' || userId === null ? (
               <span className="text-gray-400 text-xs ml-2">{GLOBAL.LOADING_WITH_DOTS}</span>
@@ -532,12 +532,12 @@ function SortableTodoItem({
                 type="button"
                 className="text-red-600 hover:underline text-xs ml-2"
                 onClick={() => {
-                  if (window.confirm(TODO_LIST.DELETE_TODO.confirm)) {
+                  if (window.confirm(TODO_LIST_TEXT.DELETE_TODO.confirm)) {
                     handleDelete(todo);
                   }
                 }}
               >
-                {TODO_LIST.DELETE_TODO.label}
+                {TODO_LIST_TEXT.DELETE_TODO.label}
               </button>
             )}
           </div>
@@ -839,10 +839,10 @@ export default function TodoList(
       <div className="flex justify-end">
         <button
           onClick={() => handleToggleShowCompleted()}
-          data-testid={TODO_LIST.TOGGLE_SHOW_COMPLETED.testId}
+          data-testid={TODO_LIST_IDS.TOGGLE_SHOW_COMPLETED.testId}
           className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition text-sm"
         >
-          {showCompleted ? TODO_LIST.TOGGLE_SHOW_COMPLETED.label_false : TODO_LIST.TOGGLE_SHOW_COMPLETED.label_true}
+          {showCompleted ? TODO_LIST_TEXT.TOGGLE_SHOW_COMPLETED.hide : TODO_LIST_TEXT.TOGGLE_SHOW_COMPLETED.show}
         </button>
       </div>
 
