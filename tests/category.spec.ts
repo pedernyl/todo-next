@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { createTestDbClient } from './helpers/dbClient';
 import { deleteTodosByTitle, deleteCategoriesByTitle } from './helpers/cleanupHelpers';
+import { API_PATHS } from '@/constants/api/apiPaths';
 import { DROPDOWN_OPTIONS } from '@/constants/dropdowns/categoryDropDown';
 
 const BASE_URL = 'http://localhost:3000';
@@ -30,7 +31,7 @@ async function createTodo(page: import('@playwright/test').Page, title: string, 
 	await page.fill('input[name="title"]', title);
 	await page.fill('textarea[name="description"]', description);
 	await Promise.all([
-		page.waitForResponse((res) => res.url().includes('/api/todos') && res.request().method() === 'POST' && res.ok()),
+		page.waitForResponse((res) => res.url().includes(API_PATHS.TODOS) && res.request().method() === 'POST' && res.ok()),
 		page.click('button:has-text("Save Todo")'),
 	]);
 	await expect(page.locator(`li:has-text("${title}")`)).toBeVisible();

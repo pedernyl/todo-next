@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { API_PATHS } from "../../constants/api/apiPaths";
 import { useGlobalBlockingLoader } from "../../context/GlobalBlockingLoaderContext";
 
 type CopyMode = "overwrite" | "append";
@@ -27,7 +28,7 @@ export default function AdminDatabaseCopyView() {
 
     try {
       const res = await runBlockingFetch(
-        "/api/admin/database-copy",
+        API_PATHS.ADMIN.DATABASE_COPY,
         { cache: "no-store" },
         { label: "Loading database copy status...", cancellable: true }
       );
@@ -67,7 +68,7 @@ export default function AdminDatabaseCopyView() {
 
     try {
       const res = await runBlockingFetch(
-        "/api/admin/database-copy",
+        API_PATHS.ADMIN.DATABASE_COPY,
         {
           method: "POST",
           headers: {

@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { createClient } from "@supabase/supabase-js";
+import { API_PATHS } from "../constants/api/apiPaths";
 import { assertIntegrationTestDbEnvIsActive } from "./assertIntegrationTestDbEnv";
 import { cleanupTestOwnerData } from "./integrationTestHelpers";
 import { createTodo, getTodos, reorderTodoSiblings } from "../lib/dataService";
@@ -62,7 +63,7 @@ describe("Todos_sort_limit", () => {
 
     // createTodo resolves owner id via fetchUserIdByEmail -> /api/userid.
     global.fetch = vi.fn(async (input: unknown, init?: RequestInit): Promise<Response | MockUserIdResponse> => {
-      if (String(input).includes("/api/userid")) {
+      if (String(input).includes(API_PATHS.USER_ID)) {
         return {
           ok: true,
           json: async () => ({ userId: TEST_OWNER_ID }),

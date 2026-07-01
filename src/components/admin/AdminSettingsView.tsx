@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { API_PATHS } from "../../constants/api/apiPaths";
 import { useGlobalBlockingLoader } from "../../context/GlobalBlockingLoaderContext";
 import type { AdminSettingsGroupState, AdminSettingsTypeGroup } from "../../lib/adminSettings";
 
@@ -43,7 +44,7 @@ export default function AdminSettingsView() {
 
     try {
       const res = await runBlockingFetch(
-        "/api/admin/settings",
+        API_PATHS.ADMIN.SETTINGS,
         { cache: "no-store" },
         { label: "Loading admin settings...", cancellable: true }
       );
@@ -113,7 +114,7 @@ export default function AdminSettingsView() {
 
     try {
       const res = await runBlockingFetch(
-        "/api/admin/settings",
+        API_PATHS.ADMIN.SETTINGS,
         {
           method: "POST",
           headers: {

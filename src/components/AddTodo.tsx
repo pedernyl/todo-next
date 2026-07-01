@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Todo } from '../../types';
+import { API_PATHS } from '../constants/api/apiPaths';
 import { useGlobalBlockingLoader } from '../context/GlobalBlockingLoaderContext';
 
 interface AddTodoProps {
@@ -37,7 +38,7 @@ export default function AddTodo({ onTodoAdded, editTodo, onTodoUpdated, parentTo
       // Update existing todo
       try {
         const res = await runBlockingFetch(
-          '/api/todos',
+          API_PATHS.TODOS,
           {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
@@ -61,7 +62,7 @@ export default function AddTodo({ onTodoAdded, editTodo, onTodoUpdated, parentTo
       }
       try {
         const res = await runBlockingFetch(
-          '/api/todos',
+          API_PATHS.TODOS,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

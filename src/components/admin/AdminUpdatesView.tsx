@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { API_PATHS } from "../../constants/api/apiPaths";
 import { useGlobalBlockingLoader } from "../../context/GlobalBlockingLoaderContext";
 
 type UpdateItem = {
@@ -34,7 +35,7 @@ export default function AdminUpdatesView() {
 
     try {
       const res = await runBlockingFetch(
-        "/api/admin/updates",
+        API_PATHS.ADMIN.UPDATES,
         { cache: "no-store" },
         { label: "Loading admin updates...", cancellable: true }
       );
@@ -78,7 +79,7 @@ export default function AdminUpdatesView() {
 
     try {
       const res = await runBlockingFetch(
-        "/api/admin/updates",
+        API_PATHS.ADMIN.UPDATES,
         {
           method: "POST",
           headers: {

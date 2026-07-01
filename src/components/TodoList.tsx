@@ -3,8 +3,9 @@ import React from "react";
 import { useUserId } from "../context/UserIdContext";
 import { Todo } from "../../types";
 import AddTodo from "./AddTodo";
-import { GLOBAL } from "@/constants/global/global";
-import { TODO_LIST_IDS, TODO_LIST_TEXT } from "@/constants/todo/TodoList";
+import { API_PATHS } from "../constants/api/apiPaths";
+import { GLOBAL } from "../constants/global/global";
+import { TODO_LIST_IDS, TODO_LIST_TEXT } from "../constants/todo/TodoList";
 import {
   rectIntersection,
   DndContext,
@@ -601,7 +602,7 @@ export default function TodoList(
     }
     try {
       const response = await runBlockingFetch(
-        "/api/todos",
+        API_PATHS.TODOS,
         {
           method: "DELETE",
           headers: { "Content-Type": "application/json" },
@@ -685,7 +686,7 @@ export default function TodoList(
   const toggleTodo = async (id: string, completed: boolean) => {
     try {
       const response = await runBlockingFetch(
-        "/api/todos",
+        API_PATHS.TODOS,
         {
           method: "PATCH",
           headers: {
@@ -736,7 +737,7 @@ export default function TodoList(
 
     try {
       const response = await runBlockingFetch(
-        "/api/todos",
+        API_PATHS.TODOS,
         {
           method: "PATCH",
           headers: {

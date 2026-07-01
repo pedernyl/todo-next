@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import AddTodo from '../components/AddTodo';
+import { API_PATHS } from '../constants/api/apiPaths';
 
 const runBlockingFetchMock = vi.fn();
 
@@ -36,7 +37,7 @@ describe('AddTodo', () => {
     });
 
     expect(runBlockingFetchMock).toHaveBeenCalledWith(
-      '/api/todos',
+      API_PATHS.TODOS,
       expect.objectContaining({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -70,7 +71,7 @@ describe('AddTodo', () => {
     });
 
     expect(runBlockingFetchMock).toHaveBeenCalledWith(
-      '/api/todos',
+      API_PATHS.TODOS,
       expect.objectContaining({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

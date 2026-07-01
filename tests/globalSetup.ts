@@ -1,8 +1,9 @@
 import type { FullConfig } from '@playwright/test';
+import { API_PATHS } from '@/constants/api/apiPaths';
 import { assertRequiredTestDbEnv } from './helpers/testDbEnvGuard';
 
 const DEFAULT_BASE_URL = 'http://localhost:3000';
-const TEST_DB_STATUS_PATH = '/api/test-db-status';
+const TEST_DB_STATUS_PATH = API_PATHS.TEST_DB_STATUS;
 
 function resolveBaseUrl(config: FullConfig): string {
   const fromConfig = config.projects.find((project) => typeof project.use.baseURL === 'string')?.use

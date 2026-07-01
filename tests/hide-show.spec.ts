@@ -8,6 +8,7 @@ import {
     setSettingValue,
 } from './helpers/cleanupHelpers';
 import type { FindSettingsByKeyResult, AdminSettingsDefinition } from '@/lib/adminSettings/types';
+import { API_PATHS } from '@/constants/api/apiPaths';
 import { DROPDOWN_OPTIONS } from '@/constants/dropdowns/categoryDropDown';
 import { TODO_LIST_IDS } from '@/constants/todo/TodoList';
 
@@ -106,7 +107,7 @@ test.describe('Hide/Show Todos E2E', () => {
         await page.getByTestId('todo-title-input').fill(todoTitle);
         await page.getByTestId('todo-description-input').fill(`Description for ${todoTitle}`);
         await Promise.all([
-            page.waitForResponse((res) => res.url().includes('/api/todos') && res.request().method() === 'POST' && res.ok()),
+            page.waitForResponse((res) => res.url().includes(API_PATHS.TODOS) && res.request().method() === 'POST' && res.ok()),
             page.getByTestId('save-todo-button').click(),
         ]);
         const todoItem = page.locator(`li:has-text("${todoTitle}")`).first();

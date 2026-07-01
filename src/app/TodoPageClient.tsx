@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import TodoList from "../components/TodoList";
 import CategoryDropdownWrapper from "../components/CategoryDropdownWrapper";
 import { useUserId } from "../context/UserIdContext";
+import { API_PATHS } from "../constants/api/apiPaths";
 import { Todo } from "../../types";
 import type { Category } from "../lib/categoryService";
 import { useGlobalBlockingLoader } from "../context/GlobalBlockingLoaderContext";
@@ -79,7 +80,7 @@ export default function TodoPageClient({ initialTodos }: { initialTodos: Todo[] 
         params.set("category_id", categoryId);
       }
 
-      const res = await fetch(`/api/todos?${params.toString()}`, {
+      const res = await fetch(`${API_PATHS.TODOS}?${params.toString()}`, {
         method: "GET",
         cache: "no-store",
       });
@@ -136,7 +137,7 @@ export default function TodoPageClient({ initialTodos }: { initialTodos: Todo[] 
       params.set("category_id", selectedCategory.id);
     }
 
-    const url = `/api/todos?${params.toString()}`;
+    const url = `${API_PATHS.TODOS}?${params.toString()}`;
 
     runBlockingFetch(url, undefined, {
       label: "Loading todos...",
