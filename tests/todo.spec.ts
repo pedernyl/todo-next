@@ -1,17 +1,48 @@
 
 import { test, expect } from '@playwright/test';
 import { createTestDbClient } from './helpers/dbClient';
-import { deleteTodosByTitle } from './helpers/cleanupHelpers';
+import { deleteTodosByTitle, createTodo } from './helpers/cleanupHelpers';
+import { ADD_TODO_IDS } from '@/constants/todo/AddTodo';
+import { TODO_LIST_IDS } from '@/constants/todo/TodoList';
+import { error } from 'console';
 
 // Use authentication state for all tests in this file
 test.use({ storageState: 'storageState.json' });
 // Adjust the URL if your dev server runs on a different port
 const BASE_URL = 'http://localhost:3000';
+const title = 'Playwright Todo';
+const completeTodoTitle = 'Playwright Complete Todo';
 
 test.describe('Todo App E2E', () => {
+  // Tracks all todo titles created during the test suite so they can be cleaned up in afterAll
   const createdTodoTitles: string[] = [];
 
+  test.beforeAll(async ({ browser, baseURL }) => {
+    // A dedicated browser context is created here (rather than using the test-scoped `page` fixture)
+    // because beforeAll does not have access to page/request fixtures directly.
+    // The context must include storageState so API requests are authenticated.
+    const context = await browser.newContext({
+      baseURL,
+      storageState: 'storageState.json',
+    });
+
+    try {
+      // Pre-create a todo via the API so it exists before any test runs;
+      // creating it through the UI in beforeAll is unreliable across parallel workers.
+      await createTodo(
+        context.request,
+        completeTodoTitle,
+        'This todo will be completed in the test'
+      );
+
+      createdTodoTitles.push(completeTodoTitle);
+    } finally {
+      await context.close();
+    }
+  });
+
   test.afterAll(async () => {
+    // Clean up all todos created during this suite to keep the test database tidy
     const db = createTestDbClient();
     await deleteTodosByTitle(db, createdTodoTitles);
   });
@@ -20,50 +51,49 @@ test.describe('Todo App E2E', () => {
     const title = `Playwright Line Break ${Date.now()}`;
     createdTodoTitles.push(title);
     await page.goto(BASE_URL);
-    await page.click('text=Add Todo');
-    await page.fill('input[name="title"]', title);
-    await page.fill('textarea[name="description"]', 'first line\nsecond line');
-    await page.click('button:has-text("Save Todo")');
+    await page.getByTestId(TODO_LIST_IDS.TOGGLE_ADD_TODO_FORM.testId).click();
+    await page.getByTestId(ADD_TODO_IDS.TITLE_INPUT).fill(title);
+    await page.getByTestId(ADD_TODO_IDS.DESCRIPTION_INPUT).fill('first line\nsecond line');
+    await page.getByTestId(ADD_TODO_IDS.SAVE_BUTTON).click();
 
     const todoItem = page.locator(`li:has-text("${title}")`).first();
     await expect(todoItem).toBeVisible();
-    await todoItem.getByText('Show Description').click();
+    // Expand the description panel to make the rendered markdown visible
+    await todoItem.getByTestId(new RegExp(`^${TODO_LIST_IDS.TOGGLE_DESCRIPTION.testId}-`)).click();
 
+    // A single newline in the input should produce exactly one <br> in the rendered output
     await expect(todoItem.locator('.prose br')).toHaveCount(1);
     await expect(todoItem).toContainText('first line');
     await expect(todoItem).toContainText('second line');
   });
 
   test('should create a new todo', async ({ page }) => {
-    const title = 'Playwright Todo';
     createdTodoTitles.push(title);
     await page.goto(BASE_URL);
-    // Click 'Add Todo' link to reveal the form
-    await page.click('text=Add Todo');
-    // Now click the 'Add Todo' button if needed (remove if not present)
-    // await page.click('button:has-text("Add Todo")');
-    // Fill in the title and description
-    await page.fill('input[name="title"]', title);
-    await page.fill('textarea[name="description"]', 'Created by Playwright');
-  // Submit the form
-  await page.click('button:has-text("Save Todo")');
+    await page.getByTestId(TODO_LIST_IDS.TOGGLE_ADD_TODO_FORM.testId).click();
+    await page.getByTestId(ADD_TODO_IDS.TITLE_INPUT).fill(title);
+    await page.getByTestId(ADD_TODO_IDS.DESCRIPTION_INPUT).fill('Created by Playwright');
+    await page.getByTestId(ADD_TODO_IDS.SAVE_BUTTON).click();
     // Check that the new todo appears in the list
-    await expect(page.locator('text=Playwright Todo')).toBeVisible();
+    await expect(page.locator(`text=${title}`)).toBeVisible();
   });
 
   test('should complete a todo', async ({ page }) => {
     await page.goto(BASE_URL);
-    const todoItem = page.locator('li:has-text("Playwright Todo")').first();
+    const todoItem = page.locator(`li:has-text("${completeTodoTitle}")`).first();
     await expect(todoItem).toBeVisible();
-    // Click 'Show Description' within this todo
-    await todoItem.getByText('Show Description').click();
-    await page.waitForTimeout(300);
-    // Click the Complete button
-    await todoItem.getByRole('button', { name: /complete/i }).click();
-    await page.waitForTimeout(300);
-    // Check that the todo is now marked as completed (line-through style)
-    const title = todoItem.locator('span');
-    await expect(title).toHaveClass(/line-through/);
+    // The complete button is only shown when the description panel is expanded
+    await todoItem.getByTestId(new RegExp(`^${TODO_LIST_IDS.TOGGLE_DESCRIPTION.testId}-`)).click();
+    const completedButton = todoItem.getByTestId(new RegExp(`^${TODO_LIST_IDS.TOGGLE_COMPLETE.testId}-`));
+    await expect(completedButton).toBeVisible();
+    await completedButton.click();
+    const completedTodo = todoItem
+      .getByTestId(
+        new RegExp(`^${TODO_LIST_IDS.COMPLETED_TODO.completed}-`)
+      );
+    await expect(completedTodo).toBeVisible();
+    await expect(completedTodo).toHaveCount(1);
+  
   });
 
 });

@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { Todo } from '../../types';
+import { API_PATHS } from '../constants/api/apiPaths';
+import { GLOBAL } from '../constants/global/global';
+import { ADD_TODO_IDS, ADD_TODO_TEXT } from '../constants/todo/AddTodo';
 import { useGlobalBlockingLoader } from '../context/GlobalBlockingLoaderContext';
 
 interface AddTodoProps {
@@ -37,13 +40,13 @@ export default function AddTodo({ onTodoAdded, editTodo, onTodoUpdated, parentTo
       // Update existing todo
       try {
         const res = await runBlockingFetch(
-          '/api/todos',
+          API_PATHS.TODOS,
           {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id: editTodo.id, title, description }),
           },
-          { label: 'Updating todo...', cancellable: true }
+          { label: GLOBAL.LOADER_LABELS.UPDATING_TODO, cancellable: true }
         );
         if (!res.ok) return;
         const updatedTodo: Todo = await res.json();
@@ -56,12 +59,12 @@ export default function AddTodo({ onTodoAdded, editTodo, onTodoUpdated, parentTo
     } else {
       // Create new todo or sub-todo
       if (typeof userId !== 'number') {
-        alert("User id not loaded. Please try again.");
+        alert(ADD_TODO_TEXT.USER_ID_NOT_LOADED);
         return;
       }
       try {
         const res = await runBlockingFetch(
-          '/api/todos',
+          API_PATHS.TODOS,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -73,7 +76,7 @@ export default function AddTodo({ onTodoAdded, editTodo, onTodoUpdated, parentTo
               ...(categoryId ? { category_id: categoryId } : {})
             }),
           },
-          { label: 'Creating todo...', cancellable: true }
+          { label: GLOBAL.LOADER_LABELS.CREATING_TODO, cancellable: true }
         );
         if (!res.ok) return;
         const newTodo: Todo = await res.json();
@@ -82,7 +85,7 @@ export default function AddTodo({ onTodoAdded, editTodo, onTodoUpdated, parentTo
         if (error instanceof DOMException && error.name === 'AbortError') {
           return;
         }
-        const message = error instanceof Error ? error.message : 'Failed to create todo. Please try again.';
+        const message = error instanceof Error ? error.message : ADD_TODO_TEXT.CREATE_TODO_FAILED;
         alert(message);
         return;
       }
@@ -95,36 +98,37 @@ export default function AddTodo({ onTodoAdded, editTodo, onTodoUpdated, parentTo
     <form
       onSubmit={handleSubmit}
       className="flex flex-col gap-3 max-w-xl mx-auto mb-6"
+      data-testid={ADD_TODO_IDS.FORM}
     >
       {parentTodo && (
-        <div className="text-sm text-gray-600 mb-2">
-          Parent Todo: <span className="font-semibold">{parentTodo.title}</span>
+        <div className="text-sm text-gray-600 mb-2" data-testid={ADD_TODO_IDS.PARENT_TODO_INFO}>
+          {ADD_TODO_TEXT.PARENT_TODO_LABEL} <span className="font-semibold">{parentTodo.title}</span>
         </div>
       )}
       <input
         type="text"
-        placeholder="Title"
+        placeholder={ADD_TODO_TEXT.TITLE_PLACEHOLDER}
         value={title}
         onChange={e => setTitle(e.target.value)}
         name='title'
         required
         className="p-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        data-testid="todo-title-input"
+        data-testid={ADD_TODO_IDS.TITLE_INPUT}
       />
       <textarea
-        placeholder="Description"
+        placeholder={ADD_TODO_TEXT.DESCRIPTION_PLACEHOLDER}
         value={description}
         name='description'
         onChange={e => setDescription(e.target.value)}
         className="p-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y min-h-[80px]"
-        data-testid="todo-description-input"
+        data-testid={ADD_TODO_IDS.DESCRIPTION_INPUT}
       />
       <button
         type="submit"
         className="bg-blue-600 text-white rounded px-4 py-2 hover:bg-blue-700 transition"
-        data-testid="save-todo-button"
+        data-testid={ADD_TODO_IDS.SAVE_BUTTON}
       >
-        Save Todo
+        {ADD_TODO_TEXT.SAVE_BUTTON}
       </button>
     </form>
   );

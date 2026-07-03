@@ -1,7 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { API_PATHS } from "../../constants/api/apiPaths";
 import { useGlobalBlockingLoader } from "../../context/GlobalBlockingLoaderContext";
+import { GLOBAL } from "../../constants/global/global";
+import { ADMIN_VIEW_IDS, ADMIN_VIEW_TEXT } from "../../constants/admin/adminViews";
 
 type UserItem = {
   id: number;
@@ -21,14 +24,14 @@ export default function AdminUsersView() {
 
     try {
       const res = await runBlockingFetch(
-        "/api/admin/users",
+        API_PATHS.ADMIN.USERS,
         { cache: "no-store" },
-        { label: "Loading admin users...", cancellable: true }
+        { label: GLOBAL.LOADER_LABELS.LOADING_ADMIN_USERS, cancellable: true }
       );
       const data = (await res.json()) as { users?: UserItem[]; error?: string };
 
       if (!res.ok || !data.users) {
-        throw new Error(data.error || "Failed to load users");
+        throw new Error(data.error || ADMIN_VIEW_TEXT.USERS.LOAD_FAILED);
       }
 
       setUsers(data.users);
@@ -36,7 +39,7 @@ export default function AdminUsersView() {
       if (err instanceof DOMException && err.name === "AbortError") {
         return;
       }
-      const message = err instanceof Error ? err.message : "Failed to load users";
+      const message = err instanceof Error ? err.message : ADMIN_VIEW_TEXT.USERS.LOAD_FAILED;
       setError(message);
     } finally {
       setIsLoading(false);
@@ -50,27 +53,28 @@ export default function AdminUsersView() {
   const hasUsers = useMemo(() => users.length > 0, [users.length]);
 
   return (
-    <section className="rounded border border-slate-300 bg-white p-5 shadow-sm">
-      <h2 className="mb-4 text-lg font-semibold text-slate-700">Users overview</h2>
-      {error && <p className="mb-3 text-sm text-red-700">{error}</p>}
+    <section className="rounded border border-slate-300 bg-white p-5 shadow-sm" data-testid={ADMIN_VIEW_IDS.USERS.SECTION}>
+      <h2 className="mb-4 text-lg font-semibold text-slate-700" data-testid={ADMIN_VIEW_IDS.USERS.HEADING}>{ADMIN_VIEW_TEXT.USERS.HEADING}</h2>
+      {error && <p className="mb-3 text-sm text-red-700" data-testid={ADMIN_VIEW_IDS.USERS.ERROR}>{error}</p>}
 
-      {isLoading && <p className="text-sm text-slate-600">Loading users...</p>}
-      {!isLoading && !hasUsers && <p className="text-sm text-slate-600">No users found.</p>}
+      {isLoading && <p className="text-sm text-slate-600" data-testid={ADMIN_VIEW_IDS.USERS.LOADING}>{GLOBAL.UI_TEXT.ADMIN.LOADING_USERS}</p>}
+      {!isLoading && !hasUsers && <p className="text-sm text-slate-600" data-testid={ADMIN_VIEW_IDS.USERS.EMPTY}>{GLOBAL.UI_TEXT.ADMIN.NO_USERS_FOUND}</p>}
 
-      <div className="mb-2 grid grid-cols-[80px_1fr_110px] px-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
-        <span>ID</span>
-        <span>Email</span>
-        <span>Admin</span>
+      <div className="mb-2 grid grid-cols-[80px_1fr_110px] px-3 text-xs font-semibold uppercase tracking-wide text-slate-500" data-testid={ADMIN_VIEW_IDS.USERS.HEADER_ROW}>
+        <span>{ADMIN_VIEW_TEXT.USERS.ID_LABEL}</span>
+        <span>{ADMIN_VIEW_TEXT.USERS.EMAIL_LABEL}</span>
+        <span>{ADMIN_VIEW_TEXT.USERS.ADMIN_LABEL}</span>
       </div>
 
-      <ul className="space-y-2">
+      <ul className="space-y-2" data-testid={ADMIN_VIEW_IDS.USERS.LIST}>
         {users.map((user) => (
           <li
             key={user.id}
             className="grid grid-cols-[80px_1fr_110px] items-center rounded border border-slate-200 px-3 py-2 text-sm"
+            data-testid={ADMIN_VIEW_IDS.USERS.ITEM(user.id)}
           >
             <span className="font-medium text-slate-700">#{user.id}</span>
-            <span className="text-slate-600">{user.email || "(no email)"}</span>
+            <span className="text-slate-600">{user.email || ADMIN_VIEW_TEXT.USERS.NO_EMAIL}</span>
             <span>
               <span
                 className={`inline-flex rounded px-2 py-0.5 text-xs font-semibold ${
@@ -79,7 +83,7 @@ export default function AdminUsersView() {
                     : "bg-slate-100 text-slate-600"
                 }`}
               >
-                {user.isAdmin ? "Yes" : "No"}
+                {user.isAdmin ? ADMIN_VIEW_TEXT.USERS.YES : ADMIN_VIEW_TEXT.USERS.NO}
               </span>
             </span>
           </li>

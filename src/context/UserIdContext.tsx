@@ -2,7 +2,9 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useSession } from "next-auth/react";
+import { API_PATHS } from "../constants/api/apiPaths";
 import { useGlobalBlockingLoader } from "./GlobalBlockingLoaderContext";
+import { GLOBAL } from "../constants/global/global";
 
 interface UserIdContextType {
   userId: number | null;
@@ -24,9 +26,9 @@ export function UserIdProvider({ children }: { children: ReactNode }) {
       if (session?.user?.email) {
         try {
           const res = await runBlockingFetch(
-            "/api/userid?email=" + encodeURIComponent(session.user.email),
+            API_PATHS.userIdByEmail(session.user.email),
             undefined,
-            { label: "Loading account information...", cancellable: true }
+            { label: GLOBAL.LOADER_LABELS.LOADING_ACCOUNT_INFO, cancellable: true }
           );
           if (res.ok) {
             const data = await res.json();

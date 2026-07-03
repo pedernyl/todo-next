@@ -1,7 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { API_PATHS } from "../../constants/api/apiPaths";
 import { useGlobalBlockingLoader } from "../../context/GlobalBlockingLoaderContext";
+import { GLOBAL } from "../../constants/global/global";
+import { ADMIN_SETTINGS_TEST_IDS } from "../../constants/admin/adminSettings";
+import { ADMIN_VIEW_IDS, ADMIN_VIEW_TEXT } from "../../constants/admin/adminViews";
 import type { AdminSettingsGroupState, AdminSettingsTypeGroup } from "../../lib/adminSettings";
 
 function settingKey(setting: Pick<AdminSettingsGroupState, "name" | "type">): string {
@@ -10,12 +14,12 @@ function settingKey(setting: Pick<AdminSettingsGroupState, "name" | "type">): st
 
 function formatChangedTimestamp(timestamp: string | null): string {
   if (!timestamp) {
-    return "Never";
+    return ADMIN_VIEW_TEXT.SETTINGS.NEVER;
   }
 
   const date = new Date(timestamp);
   if (Number.isNaN(date.getTime())) {
-    return "Unknown";
+    return ADMIN_VIEW_TEXT.SETTINGS.UNKNOWN;
   }
 
   return date.toLocaleString();
@@ -43,15 +47,15 @@ export default function AdminSettingsView() {
 
     try {
       const res = await runBlockingFetch(
-        "/api/admin/settings",
+        API_PATHS.ADMIN.SETTINGS,
         { cache: "no-store" },
-        { label: "Loading admin settings...", cancellable: true }
+        { label: GLOBAL.LOADER_LABELS.LOADING_ADMIN_SETTINGS, cancellable: true }
       );
 
       const data = (await res.json()) as { groups?: AdminSettingsTypeGroup[]; error?: string };
 
       if (!res.ok || !data.groups) {
-        throw new Error(data.error || "Failed to load settings");
+        throw new Error(data.error || ADMIN_VIEW_TEXT.SETTINGS.LOAD_FAILED);
       }
 
       const clonedGroups = cloneGroups(data.groups);
@@ -68,7 +72,7 @@ export default function AdminSettingsView() {
       if (err instanceof DOMException && err.name === "AbortError") {
         return;
       }
-      const message = err instanceof Error ? err.message : "Failed to load settings";
+      const message = err instanceof Error ? err.message : ADMIN_VIEW_TEXT.SETTINGS.LOAD_FAILED;
       setError(message);
     } finally {
       setIsLoading(false);
@@ -113,7 +117,7 @@ export default function AdminSettingsView() {
 
     try {
       const res = await runBlockingFetch(
-        "/api/admin/settings",
+        API_PATHS.ADMIN.SETTINGS,
         {
           method: "POST",
           headers: {
@@ -125,7 +129,12 @@ export default function AdminSettingsView() {
             settings: draft,
           }),
         },
-        { label: `Saving ${setting.title} settings...`, cancellable: true }
+        { 
+          label: 
+            `${ADMIN_VIEW_TEXT.SETTINGS.SAVING} 
+            ${setting.title} settings...`, 
+            cancellable: true 
+        }
       );
 
       const data = (await res.json()) as { setting?: AdminSettingsGroupState; error?: string };
@@ -133,7 +142,7 @@ export default function AdminSettingsView() {
       const savedSetting = data.setting;
 
       if (!res.ok || !savedSetting) {
-        throw new Error(data.error || "Failed to save setting");
+        throw new Error(data.error || ADMIN_VIEW_TEXT.SETTINGS.SAVE_FAILED);
       }
 
       setGroups((prev) =>
@@ -152,12 +161,12 @@ export default function AdminSettingsView() {
         [key]: { ...savedSetting.values },
       }));
 
-      setSuccessMessage(`Saved ${savedSetting.title}.`);
+      setSuccessMessage(`${ADMIN_VIEW_TEXT.SETTINGS.SAVED_PREFIX} ${savedSetting.title}.`);
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") {
         return;
       }
-      const message = err instanceof Error ? err.message : "Failed to save setting";
+      const message = err instanceof Error ? err.message : ADMIN_VIEW_TEXT.SETTINGS.SAVE_FAILED;
       setError(message);
     } finally {
       setSavingSettingKey(null);
@@ -165,25 +174,25 @@ export default function AdminSettingsView() {
   }
 
   return (
-    <section className="space-y-4">
-      <div className="rounded border border-slate-300 bg-white px-5 py-3 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-700">Settings</h2>
-        <p className="text-sm text-slate-600">Settings are defined by YAML schemas and saved manually per group.</p>
+    <section className="space-y-4" data-testid={ADMIN_VIEW_IDS.SETTINGS.SECTION}>
+      <div className="rounded border border-slate-300 bg-white px-5 py-3 shadow-sm" data-testid={ADMIN_VIEW_IDS.SETTINGS.HEADER}>
+        <h2 className="text-lg font-semibold text-slate-700" data-testid={ADMIN_VIEW_IDS.SETTINGS.HEADING}>{ADMIN_VIEW_TEXT.SETTINGS.HEADING}</h2>
+        <p className="text-sm text-slate-600" data-testid={ADMIN_VIEW_IDS.SETTINGS.DESCRIPTION}>{ADMIN_VIEW_TEXT.SETTINGS.DESCRIPTION}</p>
       </div>
 
-      {error && <p className="rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
+      {error && <p className="rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" data-testid={ADMIN_VIEW_IDS.SETTINGS.ERROR}>{error}</p>}
       {successMessage && (
-        <p className="rounded border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{successMessage}</p>
+        <p className="rounded border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700" data-testid={ADMIN_VIEW_IDS.SETTINGS.SUCCESS}>{successMessage}</p>
       )}
 
-      {isLoading && <p className="text-sm text-slate-600">Loading settings...</p>}
+      {isLoading && <p className="text-sm text-slate-600" data-testid={ADMIN_VIEW_IDS.SETTINGS.LOADING}>{GLOBAL.UI_TEXT.ADMIN.LOADING_SETTINGS}</p>}
       {!isLoading && !hasSettings && (
-        <p className="rounded border border-slate-300 bg-white px-5 py-4 text-sm text-slate-600">No settings definitions found.</p>
+        <p className="rounded border border-slate-300 bg-white px-5 py-4 text-sm text-slate-600" data-testid={ADMIN_VIEW_IDS.SETTINGS.EMPTY}>{ADMIN_VIEW_TEXT.SETTINGS.EMPTY}</p>
       )}
 
       {!isLoading &&
         groups.map((typeGroup) => (
-          <section key={typeGroup.type} className="rounded border border-slate-300 bg-white shadow-sm">
+          <section key={typeGroup.type} className="rounded border border-slate-300 bg-white shadow-sm" data-testid={ADMIN_VIEW_IDS.SETTINGS.GROUP(typeGroup.type)}>
             <div className="border-b border-slate-200 px-5 py-3">
               <h3 className="text-base font-semibold text-slate-700">{typeGroup.type}</h3>
             </div>
@@ -195,13 +204,13 @@ export default function AdminSettingsView() {
                 const dirty = isSettingDirty(setting);
 
                 return (
-                  <article key={key} className="rounded border border-slate-200 p-4">
+                  <article key={key} className="rounded border border-slate-200 p-4" data-testid={ADMIN_VIEW_IDS.SETTINGS.SETTING(key)}>
                     <header className="mb-3">
                       <h4 className="text-sm font-semibold text-slate-800">{setting.title}</h4>
                       {setting.description && <p className="mt-1 text-xs text-slate-600">{setting.description}</p>}
                       <p className="mt-1 text-xs text-slate-500">
-                        Last changed: {formatChangedTimestamp(setting.changedTimestamp)}
-                        {setting.changedBy ? ` (user #${setting.changedBy})` : ""}
+                        {ADMIN_VIEW_TEXT.SETTINGS.LAST_CHANGED} {formatChangedTimestamp(setting.changedTimestamp)}
+                        {setting.changedBy ? ` (${ADMIN_VIEW_TEXT.SETTINGS.USER_PREFIX}${setting.changedBy})` : ""}
                       </p>
                     </header>
 
@@ -218,6 +227,7 @@ export default function AdminSettingsView() {
                             {field.type === "textarea" && (
                               <textarea
                                 id={fieldId}
+                                data-testid={fieldId}
                                 value={typeof value === "string" ? value : ""}
                                 placeholder={field.placeholder}
                                 onChange={(event) => updateDraft(setting, field.key, event.target.value)}
@@ -227,6 +237,7 @@ export default function AdminSettingsView() {
                             {field.type === "text" && (
                               <input
                                 id={fieldId}
+                                data-testid={fieldId}
                                 type="text"
                                 value={typeof value === "string" ? value : ""}
                                 placeholder={field.placeholder}
@@ -237,6 +248,7 @@ export default function AdminSettingsView() {
                             {field.type === "number" && (
                               <input
                                 id={fieldId}
+                                data-testid={fieldId}
                                 type="number"
                                 value={typeof value === "number" ? value : 0}
                                 min={field.min}
@@ -256,17 +268,19 @@ export default function AdminSettingsView() {
                               <label className="inline-flex items-center gap-2 text-sm text-slate-700">
                                 <input
                                   id={fieldId}
+                                  data-testid={fieldId}
                                   type="checkbox"
                                   checked={Boolean(value)}
                                   onChange={(event) => updateDraft(setting, field.key, event.target.checked)}
                                   className="accent-sky-700"
                                 />
-                                Enabled
+                                {ADMIN_VIEW_TEXT.SETTINGS.ENABLED}
                               </label>
                             )}
                             {field.type === "select" && (
                               <select
                                 id={fieldId}
+                                data-testid={fieldId}
                                 value={typeof value === "string" ? value : ""}
                                 onChange={(event) => updateDraft(setting, field.key, event.target.value)}
                                 className="w-full rounded border border-slate-300 px-3 py-2 text-sm"
@@ -287,12 +301,12 @@ export default function AdminSettingsView() {
                     <div className="mt-4">
                       <button
                         type="button"
-                        data-testid={`save-setting-${key}`}
+                        data-testid={ADMIN_SETTINGS_TEST_IDS.saveSetting(key)}
                         onClick={() => void saveSetting(setting)}
                         disabled={!dirty || savingSettingKey === key}
                         className="rounded bg-sky-700 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-sky-800 disabled:cursor-not-allowed disabled:bg-slate-400"
                       >
-                        {savingSettingKey === key ? "Saving..." : "Save"}
+                        {savingSettingKey === key ? ADMIN_VIEW_TEXT.SETTINGS.SAVING : ADMIN_VIEW_TEXT.SETTINGS.SAVE}
                       </button>
                     </div>
                   </article>

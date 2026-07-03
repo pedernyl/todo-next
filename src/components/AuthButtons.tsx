@@ -2,6 +2,7 @@
 
 import { useSession, signIn, signOut } from "next-auth/react";
 import { useGlobalBlockingLoader } from "../context/GlobalBlockingLoaderContext";
+import { AUTH_IDS, AUTH_TEXT } from "../constants/auth/auth";
 
 export default function AuthButtons() {
   const { data: session } = useSession();
@@ -10,42 +11,49 @@ export default function AuthButtons() {
   async function handleSignOut() {
     await runBlocking(
       async () => signOut(),
-      { label: "Signing out...", cancellable: false }
+      { label: AUTH_TEXT.SIGNING_OUT, cancellable: false }
     );
   }
 
   async function handleSignIn() {
     await runBlocking(
       async () => signIn('github', { callbackUrl: '/' }),
-      { label: "Signing in...", cancellable: false }
+      { label: AUTH_TEXT.SIGNING_IN, cancellable: false }
     );
   }
 
   if (session) {
     return (
-  <div className="flex items-center justify-between max-w-xl mx-auto gap-1">
-        <span className="text-gray-700">Welcome, {session.user?.name}</span>
+  <div
+        className="flex items-center justify-between max-w-xl mx-auto gap-1"
+        data-testid={AUTH_IDS.LOGGED_IN_CONTAINER}
+      >
+        <span className="text-gray-700" data-testid={AUTH_IDS.WELCOME_TEXT}>
+          {AUTH_TEXT.WELCOME_PREFIX} {session.user?.name}
+        </span>
         <button
           onClick={() => {
             void handleSignOut();
           }}
           className="bg-gray-400 text-white px-3 py-1 rounded border border-blue-500 hover:bg-gray-500 transition"
+          data-testid={AUTH_IDS.SIGN_OUT_BUTTON}
         >
-          Sign out
+          {AUTH_TEXT.SIGN_OUT}
         </button>
       </div>
     );
   }
 
   return (
-  <div className="flex justify-center max-w-xl mx-auto">
+  <div className="flex justify-center max-w-xl mx-auto" data-testid={AUTH_IDS.LOGGED_OUT_CONTAINER}>
       <button
         onClick={() => {
           void handleSignIn();
         }}
         className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+        data-testid={AUTH_IDS.SIGN_IN_BUTTON}
       >
-        Sign in with GitHub
+        {AUTH_TEXT.SIGN_IN_WITH_GITHUB}
       </button>
     </div>
   );

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminAccessCheckResult } from "@/lib/adminAccess";
 import { loadAdminSettingsGrouped, saveAdminSettingGroup } from "@/lib/adminSettings";
+import { API_MESSAGES } from "@/constants/api/apiMessages";
 
 type SaveSettingsRequest = {
   name?: string;
@@ -12,32 +13,31 @@ export async function GET() {
   try {
     const access = await getAdminAccessCheckResult();
     if (!access.ok) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      return NextResponse.json({ error: API_MESSAGES.COMMON.FORBIDDEN }, { status: 403 });
     }
 
     const groups = await loadAdminSettingsGrouped();
     return NextResponse.json({ groups });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to load settings";
-    return NextResponse.json({ error: message }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: API_MESSAGES.ADMIN_SETTINGS.LOAD_FAILED }, { status: 500 });
   }
 }
 
 export async function POST(req: NextRequest) {
   const access = await getAdminAccessCheckResult();
   if (!access.ok) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return NextResponse.json({ error: API_MESSAGES.COMMON.FORBIDDEN }, { status: 403 });
   }
 
   let payload: SaveSettingsRequest;
   try {
     payload = (await req.json()) as SaveSettingsRequest;
   } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    return NextResponse.json({ error: API_MESSAGES.COMMON.INVALID_JSON_BODY }, { status: 400 });
   }
 
   if (!payload.name || !payload.type) {
-    return NextResponse.json({ error: "name and type are required" }, { status: 400 });
+    return NextResponse.json({ error: API_MESSAGES.ADMIN_SETTINGS.NAME_TYPE_REQUIRED }, { status: 400 });
   }
 
   try {
@@ -49,8 +49,7 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ setting });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to save setting";
-    return NextResponse.json({ error: message }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: API_MESSAGES.ADMIN_SETTINGS.SAVE_FAILED }, { status: 500 });
   }
 }

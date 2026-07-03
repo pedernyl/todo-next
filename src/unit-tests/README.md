@@ -80,3 +80,9 @@ npm run test:coverage   # unit coverage
 - `global.fetch` is mocked to return a fake `/api/userid` response; we use `@ts-expect-error` to override `global.fetch` in the test environment and a minimal response type instead of `as any`.
 
 If you add new tests that call additional Supabase methods, extend the mock chains accordingly.
+
+## Constants and selectors policy
+
+- Import selector constants from `src/constants/<domain>/...` and prefer `getByTestId(...)` over hardcoded selectors.
+- Keep test-id constants (`..._IDS`) and user-facing text constants (`..._TEXT`/equivalent) separate.
+- When asserting fixed UI messages, prefer shared constants instead of repeating inline strings.

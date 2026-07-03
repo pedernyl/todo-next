@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { API_PATHS } from "../constants/api/apiPaths";
 import AdminSettingsView from "../components/admin/AdminSettingsView";
 
 const runBlockingFetchMock = vi.fn();
@@ -14,7 +15,7 @@ describe("AdminSettingsView", () => {
   beforeEach(() => {
     runBlockingFetchMock.mockReset();
     runBlockingFetchMock.mockImplementation(async (input: RequestInfo | URL) => {
-      if (input === "/api/admin/settings") {
+      if (input === API_PATHS.ADMIN.SETTINGS) {
         return new Response(
           JSON.stringify({
             groups: [

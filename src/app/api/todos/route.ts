@@ -2,7 +2,7 @@
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: API_MESSAGES.COMMON.UNAUTHORIZED }, { status: 401 });
   }
   const url = new URL(req.url);
   const showCompleted = url.searchParams.get('showCompleted');
@@ -29,12 +29,13 @@ import { createTodo, updateTodo } from '../../../lib/dataService';
 import { getTodoLoadPolicy, computeEffectiveLimit } from '../../../lib/todoLoadPolicy';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../../../lib/authOptions";
+import { API_MESSAGES } from '../../../constants/api/apiMessages';
 
 // Handle creating a Todo
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: API_MESSAGES.COMMON.UNAUTHORIZED }, { status: 401 });
   }
   const { title, description, parent_todo, category_id } = await req.json();
 
@@ -47,7 +48,7 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: API_MESSAGES.COMMON.UNAUTHORIZED }, { status: 401 });
   }
   const body = await req.json();
   const { id, completed, title, description, reorder } = body;
@@ -55,35 +56,35 @@ export async function PATCH(req: NextRequest) {
   if (reorder) {
     const { updates } = body;
     if (!Array.isArray(updates)) {
-      return NextResponse.json({ error: "Invalid reorder payload" }, { status: 400 });
+      return NextResponse.json({ error: API_MESSAGES.TODOS.INVALID_REORDER_PAYLOAD }, { status: 400 });
     }
 
     // Validate and normalize each update entry
     for (const update of updates) {
       if (!update || typeof update !== 'object') {
-        return NextResponse.json({ error: "Invalid update entry: must be an object" }, { status: 400 });
+        return NextResponse.json({ error: API_MESSAGES.TODOS.INVALID_UPDATE_ENTRY_OBJECT }, { status: 400 });
       }
       if (typeof update.id === 'undefined') {
-        return NextResponse.json({ error: "Invalid update entry: id is required" }, { status: 400 });
+        return NextResponse.json({ error: API_MESSAGES.TODOS.INVALID_UPDATE_ENTRY_ID_REQUIRED }, { status: 400 });
       }
       if (typeof update.sort_index !== 'number' || !Number.isFinite(update.sort_index)) {
-        return NextResponse.json({ error: "Invalid update entry: sort_index must be a finite number" }, { status: 400 });
+        return NextResponse.json({ error: API_MESSAGES.TODOS.INVALID_UPDATE_ENTRY_SORT_INDEX }, { status: 400 });
       }
       // Normalize id to number if it's a string representation
       if (typeof update.id === 'string') {
         const numId = Number(update.id);
         if (!Number.isFinite(numId)) {
-          return NextResponse.json({ error: "Invalid update entry: id must be a valid number" }, { status: 400 });
+          return NextResponse.json({ error: API_MESSAGES.TODOS.INVALID_UPDATE_ENTRY_ID_VALID_NUMBER }, { status: 400 });
         }
         update.id = numId;
       } else if (typeof update.id !== 'number' || !Number.isFinite(update.id)) {
-        return NextResponse.json({ error: "Invalid update entry: id must be a number" }, { status: 400 });
+        return NextResponse.json({ error: API_MESSAGES.TODOS.INVALID_UPDATE_ENTRY_ID_NUMBER }, { status: 400 });
       }
     }
 
     const email = session.user?.email;
     if (!email) {
-      return NextResponse.json({ error: "User email missing" }, { status: 400 });
+      return NextResponse.json({ error: API_MESSAGES.TODOS.USER_EMAIL_MISSING }, { status: 400 });
     }
 
     const { fetchUserIdByEmail, reorderTodoSiblings } = await import('../../../lib/dataService');
@@ -92,9 +93,8 @@ export async function PATCH(req: NextRequest) {
       const userId = await fetchUserIdByEmail(email);
       const reorderedTodos = await reorderTodoSiblings(userId, updates);
       return NextResponse.json({ updated: reorderedTodos });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to reorder todos";
-      return NextResponse.json({ error: message }, { status: 500 });
+    } catch {
+      return NextResponse.json({ error: API_MESSAGES.TODOS.REORDER_FAILED }, { status: 500 });
     }
   }
 
@@ -107,7 +107,7 @@ export async function PATCH(req: NextRequest) {
     const { updateTodoDetails } = await import('../../../lib/dataService');
     todo = await updateTodoDetails(id, title, description);
   } else {
-    return NextResponse.json({ error: "Invalid PATCH payload" }, { status: 400 });
+    return NextResponse.json({ error: API_MESSAGES.TODOS.INVALID_PATCH_PAYLOAD }, { status: 400 });
   }
 
   return NextResponse.json(todo);
@@ -117,13 +117,13 @@ export async function PATCH(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: API_MESSAGES.COMMON.UNAUTHORIZED }, { status: 401 });
   }
   const { id, deleted_by } = await req.json();
   // Always require deleted_by to be a user id (number)
   const userId = deleted_by;
   if (!userId || typeof userId !== 'number') {
-    return NextResponse.json({ error: "User id (number) required for deleted_by" }, { status: 400 });
+    return NextResponse.json({ error: API_MESSAGES.TODOS.DELETED_BY_REQUIRED }, { status: 400 });
   }
   const { softDeleteTodo } = await import('../../../lib/dataService');
   const deleted = await softDeleteTodo(id, userId);

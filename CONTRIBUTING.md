@@ -87,6 +87,79 @@ Update dependencies
 
 Since we use squash merge, the PR title becomes the commit message on `main` — make it descriptive.
 
+## Constants Policy
+
+Use constants to keep user communication and selectors stable, testable, and easy to refactor.
+
+### 1) All user-facing text must be constants
+
+Move all user-facing text into constants, including:
+
+- labels
+- button text
+- headings
+- placeholders
+- tooltips/aria labels
+- empty states
+- confirmation dialog text
+- alert/toast/error text shown in UI
+- API error/message strings that are shown to users
+
+Do not hardcode user-facing strings directly in JSX or route responses intended for UI display.
+
+### 2) Console/log/debug messages are exempt
+
+Developer-only messages are not user communication and can stay inline.
+
+Examples:
+
+- `console.log(...)`
+- `console.warn(...)`
+- `console.error(...)`
+- internal debug traces
+
+### 3) Error-message rule
+
+Error messages shown to users must be constants.
+
+They do not need translation/i18n scaffolding; plain constants are sufficient.
+
+### 4) Organize constants by domain only
+
+Split constants under `src/constants/<domain>/`.
+
+Examples:
+
+- `src/constants/todo/...`
+- `src/constants/admin/...`
+- `src/constants/dropdowns/...`
+- `src/constants/auth/...`
+- `src/constants/api/...`
+- `src/constants/global/...`
+
+Never create one catch-all shared constants file for unrelated domains.
+
+### 5) Keep test IDs separate from text constants
+
+Keep selector/test-id constants separate from user-facing text constants.
+
+- IDs in `..._IDS` objects (for example `ADD_TODO_IDS`)
+- User text in `..._TEXT` or equivalent text-focused objects
+
+Do this even when both live in the same domain folder.
+
+### 6) Every meaningful HTML element needs a data-testid from constants
+
+Add `data-testid` to meaningful/interactive UI elements (inputs, buttons, links, list items, key containers used in assertions).
+
+`data-testid` values must come from constants, not inline strings.
+
+### 7) Tests should reuse constants
+
+- Prefer `getByTestId(...)` with shared constants.
+- Avoid hardcoded selectors when a constants-backed id exists.
+- Reuse constants for known user-visible message assertions where practical.
+
 ## Admin Settings YAML
 
 Admin settings schemas live in `src/app/admin/settings`.

@@ -1,6 +1,10 @@
 "use client";
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import {
+  GLOBAL_BLOCKING_LOADER_IDS,
+  GLOBAL_BLOCKING_LOADER_TEXT,
+} from "../constants/global/globalBlockingLoader";
 
 type BlockingTask = {
   id: number;
@@ -195,7 +199,10 @@ function BlockingOverlay({
   const latestTask = tasks[tasks.length - 1];
 
   return (
-    <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/45 px-4">
+    <div
+      className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/45 px-4"
+      data-testid={GLOBAL_BLOCKING_LOADER_IDS.OVERLAY}
+    >
       <div
         ref={dialogRef}
         role="dialog"
@@ -204,28 +211,36 @@ function BlockingOverlay({
         aria-describedby={descriptionId}
         tabIndex={-1}
         className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl"
+        data-testid={GLOBAL_BLOCKING_LOADER_IDS.DIALOG}
       >
-        <h2 id={headingId} className="text-xl font-semibold text-slate-800">Please wait</h2>
-        <p id={descriptionId} className="mt-2 text-sm text-slate-600">{latestTask?.label || "Working on your request..."}</p>
+        <h2 id={headingId} className="text-xl font-semibold text-slate-800" data-testid={GLOBAL_BLOCKING_LOADER_IDS.HEADING}>
+          {GLOBAL_BLOCKING_LOADER_TEXT.HEADING}
+        </h2>
+        <p id={descriptionId} className="mt-2 text-sm text-slate-600" data-testid={GLOBAL_BLOCKING_LOADER_IDS.DESCRIPTION}>
+          {latestTask?.label || GLOBAL_BLOCKING_LOADER_TEXT.DEFAULT_TASK_LABEL}
+        </p>
 
-        <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
-          Elapsed time: <span className="font-semibold">{formatElapsed(elapsedSeconds)}</span>
+        <div
+          className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700"
+          data-testid={GLOBAL_BLOCKING_LOADER_IDS.ELAPSED_TIME}
+        >
+          {GLOBAL_BLOCKING_LOADER_TEXT.ELAPSED_TIME_LABEL} <span className="font-semibold">{formatElapsed(elapsedSeconds)}</span>
         </div>
 
         {stillWorkingStep >= 1 && (
-          <p className="mt-3 text-sm text-slate-600">
-            Still working... {stillWorkingStep * 10}s elapsed.
+          <p className="mt-3 text-sm text-slate-600" data-testid={GLOBAL_BLOCKING_LOADER_IDS.STILL_WORKING}>
+            {GLOBAL_BLOCKING_LOADER_TEXT.STILL_WORKING_PREFIX} {GLOBAL_BLOCKING_LOADER_TEXT.STILL_WORKING_ELAPSED(stillWorkingStep * 10)}
           </p>
         )}
 
         {cancelledCancellableCount > 0 && (
-          <p className="mt-2 text-sm text-amber-700">
-            Cancelled {cancelledCancellableCount} request(s). Waiting for remaining tasks to finish.
+          <p className="mt-2 text-sm text-amber-700" data-testid={GLOBAL_BLOCKING_LOADER_IDS.CANCELLED_NOTICE}>
+            {GLOBAL_BLOCKING_LOADER_TEXT.CANCELLED_NOTICE(cancelledCancellableCount)}
           </p>
         )}
 
-        <p className="mt-3 text-xs text-slate-500">
-          Active tasks: {tasks.length} ({cancellableCount} cancellable, {nonCancellableCount} non-cancellable)
+        <p className="mt-3 text-xs text-slate-500" data-testid={GLOBAL_BLOCKING_LOADER_IDS.ACTIVE_TASKS}>
+          {GLOBAL_BLOCKING_LOADER_TEXT.ACTIVE_TASKS(tasks.length, cancellableCount, nonCancellableCount)}
         </p>
 
         <div className="mt-5">
@@ -234,8 +249,9 @@ function BlockingOverlay({
             onClick={onCancel}
             className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-medium text-rose-700 transition hover:bg-rose-100"
             disabled={cancellableCount === 0}
+            data-testid={GLOBAL_BLOCKING_LOADER_IDS.CANCEL_BUTTON}
           >
-            Cancel
+            {GLOBAL_BLOCKING_LOADER_TEXT.CANCEL_BUTTON}
           </button>
         </div>
       </div>
@@ -262,7 +278,7 @@ export function GlobalBlockingLoaderProvider({ children }: { children: React.Rea
 
     const task: BlockingTask = {
       id: taskId,
-      label: options?.label || "Working on your request...",
+      label: options?.label || GLOBAL_BLOCKING_LOADER_TEXT.DEFAULT_TASK_LABEL,
       startedAt: Date.now(),
       cancellable,
       controller,

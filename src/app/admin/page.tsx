@@ -9,6 +9,7 @@ import AdminUpdatesView from "@/components/admin/AdminUpdatesView";
 import AdminUsersView from "@/components/admin/AdminUsersView";
 import { getAdminAccessCheckResult } from "@/lib/adminAccess";
 import { getDevTitle, isTestDbActive } from '@/lib/environmentMode';
+import { ADMIN_NAV_TEXT, ADMIN_TEST_IDS } from "../../constants/admin/adminNavigation";
 
 type AdminPageProps = {
   searchParams: Promise<{ view?: string | string[] }>;
@@ -18,14 +19,7 @@ type AdminMetadataProps = {
   searchParams: Promise<{ view?: string | string[] }>;
 };
 
-const adminViews: Array<{ key: string; label: string }> = [
-  { key: "home", label: "Home" },
-  { key: "settings", label: "Settings" },
-  { key: "database-copy", label: "Database copy" },
-  { key: "updates", label: "Updates" },
-  { key: "users", label: "Users" },
-  { key: "about", label: "About" },
-];
+const adminViews = ADMIN_NAV_TEXT.VIEWS;
 
 function isAdminView(value: string | undefined): value is (typeof adminViews)[number]["key"] {
   if (!value) {
@@ -49,7 +43,7 @@ function getActiveView(
 
 function getActiveLabel(view: string | string[] | undefined): string {
   const activeView = getActiveView(view);
-  return adminViews.find((item) => item.key === activeView)?.label ?? "Admin";
+  return adminViews.find((item) => item.key === activeView)?.label ?? ADMIN_NAV_TEXT.DEFAULT_ACTIVE_LABEL;
 }
 
 export function generateMetadata(): Metadata {
@@ -78,17 +72,17 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     : 'bg-white text-slate-700 border-slate-200';
 
   return (
-    <main className="min-h-screen bg-[#edf0f3] text-slate-800">
+    <main className="min-h-screen bg-[#edf0f3] text-slate-800" data-testid={ADMIN_TEST_IDS.PAGE}>
         <div className="grid min-h-screen grid-cols-1 md:grid-cols-[auto_1fr]">
-        <aside className="border-r border-[#1a2734] bg-[#1f2d3b] text-[#d8e0e8]">
-          <div className="flex h-14 items-center border-b border-[#2a3a4b] bg-[#1873aa] px-4 text-lg font-semibold">
-            Admin
+        <aside className="border-r border-[#1a2734] bg-[#1f2d3b] text-[#d8e0e8]" data-testid={ADMIN_TEST_IDS.SIDEBAR}>
+          <div className="flex h-14 items-center border-b border-[#2a3a4b] bg-[#1873aa] px-4 text-lg font-semibold" data-testid={ADMIN_TEST_IDS.SIDEBAR_TITLE}>
+            {ADMIN_NAV_TEXT.SIDEBAR_TITLE}
           </div>
           <nav className="p-2">
             {adminViews.map((item) => (
               <Link
                 key={item.key}
-                data-testid={`admin-link-${item.key}`}
+                data-testid={ADMIN_TEST_IDS.viewLink(item.key)}
                 href={item.key === "home" ? "/admin" : `/admin?view=${item.key}`}
                 className={`mb-1 block rounded px-3 py-2 text-sm transition ${
                   activeView === item.key
@@ -104,7 +98,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
 
         <section className="flex min-h-screen flex-col">
           <header className={`sticky top-0 z-20 flex h-14 items-center justify-between border-b px-4 sm:px-6 ${headerClassName}`}>
-            <h1 className="text-2xl font-semibold">{getDevTitle(activeLabel)}</h1>
+            <h1 className="text-2xl font-semibold" data-testid={ADMIN_TEST_IDS.HEADER_TITLE}>{getDevTitle(activeLabel)}</h1>
             <Link 
               href="/" 
               prefetch={false} 
@@ -112,9 +106,9 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                 text-sm font-semibold hover:underline 
                 ${testDbActive ? 'text-white' : 'text-blue-700'}
                 `}
-              data-testid="admin-link-todos"
+              data-testid={ADMIN_TEST_IDS.TODOS_LINK}
               >
-              Todos
+              {ADMIN_NAV_TEXT.TODOS_LINK}
             </Link>
           </header>
 

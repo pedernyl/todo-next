@@ -1,7 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { API_PATHS } from "../../constants/api/apiPaths";
 import { useGlobalBlockingLoader } from "../../context/GlobalBlockingLoaderContext";
+import { GLOBAL } from "../../constants/global/global";
+import { ADMIN_VIEW_IDS, ADMIN_VIEW_TEXT } from "../../constants/admin/adminViews";
 
 type UpdateItem = {
   fileName: string;
@@ -13,7 +16,7 @@ type UpdateItem = {
 };
 
 function formatTimestamp(ts: number | null) {
-  if (!ts) return "Unknown";
+  if (!ts) return ADMIN_VIEW_TEXT.UPDATES.UNKNOWN;
   return new Date(ts * 1000).toLocaleString();
 }
 
@@ -34,14 +37,14 @@ export default function AdminUpdatesView() {
 
     try {
       const res = await runBlockingFetch(
-        "/api/admin/updates",
+        API_PATHS.ADMIN.UPDATES,
         { cache: "no-store" },
-        { label: "Loading admin updates...", cancellable: true }
+        { label: GLOBAL.LOADER_LABELS.LOADING_ADMIN_UPDATES, cancellable: true }
       );
       const data = (await res.json()) as { updates?: UpdateItem[]; error?: string };
 
       if (!res.ok || !data.updates) {
-        throw new Error(data.error || "Failed to load updates");
+        throw new Error(data.error || ADMIN_VIEW_TEXT.UPDATES.LOAD_FAILED);
       }
 
       setAvailableUpdates(data.updates);
@@ -49,7 +52,7 @@ export default function AdminUpdatesView() {
       if (err instanceof DOMException && err.name === "AbortError") {
         return;
       }
-      const message = err instanceof Error ? err.message : "Failed to load updates";
+      const message = err instanceof Error ? err.message : ADMIN_VIEW_TEXT.UPDATES.LOAD_FAILED;
       setError(message);
     } finally {
       if (showLoadingState) {
@@ -78,7 +81,7 @@ export default function AdminUpdatesView() {
 
     try {
       const res = await runBlockingFetch(
-        "/api/admin/updates",
+        API_PATHS.ADMIN.UPDATES,
         {
           method: "POST",
           headers: {
@@ -86,7 +89,7 @@ export default function AdminUpdatesView() {
           },
           body: JSON.stringify({ fileName, ...(force && { force: true }) }),
         },
-        { label: `Running update ${fileName}...`, cancellable: true }
+        { label: ADMIN_VIEW_TEXT.UPDATES.RUNNING_LABEL(fileName), cancellable: true }
       );
 
       const data = (await res.json()) as {
@@ -95,10 +98,10 @@ export default function AdminUpdatesView() {
       };
 
       if (!res.ok) {
-        throw new Error(data.error || "Update execution failed");
+        throw new Error(data.error || ADMIN_VIEW_TEXT.UPDATES.RUN_FAILED);
       }
 
-      setLastResult(data.result?.message || "Update executed.");
+      setLastResult(data.result?.message || ADMIN_VIEW_TEXT.UPDATES.RUN_RESULT);
       setRerunChecked((prev) => {
         const next = new Set(prev);
         next.delete(fileName);
@@ -109,7 +112,7 @@ export default function AdminUpdatesView() {
       if (err instanceof DOMException && err.name === "AbortError") {
         return;
       }
-      const message = err instanceof Error ? err.message : "Update execution failed";
+      const message = err instanceof Error ? err.message : ADMIN_VIEW_TEXT.UPDATES.RUN_FAILED;
       setError(message);
     } finally {
       setRunningFileName(null);
@@ -119,34 +122,34 @@ export default function AdminUpdatesView() {
   const hasUpdates = useMemo(() => availableUpdates.length > 0, [availableUpdates.length]);
 
   return (
-    <section className="rounded border border-slate-300 bg-white shadow-sm">
+    <section className="rounded border border-slate-300 bg-white shadow-sm" data-testid={ADMIN_VIEW_IDS.UPDATES.SECTION}>
       <div className="border-b border-slate-200 px-5 py-3">
-        <h2 className="text-lg font-semibold text-slate-700">Available updates</h2>
+        <h2 className="text-lg font-semibold text-slate-700" data-testid={ADMIN_VIEW_IDS.UPDATES.HEADING}>{ADMIN_VIEW_TEXT.UPDATES.HEADING}</h2>
       </div>
-      {error && <p className="px-5 pt-4 text-sm text-red-700">{error}</p>}
-      {lastResult && <p className="px-5 pt-4 text-sm text-emerald-700">{lastResult}</p>}
+      {error && <p className="px-5 pt-4 text-sm text-red-700" data-testid={ADMIN_VIEW_IDS.UPDATES.ERROR}>{error}</p>}
+      {lastResult && <p className="px-5 pt-4 text-sm text-emerald-700" data-testid={ADMIN_VIEW_IDS.UPDATES.RESULT}>{lastResult}</p>}
 
       {/* Cards */}
       <div>
-        {isLoading && <p className="px-5 py-4 text-sm text-slate-600">Loading updates...</p>}
+        {isLoading && <p className="px-5 py-4 text-sm text-slate-600" data-testid={ADMIN_VIEW_IDS.UPDATES.LOADING}>{GLOBAL.UI_TEXT.ADMIN.LOADING_UPDATES}</p>}
         {!isLoading && !hasUpdates && (
-          <p className="px-5 py-4 text-sm text-slate-600">No registered admin updates found.</p>
+          <p className="px-5 py-4 text-sm text-slate-600" data-testid={ADMIN_VIEW_IDS.UPDATES.EMPTY}>{ADMIN_VIEW_TEXT.UPDATES.EMPTY}</p>
         )}
         {!isLoading &&
           availableUpdates.map((item) => (
-            <div key={item.fileName} className="border-t border-slate-200 px-5 py-4 text-sm">
+            <div key={item.fileName} className="border-t border-slate-200 px-5 py-4 text-sm" data-testid={ADMIN_VIEW_IDS.UPDATES.ITEM(item.fileName)}>
               <dl className="mb-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5">
-                <dt className="font-medium text-slate-500">File</dt>
+                <dt className="font-medium text-slate-500">{ADMIN_VIEW_TEXT.UPDATES.FILE}</dt>
                 <dd className="break-all text-slate-700">{item.fileName}</dd>
-                <dt className="font-medium text-slate-500">Update key</dt>
+                <dt className="font-medium text-slate-500">{ADMIN_VIEW_TEXT.UPDATES.UPDATE_KEY}</dt>
                 <dd className="break-all text-slate-600">{item.updateKey}</dd>
-                <dt className="font-medium text-slate-500">Created</dt>
+                <dt className="font-medium text-slate-500">{ADMIN_VIEW_TEXT.UPDATES.CREATED}</dt>
                 <dd className="text-slate-600">{formatTimestamp(item.createdUnixTimestamp)}</dd>
-                <dt className="font-medium text-slate-500">Executed</dt>
+                <dt className="font-medium text-slate-500">{ADMIN_VIEW_TEXT.UPDATES.EXECUTED}</dt>
                 <dd className="text-slate-600">
                   {item.hasBeenExecuted
-                    ? `Yes (${item.beenExecutedTimestamp ? new Date(item.beenExecutedTimestamp).toLocaleString() : "unknown time"})`
-                    : "No"}
+                    ? `${ADMIN_VIEW_TEXT.UPDATES.YES} (${item.beenExecutedTimestamp ? new Date(item.beenExecutedTimestamp).toLocaleString() : ADMIN_VIEW_TEXT.UPDATES.UNKNOWN_TIME})`
+                    : ADMIN_VIEW_TEXT.UPDATES.NO}
                 </dd>
               </dl>
               <div className="flex flex-col gap-2">
@@ -158,8 +161,9 @@ export default function AdminUpdatesView() {
                       onChange={(e) => toggleRerun(item.fileName, e.target.checked)}
                       disabled={runningFileName === item.fileName}
                       className="accent-sky-700"
+                      data-testid={ADMIN_VIEW_IDS.UPDATES.RERUN_CHECKBOX(item.fileName)}
                     />
-                    Run again
+                    {ADMIN_VIEW_TEXT.UPDATES.RUN_AGAIN}
                   </label>
                 )}
                 <button
@@ -170,8 +174,9 @@ export default function AdminUpdatesView() {
                     (item.hasBeenExecuted && !rerunChecked.has(item.fileName))
                   }
                   className="self-start rounded bg-sky-700 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-sky-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+                  data-testid={ADMIN_VIEW_IDS.UPDATES.RUN_BUTTON(item.fileName)}
                 >
-                  {runningFileName === item.fileName ? "Running..." : "Run update"}
+                  {runningFileName === item.fileName ? ADMIN_VIEW_TEXT.UPDATES.RUNNING : ADMIN_VIEW_TEXT.UPDATES.RUN_UPDATE}
                 </button>
               </div>
             </div>

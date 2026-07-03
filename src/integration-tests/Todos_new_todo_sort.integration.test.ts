@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { createClient } from "@supabase/supabase-js";
+import { API_PATHS } from "../constants/api/apiPaths";
 import { assertIntegrationTestDbEnvIsActive } from "./assertIntegrationTestDbEnv";
 import { cleanupTestOwnerData } from "./integrationTestHelpers";
 import { createTodo, getTodos } from "../lib/dataService";
@@ -63,7 +64,7 @@ describe("New top-level todo sorts at the top", () => {
     }
 
     global.fetch = vi.fn(async (input: unknown, init?: RequestInit): Promise<Response | MockUserIdResponse> => {
-      if (String(input).includes("/api/userid")) {
+      if (String(input).includes(API_PATHS.USER_ID)) {
         return { ok: true, json: async () => ({ userId: TEST_OWNER_ID }) };
       }
       if (!originalFetch) throw new Error(`No original fetch available for: ${String(input)}`);
@@ -156,7 +157,7 @@ describe("New subtodo sorts at the top of the parent subtodo list", () => {
     }
 
     global.fetch = vi.fn(async (input: unknown, init?: RequestInit): Promise<Response | MockUserIdResponse> => {
-      if (String(input).includes("/api/userid")) {
+      if (String(input).includes(API_PATHS.USER_ID)) {
         return { ok: true, json: async () => ({ userId: TEST_OWNER_ID }) };
       }
       if (!originalFetch) throw new Error(`No original fetch available for: ${String(input)}`);
@@ -285,7 +286,7 @@ describe("New todo in category and new subtodo each sort at the top", () => {
     }
 
     global.fetch = vi.fn(async (input: unknown, init?: RequestInit): Promise<Response | MockUserIdResponse> => {
-      if (String(input).includes("/api/userid")) {
+      if (String(input).includes(API_PATHS.USER_ID)) {
         return { ok: true, json: async () => ({ userId: TEST_OWNER_ID }) };
       }
       if (!originalFetch) throw new Error(`No original fetch available for: ${String(input)}`);

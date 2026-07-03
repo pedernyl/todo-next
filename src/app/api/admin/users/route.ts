@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminAccessCheckResult } from "@/lib/adminAccess";
 import { supabaseAdmin } from "@/lib/supabaseAdminClient";
+import { API_MESSAGES } from "@/constants/api/apiMessages";
 
 type UserRow = {
   id: number;
@@ -12,7 +13,7 @@ export async function GET() {
   try {
     const access = await getAdminAccessCheckResult();
     if (!access.ok) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      return NextResponse.json({ error: API_MESSAGES.COMMON.FORBIDDEN }, { status: 403 });
     }
 
     const { data, error } = await supabaseAdmin
@@ -31,8 +32,7 @@ export async function GET() {
     }));
 
     return NextResponse.json({ users });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to load users";
-    return NextResponse.json({ error: message }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: API_MESSAGES.ADMIN_USERS.LOAD_FAILED }, { status: 500 });
   }
 }

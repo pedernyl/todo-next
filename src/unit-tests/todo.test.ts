@@ -1,5 +1,6 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { createTodo, softDeleteTodo } from '../lib/dataService';
+import { API_PATHS } from '../constants/api/apiPaths';
 
 vi.mock('../lib/markdown', () => ({
   renderSanitizedMarkdown: vi.fn(async (input: string) =>
@@ -63,7 +64,7 @@ vi.mock('next-auth', () => ({
 type SimpleResponse = { ok: boolean; json: () => Promise<{ userId: number }> };
 // @ts-expect-error - mocking global.fetch in the test environment
 global.fetch = vi.fn(async (url: unknown): Promise<SimpleResponse> => {
-  if (String(url).includes('/api/userid')) {
+  if (String(url).includes(API_PATHS.USER_ID)) {
     return {
       ok: true,
       json: async () => ({ userId: 1 })

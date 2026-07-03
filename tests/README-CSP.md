@@ -26,3 +26,4 @@ Notes
 
 - This is intentionally conservative. After collecting reports, we'll tighten policies (replace wildcards, add only needed external hosts, consider hashes/nonces).
 - Don't flip to `enforce` until you've reviewed and remedied report-only violations.
+- For Playwright selector/text conventions, follow the constants policy in `CONTRIBUTING.md` and `tests/README.md`.

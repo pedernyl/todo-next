@@ -4,6 +4,7 @@ import CategoryDropdown from "./CategoryDropdown";
 import { useUserId } from "../context/UserIdContext";
 import { getCategories, createCategory, Category } from "../lib/categoryService";
 import { useGlobalBlockingLoader } from "../context/GlobalBlockingLoaderContext";
+import { GLOBAL } from "../constants/global/global";
 import { DROPDOWN_OPTIONS } from "../constants/dropdowns/categoryDropDown";
 
 interface CategoryDropdownWrapperProps {
@@ -20,7 +21,7 @@ const CategoryDropdownWrapper: React.FC<CategoryDropdownWrapperProps> = ({ onCat
     if (userId) {
       runBlocking(
         async () => getCategories(userId),
-        { label: "Loading categories...", cancellable: false }
+        { label: GLOBAL.LOADER_LABELS.LOADING_CATEGORIES, cancellable: false }
       )
         .then(setCategories)
         .catch(() => setCategories([]));
@@ -41,7 +42,7 @@ const CategoryDropdownWrapper: React.FC<CategoryDropdownWrapperProps> = ({ onCat
     if (!userId) return;
     const newCat = await runBlocking(
       async () => createCategory(name, userId, description),
-      { label: "Creating category...", cancellable: false }
+      { label: GLOBAL.LOADER_LABELS.CREATING_CATEGORY, cancellable: false }
     );
     setCategories(prev => [...prev, newCat]);
     setSelectedCategory(newCat.id);

@@ -63,6 +63,12 @@ export default async function runAdminUpdate() {
 
 The function should return an object with a user-facing `message` string.
 
+This message is user communication and should follow the constants policy:
+
+- keep user-facing text in domain constants (`src/constants/<domain>/...`) when practical
+- avoid introducing new inline UI-facing copy that duplicates existing constants
+- keep selector/test-id constants separate from user-facing text constants
+
 ## How to code SQL-style updates
 
 Write the update in TypeScript using `supabaseAdmin` queries. This replaces raw SQL migration files for runtime-admin updates.
