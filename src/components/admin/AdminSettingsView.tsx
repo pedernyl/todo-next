@@ -129,7 +129,12 @@ export default function AdminSettingsView() {
             settings: draft,
           }),
         },
-        { label: `${ADMIN_VIEW_TEXT.SETTINGS.SAVING.replace("...", "")} ${setting.title} settings...`, cancellable: true }
+        { 
+          label: 
+            `${ADMIN_VIEW_TEXT.SETTINGS.SAVING} 
+            ${setting.title} settings...`, 
+            cancellable: true 
+        }
       );
 
       const data = (await res.json()) as { setting?: AdminSettingsGroupState; error?: string };
