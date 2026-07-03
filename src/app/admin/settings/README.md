@@ -78,3 +78,11 @@ fields:
 - `key` must be unique within each YAML file
 - `select` fields must provide at least one option
 - Files named `example.*.yaml` or `example.*.yml` are ignored at runtime
+
+## UI constants and test IDs
+
+Admin Settings values from YAML are rendered in the admin UI, which follows the repository constants policy:
+
+- user-facing static UI copy (headings, helper text, status/error text) lives in `src/constants/admin/...`
+- test-id constants are kept separate from text constants
+- meaningful UI elements use constants-backed `data-testid` attributes

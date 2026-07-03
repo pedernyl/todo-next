@@ -1,4 +1,5 @@
 import { test } from '@playwright/test';
+import { AUTH_IDS } from '../src/constants/auth/auth';
 
 // Explicitly override any storageState for this test file
 test.use({ storageState: undefined });
@@ -8,9 +9,9 @@ const BASE_URL = 'http://localhost:3000';
 
 test('authenticate via GitHub and save storage', async ({ page }) => {
   await page.goto(BASE_URL + '/login');
-  await page.click('text=Sign in');
-  await page.waitForSelector('text=Sign in with GitHub');
-  await page.click('text=Sign in with GitHub');
+  const signInButton = page.getByTestId(AUTH_IDS.SIGN_IN_BUTTON);
+  await signInButton.waitFor();
+  await signInButton.click();
   // Complete the GitHub login manually in the opened browser window
   // Wait for redirect to dashboard (adjust selector as needed)
   await page.waitForURL(BASE_URL + '/');

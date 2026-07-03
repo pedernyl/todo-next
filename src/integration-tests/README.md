@@ -32,4 +32,8 @@ npm run test:integration:watch
 
 - Integration tests are not part of the default `npm test` command.
 - CI workflow runs unit tests only (`npm run test:unit`).
-- Follow the constants policy from `CONTRIBUTING.md`: keep constants domain-scoped, separate IDs from user-facing text, and extract text values that are reused more than once.
+- Follow the constants policy from `CONTRIBUTING.md`:
+	- all user-facing text (including UI-facing error messages) must come from constants
+	- constants must stay domain-scoped under `src/constants/<domain>/`
+	- test-id constants must be separate from user-facing text constants
+	- meaningful UI elements should be asserted with constants-backed `data-testid` values where available

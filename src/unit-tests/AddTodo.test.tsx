@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import AddTodo from '../components/AddTodo';
 import { API_PATHS } from '../constants/api/apiPaths';
 import { GLOBAL } from '../constants/global/global';
+import { ADD_TODO_IDS } from '../constants/todo/AddTodo';
 
 const runBlockingFetchMock = vi.fn();
 
@@ -25,13 +26,13 @@ describe('AddTodo', () => {
 
     render(<AddTodo userId={1} onTodoAdded={onTodoAdded} />);
 
-    const titleInput = screen.getByPlaceholderText('Title') as HTMLInputElement;
-    const descriptionInput = screen.getByPlaceholderText('Description') as HTMLTextAreaElement;
+    const titleInput = screen.getByTestId(ADD_TODO_IDS.TITLE_INPUT) as HTMLInputElement;
+    const descriptionInput = screen.getByTestId(ADD_TODO_IDS.DESCRIPTION_INPUT) as HTMLTextAreaElement;
 
     fireEvent.change(titleInput, { target: { value: 'My pending todo' } });
     fireEvent.change(descriptionInput, { target: { value: 'Keep this text' } });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Save Todo' }));
+    fireEvent.click(screen.getByTestId(ADD_TODO_IDS.SAVE_BUTTON));
 
     await waitFor(() => {
       expect(runBlockingFetchMock).toHaveBeenCalledTimes(1);
@@ -59,13 +60,13 @@ describe('AddTodo', () => {
 
     render(<AddTodo userId={1} onTodoAdded={onTodoAdded} />);
 
-    const titleInput = screen.getByPlaceholderText('Title') as HTMLInputElement;
-    const descriptionInput = screen.getByPlaceholderText('Description') as HTMLTextAreaElement;
+    const titleInput = screen.getByTestId(ADD_TODO_IDS.TITLE_INPUT) as HTMLInputElement;
+    const descriptionInput = screen.getByTestId(ADD_TODO_IDS.DESCRIPTION_INPUT) as HTMLTextAreaElement;
 
     fireEvent.change(titleInput, { target: { value: 'Keep this title' } });
     fireEvent.change(descriptionInput, { target: { value: 'Keep this description' } });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Save Todo' }));
+    fireEvent.click(screen.getByTestId(ADD_TODO_IDS.SAVE_BUTTON));
 
     await waitFor(() => {
       expect(runBlockingFetchMock).toHaveBeenCalledTimes(1);

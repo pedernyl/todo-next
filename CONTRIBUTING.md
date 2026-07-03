@@ -89,48 +89,76 @@ Since we use squash merge, the PR title becomes the commit message on `main` —
 
 ## Constants Policy
 
-Use constants to keep identifiers and repeated UI text stable, testable, and easy to refactor.
+Use constants to keep user communication and selectors stable, testable, and easy to refactor.
 
-### 1) Organize constants by domain
+### 1) All user-facing text must be constants
 
-Place constants in domain-specific files under `src/constants`.
+Move all user-facing text into constants, including:
 
-Current examples:
+- labels
+- button text
+- headings
+- placeholders
+- tooltips/aria labels
+- empty states
+- confirmation dialog text
+- alert/toast/error text shown in UI
+- API error/message strings that are shown to users
 
-- `src/constants/api/apiPaths.ts` for API route paths and path helpers
-- `src/constants/todo/TodoList.ts` and `src/constants/todo/AddTodo.ts` for todo-related IDs and text
-- `src/constants/dropdowns/categoryDropDown.ts` for category dropdown values/IDs
-- `src/constants/admin/adminNavigation.ts` and `src/constants/admin/adminSettings.ts` for admin IDs/helpers
-- `src/constants/global/global.ts` for app-wide shared labels/messages used across domains
+Do not hardcode user-facing strings directly in JSX or route responses intended for UI display.
 
-Rule of thumb:
+### 2) Console/log/debug messages are exempt
 
-- If a constant clearly belongs to one feature area, keep it in that domain file.
-- If it is reused across multiple feature areas, place it in a shared/global constants module.
+Developer-only messages are not user communication and can stay inline.
 
-### 2) Separate IDs from user-facing text
+Examples:
 
-Keep test/DOM IDs and visible copy in separate constant groups.
+- `console.log(...)`
+- `console.warn(...)`
+- `console.error(...)`
+- internal debug traces
 
-- IDs: `..._IDS` objects or equivalent (for example test IDs and identifier tokens)
-- Text: `..._TEXT`, `UI_TEXT`, or `LOADER_LABELS` objects (for labels/messages shown to users)
+### 3) Error-message rule
 
-This keeps selector stability concerns separate from copy/content changes.
+Error messages shown to users must be constants.
 
-### 3) Reuse rule for text values
+They do not need translation/i18n scaffolding; plain constants are sufficient.
 
-If a text value is used more than once, extract it into a constant.
+### 4) Organize constants by domain only
 
-- First use: inline text is acceptable.
-- Second use (or expected reuse): create a constant and migrate both usages.
+Split constants under `src/constants/<domain>/`.
 
-Applies to UI text, loader labels, and repeated test-visible strings.
+Examples:
 
-### 4) Tests should use constants for selectors
+- `src/constants/todo/...`
+- `src/constants/admin/...`
+- `src/constants/dropdowns/...`
+- `src/constants/auth/...`
+- `src/constants/api/...`
+- `src/constants/global/...`
 
-- Prefer `getByTestId(...)` with shared constants in Playwright tests.
-- Avoid hardcoded selector strings when an existing constant already represents that identifier.
-- Reuse API and shared text constants in tests when asserting known app messages.
+Never create one catch-all shared constants file for unrelated domains.
+
+### 5) Keep test IDs separate from text constants
+
+Keep selector/test-id constants separate from user-facing text constants.
+
+- IDs in `..._IDS` objects (for example `ADD_TODO_IDS`)
+- User text in `..._TEXT` or equivalent text-focused objects
+
+Do this even when both live in the same domain folder.
+
+### 6) Every meaningful HTML element needs a data-testid from constants
+
+Add `data-testid` to meaningful/interactive UI elements (inputs, buttons, links, list items, key containers used in assertions).
+
+`data-testid` values must come from constants, not inline strings.
+
+### 7) Tests should reuse constants
+
+- Prefer `getByTestId(...)` with shared constants.
+- Avoid hardcoded selectors when a constants-backed id exists.
+- Reuse constants for known user-visible message assertions where practical.
 
 ## Admin Settings YAML
 
