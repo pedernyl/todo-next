@@ -81,8 +81,11 @@ test.describe('Todo App E2E', () => {
     await todoItem.getByTestId(new RegExp(`^${TODO_LIST_IDS.TOGGLE_DESCRIPTION.testId}-`)).click();
     const completedButton = todoItem.getByTestId(new RegExp(`^${TODO_LIST_IDS.TOGGLE_COMPLETE.testId}-`));
     await expect(completedButton).toBeVisible();
-    completedButton.click();
-    const completedTodo = todoItem.getByTestId(new RegExp(`^${TODO_LIST_IDS.COMPLETED_TODO.completed}-`));
+    await completedButton.click();
+    const completedTodo = todoItem
+      .getByTestId(
+        new RegExp(`^${TODO_LIST_IDS.COMPLETED_TODO.completed}-`)
+      );
     await expect(completedTodo).toBeVisible();
     await expect(completedTodo).toHaveCount(1);
   
