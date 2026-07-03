@@ -468,7 +468,7 @@ function SortableTodoItem({
             className="cursor-grab active:cursor-grabbing text-gray-500 hover:text-gray-700 text-sm"
             aria-label={`${TODO_LIST_TEXT.DRAG_TODO.label} ${todo.title}`}
             title={TODO_LIST_TEXT.DRAG_TODO.label}
-            data-testid={`${TODO_LIST_IDS.DRAG_TODO.testId}-${todoId}`} 
+            data-testid={`${TODO_LIST_IDS.DRAG_TODO.testId}-${todoId}`}
             {...attributes}
             {...listeners}
           >
