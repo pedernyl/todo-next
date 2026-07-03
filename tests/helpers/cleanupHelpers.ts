@@ -28,7 +28,7 @@ export async function createTodo(
     });
   
     if (!createRes.ok()) {
-      throw new Error('[cleanup] createTodoSingle POST failed: ' + createRes.status());
+      throw new Error('[cleanup] createTodo POST failed: ' + createRes.status());
     }
 }
 

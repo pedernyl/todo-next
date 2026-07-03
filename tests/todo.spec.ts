@@ -4,6 +4,7 @@ import { createTestDbClient } from './helpers/dbClient';
 import { deleteTodosByTitle, createTodo } from './helpers/cleanupHelpers';
 import { ADD_TODO_IDS } from '@/constants/todo/AddTodo';
 import { TODO_LIST_IDS } from '@/constants/todo/TodoList';
+import { error } from 'console';
 
 // Use authentication state for all tests in this file
 test.use({ storageState: 'storageState.json' });
@@ -25,15 +26,19 @@ test.describe('Todo App E2E', () => {
       storageState: 'storageState.json',
     });
 
-    // Pre-create a todo via the API so it exists before any test runs;
-    // creating it through the UI in beforeAll is unreliable across parallel workers.
-    await createTodo(
-      context.request,
-      completeTodoTitle,
-      'This todo will be completed in the test'
-    );
+    try {
+      // Pre-create a todo via the API so it exists before any test runs;
+      // creating it through the UI in beforeAll is unreliable across parallel workers.
+      await createTodo(
+        context.request,
+        completeTodoTitle,
+        'This todo will be completed in the test'
+      );
 
-    createdTodoTitles.push(completeTodoTitle);
+      createdTodoTitles.push(completeTodoTitle);
+    } finally {
+      await context.close();
+    }
   });
 
   test.afterAll(async () => {
