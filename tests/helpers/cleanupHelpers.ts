@@ -2,7 +2,35 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { AdminSettingsDefinition, FindSettingsByKeyResult } from '@/lib/adminSettings/types';
 import { readFile } from 'fs/promises';
 import { parseAdminSettingsDefinitionYaml } from '@/lib/adminSettings/loader';
+import { API_PATHS } from '@/constants/api/apiPaths';
+import { APIRequestContext } from '@playwright/test';
 
+/**
+ * Creates a todo via the API using an authenticated Playwright request context.
+ *
+ * Intended for test setup (e.g. `beforeAll`) where the `page` fixture is not
+ * available and todos must be seeded programmatically before tests run.
+ *
+ * @param request Playwright `APIRequestContext` — must be created with `storageState`
+ *   so the request is authenticated.
+ * @param title Title of the todo to create
+ * @param description Description body of the todo
+ * @throws If the POST request fails (non-2xx response)
+ */
+export async function createTodo(
+  request: APIRequestContext,
+  title: string,
+  description: string
+): Promise<void> {
+  
+    const createRes = await request.post(API_PATHS.TODOS, {
+      data: { title, description },
+    });
+  
+    if (!createRes.ok()) {
+      throw new Error('[cleanup] createTodoSingle POST failed: ' + createRes.status());
+    }
+}
 
 /**
  * Deletes todos by their exact titles.

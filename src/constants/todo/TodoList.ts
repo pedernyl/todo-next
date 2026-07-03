@@ -45,7 +45,7 @@ export const TODO_LIST_TEXT = {
         incomplete: "Mark as Incomplete",
     },
     CREATE_SUB_TODO: {
-        label: "Create Sub Todo",
+        label: "Create Sub-Todo",
     },
     EDIT_TODO: {
         label: "Edit Todo",
