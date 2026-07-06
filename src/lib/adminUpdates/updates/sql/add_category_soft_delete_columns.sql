@@ -1,3 +1,5 @@
+-- Run this in Supabase SQL editor before executing
+-- add_category_soft_delete_columns_1783318540.ts
 create or replace function public.add_category_soft_delete_columns_if_missing()
 returns void
 language plpgsql

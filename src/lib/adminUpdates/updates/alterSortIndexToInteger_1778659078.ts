@@ -1,4 +1,4 @@
-import { supabaseAdmin } from "../../supabaseAdminClient";
+import { supabaseAdmin } from "@/lib/supabaseAdminClient";
 
 export async function runAdminUpdate() {
   const { error } = await supabaseAdmin.rpc("alter_sort_index_to_integer");
