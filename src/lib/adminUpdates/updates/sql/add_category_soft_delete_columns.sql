@@ -29,4 +29,8 @@ begin
 end;
 $$;
 
+revoke all on function public.add_category_soft_delete_columns_if_missing() from public;
+revoke all on function public.add_category_soft_delete_columns_if_missing() from anon;
+revoke all on function public.add_category_soft_delete_columns_if_missing() from authenticated;
+
 grant execute on function public.add_category_soft_delete_columns_if_missing() to service_role;
