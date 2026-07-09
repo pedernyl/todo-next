@@ -1,5 +1,6 @@
 -- Run this in Supabase SQL editor before executing
--- Suggested TS update file: add_category_completed_columns_and_change_deleted_timestamp_<timestamp>.ts
+-- add_category_completed_columns_and_change_deleted_timestamp_1783497399.ts
+-- The sp name uses a short for "timestamp" to avoid hitting the 63 character limit for function names in Postgres.
 create or replace function public.add_category_completed_columns_and_change_deleted_ts_if_missing()
 returns void
 language plpgsql
