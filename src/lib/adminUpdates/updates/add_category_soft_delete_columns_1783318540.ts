@@ -6,7 +6,8 @@ export async function runAdminUpdate() {
   );
 
   if (error) {
-    throw new Error(error.message);
+    throw new Error
+      (`Failed to run add_category_soft_delete_columns_if_missing: ${error.message}`);
   }
 
   return {
