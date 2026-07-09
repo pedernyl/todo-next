@@ -57,6 +57,9 @@ begin
       and column_name = 'completed'
   ) then
     execute 'alter table public."Category" add column completed boolean default false';
+    else
+    execute 'alter table public."Category" alter column completed set default false';
+    execute 'update public."Category" set completed = false where completed is null';
   end if;
 
   if not exists (

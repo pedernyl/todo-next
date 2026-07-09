@@ -6,8 +6,8 @@ export async function runAdminUpdate() {
   );
 
   if (error) {
-    console.log("Error running admin update:", error);
-    throw new Error(error.message);
+    throw new Error
+      (`Failed to run add_category_completed_columns_and_change_deleted_ts_if_missing: ${error.message}`);
   }
 
   return {
