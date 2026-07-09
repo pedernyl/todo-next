@@ -56,7 +56,7 @@ begin
       and table_name = 'Category'
       and column_name = 'completed'
   ) then
-    execute 'alter table public."Category" add column completed boolean';
+    execute 'alter table public."Category" add column completed boolean default false';
   end if;
 
   if not exists (
