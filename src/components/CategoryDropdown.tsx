@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { CATEGORY_DROPDOWN_IDS, CATEGORY_DROPDOWN_TEXT, DROPDOWN_OPTIONS } from "../constants/dropdowns/categoryDropDown";
 
-
+//@todo add hasActiveTodos, completed, deleted
 interface CategoryDropdownProps {
   categories: { id: string; title: string }[];
   onCategorySelect: (categoryId: string) => void;
@@ -26,6 +26,8 @@ const CategoryDropdown: React.FC<CategoryDropdownProps> = ({
     }
   };
 
+  //@todo create handeDelete 
+
   return (
     <div className="relative inline-block text-left" data-testid={CATEGORY_DROPDOWN_IDS.ROOT}>
       <select
@@ -46,7 +48,10 @@ const CategoryDropdown: React.FC<CategoryDropdownProps> = ({
             value={cat.id}
             data-testid={CATEGORY_DROPDOWN_IDS.CATEGORY_OPTION(cat.id)}
           >
-            {cat.title}
+            {cat.title} 
+            {
+            //@todo add hasActiveTodos, completed, deleted
+            }
           </option>
         ))}
         <option
