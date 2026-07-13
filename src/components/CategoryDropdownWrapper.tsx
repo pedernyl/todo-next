@@ -20,7 +20,12 @@ const CategoryDropdownWrapper: React.FC<CategoryDropdownWrapperProps> = ({ onCat
   useEffect(() => {
     if (userId) {
       runBlocking(
-        async () => getCategories(userId),
+        async () => getCategories(
+          {
+            ownerId: userId,
+            completed: false,
+            deleted: false
+          }),
         { label: GLOBAL.LOADER_LABELS.LOADING_CATEGORIES, cancellable: false }
       )
         .then(setCategories)
@@ -48,6 +53,8 @@ const CategoryDropdownWrapper: React.FC<CategoryDropdownWrapperProps> = ({ onCat
     setSelectedCategory(newCat.id);
     onCategoryChange(newCat);
   };
+
+  //@todo create handleDeleteCategory
 
   return (
     <CategoryDropdown
