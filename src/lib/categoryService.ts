@@ -8,15 +8,29 @@ export interface Category {
 }
 
 // Fetch all categories for a user
-export async function getCategories(owner_id: number): Promise<Category[]> {
-  const { data, error } = await supabase
-    .from('Category')
-    .select('*')
-    .eq('owner_id', owner_id)
-    .order('title', { ascending: true });
+export async function getCategories({
+  ownerId,
+  completed,
+  deleted
+}: {
+  ownerId: number;
+  completed: boolean;
+  deleted?: boolean;
+}): Promise<Category[]> {
+  const { data, error } = 
+    await supabase.rpc
+      (
+        'get_categories_with_has_active_todos', 
+        { 
+          p_owner_id: ownerId, 
+          p_completed: completed,
+          p_deleted: deleted || false
+        }
+      );
   if (error) throw error;
   return data as Category[];
 }
+
 
 // Create a new category
 export async function createCategory(title: string, owner_id: number, description?: string): Promise<Category> {
@@ -28,3 +42,5 @@ export async function createCategory(title: string, owner_id: number, descriptio
   if (error) throw error;
   return data as Category;
 }
+
+//@todo implement deleteCategory function
