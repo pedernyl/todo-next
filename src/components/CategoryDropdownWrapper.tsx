@@ -58,7 +58,12 @@ const CategoryDropdownWrapper: React.FC<CategoryDropdownWrapperProps> = ({ onCat
 
   return (
     <CategoryDropdown
-      categories={categories.map(c => ({ id: c.id, title: c.title }))}
+      categories={categories.map(c => ({ 
+        id: c.id, 
+        title: c.title,
+        hasActiveTodos: c.hasActiveTodos,
+        completed: c.completed
+      }))}
       selectedCategory={selectedCategory}
       onCategorySelect={handleCategorySelect}
       onCreateCategory={handleCreateCategory}
