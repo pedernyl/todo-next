@@ -5,6 +5,9 @@ export interface Category {
   title: string;
   description?: string;
   owner_id: number;
+  hasActiveTodos: boolean;
+  completed: boolean;
+  deleted_timestamp?: string | null;
 }
 
 // Fetch all categories for a user
