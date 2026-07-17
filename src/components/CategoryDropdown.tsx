@@ -1,9 +1,16 @@
 import React, { useState } from "react";
-import { CATEGORY_DROPDOWN_IDS, CATEGORY_DROPDOWN_TEXT, DROPDOWN_OPTIONS } from "../constants/dropdowns/categoryDropDown";
+import { CATEGORY_DROPDOWN_IDS, CATEGORY_DROPDOWN_TEXT, DROPDOWN_OPTIONS } 
+  from "../constants/dropdowns/categoryDropDown";
 
 //@todo add hasActiveTodos, completed, deleted
 interface CategoryDropdownProps {
-  categories: { id: string; title: string }[];
+  categories: { 
+    id: string; 
+    title: string;
+    hasActiveTodos: boolean;
+    completed: boolean;
+    deleted_timestamp?: string | null;
+  }[];
   onCategorySelect: (categoryId: string) => void;
   onCreateCategory: (title: string, description?: string) => void;
   selectedCategory: string;
