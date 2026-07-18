@@ -4,6 +4,7 @@ import {
     deleteCategoriesByTitle,
     deleteTodosByTitle,
     getAdminSettingsFromYamlFile,
+    getCategoryIdByTitle,
     getSettingValue,
     setSettingValue,
 } from './helpers/cleanupHelpers';
@@ -15,6 +16,7 @@ import { CATEGORY_DROPDOWN_IDS, DROPDOWN_OPTIONS } from '@/constants/dropdowns/c
 import { GLOBAL } from '@/constants/global/global';
 import { ADD_TODO_IDS } from '@/constants/todo/AddTodo';
 import { TODO_LIST_IDS } from '@/constants/todo/TodoList';
+import { selectCategory } from './helpers/categoryHelpers';
 
 
 const BASE_URL = 'http://localhost:3000';
@@ -85,21 +87,21 @@ test.describe('Hide/Show Todos E2E', () => {
         createdTodoTitles.push(todoTitle);
 
         await page.goto(BASE_URL);
-        const categorySelect = page.getByTestId(CATEGORY_DROPDOWN_IDS.SELECT);
-        await expect(categorySelect).toBeVisible();
-        await page.getByTestId(CATEGORY_DROPDOWN_IDS.SELECT).selectOption(DROPDOWN_OPTIONS.CREATE_CATEGORY.value);
+        const triggerButton = page.getByTestId(CATEGORY_DROPDOWN_IDS.TRIGGER_BUTTON);
+        await expect(triggerButton).toBeVisible();
+
+        await triggerButton.click();
+
+        await page.getByTestId(DROPDOWN_OPTIONS.CREATE_CATEGORY.testId).click();
+
         await page.getByTestId(CATEGORY_DROPDOWN_IDS.NEW_CATEGORY_INPUT).fill(categoryTitle);
         await page.getByTestId(CATEGORY_DROPDOWN_IDS.NEW_CATEGORY_DESCRIPTION).fill(`Created by Playwright: ${categoryTitle}`);
         await page.getByTestId(CATEGORY_DROPDOWN_IDS.CREATE_BUTTON).click();
-        await expect(
-            page.getByTestId(CATEGORY_DROPDOWN_IDS.SELECT).locator(`option:has-text("${categoryTitle}")`)
-        ).toHaveCount(1);
-        await page.getByTestId(CATEGORY_DROPDOWN_IDS.SELECT).selectOption({ label: categoryTitle });
-        await expect(
-            page.getByTestId(CATEGORY_DROPDOWN_IDS.SELECT))
-            .not.toHaveValue(DROPDOWN_OPTIONS.CREATE_CATEGORY.value);
 
-        // Add a todo in the created category.
+        await expect(triggerButton).toHaveText(categoryTitle, { timeout: 15000 });
+        const categoryId = await getCategoryIdByTitle(db, categoryTitle);
+
+           // Add a todo in the created category.
         const addTodoButton = page.getByTestId(TODO_LIST_IDS.TOGGLE_ADD_TODO_FORM.testId);
         await addTodoButton.click();
         
@@ -117,17 +119,15 @@ test.describe('Hide/Show Todos E2E', () => {
         await todoItem.getByTestId(new RegExp(`^${TODO_LIST_IDS.TOGGLE_COMPLETE.testId}-`)).click();
         await expect(todoItem.getByTestId(new RegExp(`^${TODO_LIST_IDS.COMPLETED_TODO.completed}-`))).toHaveCount(1);
 
-        // Change to all categories.
-        await page.getByTestId(CATEGORY_DROPDOWN_IDS.SELECT).selectOption(DROPDOWN_OPTIONS.ALL_CATEGORIES.value);
-
-        // Hide completed in all categories.
+        await triggerButton.click();
+        await page.getByTestId(DROPDOWN_OPTIONS.ALL_CATEGORIES.testId).click();
         await page.getByTestId(TODO_LIST_IDS.TOGGLE_SHOW_COMPLETED.testId).click();
-        await expect(page.getByTestId(new RegExp(`^${TODO_LIST_IDS.COMPLETED_TODO.completed}-`))).toHaveCount(0);
-
-        // Select the created category again: the completed todo must stay hidden.
-        await page.getByTestId(CATEGORY_DROPDOWN_IDS.SELECT).selectOption({ label: categoryTitle });
+       
+        await selectCategory(page, categoryId);
         await expect(page.locator(`li:has-text("${todoTitle}")`)).toHaveCount(0);
         await expect(page.getByTestId(new RegExp(`^${TODO_LIST_IDS.COMPLETED_TODO.completed}-`))).toHaveCount(0);
+
+
     });
 
     
