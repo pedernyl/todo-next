@@ -122,15 +122,11 @@ test.describe('Hide/Show Todos E2E', () => {
         await triggerButton.click();
         await page.getByTestId(DROPDOWN_OPTIONS.ALL_CATEGORIES.testId).click();
         await page.getByTestId(TODO_LIST_IDS.TOGGLE_SHOW_COMPLETED.testId).click();
-       
+        await triggerButton.click();
         await selectCategory(page, categoryId);
         await expect(page.locator(`li:has-text("${todoTitle}")`)).toHaveCount(0);
         await expect(page.getByTestId(new RegExp(`^${TODO_LIST_IDS.COMPLETED_TODO.completed}-`))).toHaveCount(0);
-
-
     });
-
-    
 
     test.afterAll(async () => {
         await deleteTodosByTitle(db, createdTodoTitles);
@@ -160,7 +156,4 @@ test.describe('Hide/Show Todos E2E', () => {
     });
 
 });    
-
-
-    
 
