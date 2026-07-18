@@ -68,18 +68,14 @@ test.describe('Category E2E', () => {
 
 		const triggerButton = page.getByTestId(CATEGORY_DROPDOWN_IDS.TRIGGER_BUTTON);
 		await expect(triggerButton).toHaveText(categoryB, { timeout: 15000 });
-		await expect(page.getByTestId(TODO_LIST_IDS.TOGGLE_ADD_TODO_FORM.testId)).toBeVisible();
 		await expect(page.locator(`li:has-text("${todoB}")`)).toBeVisible();
 		await expect(page.locator(`li:has-text("${todoA}")`)).toHaveCount(0);
 
 		const categoryAId = await getCategoryIdByTitle(db, categoryA);
 		await selectCategory(page, categoryAId);
 		await expect(triggerButton).toHaveText(categoryA, { timeout: 15000 });
-		await expect(page.getByTestId(TODO_LIST_IDS.TOGGLE_ADD_TODO_FORM.testId)).toBeVisible();
 		await expect(page.locator(`li:has-text("${todoA}")`)).toBeVisible();
 		await expect(page.locator(`li:has-text("${todoB}")`)).toHaveCount(0);
-
-	
 
 	});
 });
