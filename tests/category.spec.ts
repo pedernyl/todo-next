@@ -45,6 +45,22 @@ async function createTodo(page: import('@playwright/test').Page, title: string, 
 	await expect(page.locator(`li:has-text("${title}")`)).toBeVisible();
 }
 
+async function checkThatTodoBelongsToCategory(
+	page: import('@playwright/test').Page, 
+	todoShouldBelongToCategory: string,
+	todoShouldNotBelongToCategory: string, 
+	categoryName: string
+) {
+	const categoryId = await getCategoryIdByTitle(db, categoryName);
+	await selectCategory(page, categoryId);
+	const triggerButton = page.getByTestId(CATEGORY_DROPDOWN_IDS.TRIGGER_BUTTON);
+	await expect(triggerButton).toHaveText(categoryName, { timeout: 15000 });
+
+	await expect(page.locator(`li:has-text("${todoShouldBelongToCategory}")`)).toBeVisible();
+	await expect(page.locator(`li:has-text("${todoShouldNotBelongToCategory}")`)).toHaveCount(0);
+
+}
+
 test.describe('Category E2E', () => {
 	const seed = Date.now();
 	const categoryA = `PW Category A ${seed}`;
@@ -66,16 +82,7 @@ test.describe('Category E2E', () => {
 		await createCategory(page, categoryB);
 		await createTodo(page, todoB, 'belongs to B');
 
-		const triggerButton = page.getByTestId(CATEGORY_DROPDOWN_IDS.TRIGGER_BUTTON);
-		await expect(triggerButton).toHaveText(categoryB, { timeout: 15000 });
-		await expect(page.locator(`li:has-text("${todoB}")`)).toBeVisible();
-		await expect(page.locator(`li:has-text("${todoA}")`)).toHaveCount(0);
-
-		const categoryAId = await getCategoryIdByTitle(db, categoryA);
-		await selectCategory(page, categoryAId);
-		await expect(triggerButton).toHaveText(categoryA, { timeout: 15000 });
-		await expect(page.locator(`li:has-text("${todoA}")`)).toBeVisible();
-		await expect(page.locator(`li:has-text("${todoB}")`)).toHaveCount(0);
-
+		await checkThatTodoBelongsToCategory(page, todoB, todoA, categoryB);
+		await checkThatTodoBelongsToCategory(page, todoA, todoB, categoryA);
 	});
 });
