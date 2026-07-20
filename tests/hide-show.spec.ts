@@ -101,7 +101,7 @@ test.describe('Hide/Show Todos E2E', () => {
         await expect(triggerButton).toHaveText(categoryTitle, { timeout: 15000 });
         const categoryId = await getCategoryIdByTitle(db, categoryTitle);
 
-           // Add a todo in the created category.
+        // Add a todo in the created category.
         const addTodoButton = page.getByTestId(TODO_LIST_IDS.TOGGLE_ADD_TODO_FORM.testId);
         await addTodoButton.click();
         
@@ -122,7 +122,7 @@ test.describe('Hide/Show Todos E2E', () => {
         await triggerButton.click();
         await page.getByTestId(DROPDOWN_OPTIONS.ALL_CATEGORIES.testId).click();
         await page.getByTestId(TODO_LIST_IDS.TOGGLE_SHOW_COMPLETED.testId).click();
-        await triggerButton.click();
+        await expect(page.getByTestId(new RegExp(`^${TODO_LIST_IDS.COMPLETED_TODO.completed}-`))).toHaveCount(0);
         await selectCategory(page, categoryId);
         await expect(page.locator(`li:has-text("${todoTitle}")`)).toHaveCount(0);
         await expect(page.getByTestId(new RegExp(`^${TODO_LIST_IDS.COMPLETED_TODO.completed}-`))).toHaveCount(0);
