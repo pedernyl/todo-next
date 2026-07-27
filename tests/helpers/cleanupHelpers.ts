@@ -103,6 +103,28 @@ export async function deleteCategoriesByTitle(
   }
 }
 
+/*
+  * Fetch category ID by title from database
+  * @param db Supabase client instance
+  * @param title Category title to search for
+  * @returns Promise<string> Category ID
+  * @throws Error if no category is found with the given title
+  */
+export async function getCategoryIdByTitle(
+  db: SupabaseClient,
+  title: string
+): Promise<string> {
+  const { data, error } = await db
+    .from('Category')
+    .select('id')
+    .eq('title', title)
+    .single();
+  if (error || !data) {
+    throw new Error(`[cleanup] getCategoryIdByTitle found no category titled "${title}": ${error?.message}`);
+  }
+  return data.id;
+}
+
 
 /** 
  * Fetch settings value from database 

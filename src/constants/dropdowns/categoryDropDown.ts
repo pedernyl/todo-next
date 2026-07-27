@@ -12,6 +12,11 @@ export const CATEGORY_DROPDOWN_IDS = {
     NEW_CATEGORY_INPUT: "new-category-input",
     NEW_CATEGORY_DESCRIPTION: "new-category-description",
     CREATE_BUTTON: "create-category-button",
+    TRIGGER_BUTTON: "category-trigger-button",
+    MENU_PANEL: "category-menu-panel",
+    CATEGORY_ROW_COMPLETE_BUTTON: (id: string) => `category-complete-btn-${id}`,
+    CATEGORY_ROW_EDIT_BUTTON: (id: string) => `category-edit-btn-${id}`,
+    CATEGORY_ROW_DELETE_BUTTON: (id: string) => `category-delete-btn-${id}`,
 } as const;
 
 export const CATEGORY_DROPDOWN_TEXT = {
@@ -19,4 +24,7 @@ export const CATEGORY_DROPDOWN_TEXT = {
     NEW_CATEGORY_PLACEHOLDER: "New category name",
     NEW_CATEGORY_DESCRIPTION_PLACEHOLDER: "Description (optional)",
     CREATE: "Create",
+    COMPLETE: "Mark as completed",
+    EDIT: "Edit",
+    DELETE: "Delete",
 } as const;
