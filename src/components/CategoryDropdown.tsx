@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from "@headlessui/react";
+import CategoryRow from "./CategoryRow";
 import { CATEGORY_DROPDOWN_IDS, CATEGORY_DROPDOWN_TEXT, DROPDOWN_OPTIONS } 
   from "../constants/dropdowns/categoryDropDown";
 
@@ -14,6 +16,9 @@ interface CategoryDropdownProps {
   onCategorySelect: (categoryId: string) => void;
   onCreateCategory: (title: string, description?: string) => void;
   selectedCategory: string;
+  onDeleteCategory?: (id: string) => void;
+  onEditCategory?: (id: string) => void;
+  onCompleteCategory?: (id: string) => void;
 }
 
 const CategoryDropdown: React.FC<CategoryDropdownProps> = ({
@@ -21,6 +26,9 @@ const CategoryDropdown: React.FC<CategoryDropdownProps> = ({
   onCategorySelect,
   onCreateCategory,
   selectedCategory,
+  onDeleteCategory = () => {},
+  onEditCategory = () => {},
+  onCompleteCategory = () => {},
 }) => {
   const [newCategory, setNewCategory] = useState("");
   const [newDescription, setNewDescription] = useState("");
@@ -37,37 +45,58 @@ const CategoryDropdown: React.FC<CategoryDropdownProps> = ({
 
   return (
     <div className="relative inline-block text-left" data-testid={CATEGORY_DROPDOWN_IDS.ROOT}>
-      <select
-        className="px-4 py-2 rounded-lg border border-gray-300 bg-white shadow text-sm focus:outline-none"
+      <Listbox
         value={selectedCategory}
-        onChange={e => onCategorySelect(e.target.value)}
-        data-testid={CATEGORY_DROPDOWN_IDS.SELECT}
+        onChange={onCategorySelect}
       >
-        <option
-          value={DROPDOWN_OPTIONS.ALL_CATEGORIES.value}
-          data-testid={DROPDOWN_OPTIONS.ALL_CATEGORIES.testId}
+        <ListboxButton
+          className="px-4 py-2 rounded-lg border border-gray-300 bg-white shadow text-sm focus:outline-none hover:bg-gray-50"
+          data-testid={CATEGORY_DROPDOWN_IDS.TRIGGER_BUTTON}
         >
-          {DROPDOWN_OPTIONS.ALL_CATEGORIES.label}
-        </option>
-        {categories.map((cat) => (
-          <option
-            key={cat.id}
-            value={cat.id}
-            data-testid={CATEGORY_DROPDOWN_IDS.CATEGORY_OPTION(cat.id)}
+          {selectedCategory === DROPDOWN_OPTIONS.ALL_CATEGORIES.value
+            ? DROPDOWN_OPTIONS.ALL_CATEGORIES.label
+            : categories.find(c => String(c.id) === String(selectedCategory))?.title 
+              || DROPDOWN_OPTIONS.ALL_CATEGORIES.label}
+        </ListboxButton>
+        <ListboxOptions
+          className="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded shadow z-20"
+          data-testid={CATEGORY_DROPDOWN_IDS.MENU_PANEL}
+        >
+          {/* All Categories option */}
+          <ListboxOption
+            value={DROPDOWN_OPTIONS.ALL_CATEGORIES.value}
+            className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
+            data-testid={DROPDOWN_OPTIONS.ALL_CATEGORIES.testId}
           >
-            {cat.title} 
-            {
-            //@todo add hasActiveTodos, completed, deleted
-            }
-          </option>
-        ))}
-        <option
-          value={DROPDOWN_OPTIONS.CREATE_CATEGORY.value}
-          data-testid={DROPDOWN_OPTIONS.CREATE_CATEGORY.testId}
-        >
-          {DROPDOWN_OPTIONS.CREATE_CATEGORY.label}
-        </option>
-      </select>
+            {DROPDOWN_OPTIONS.ALL_CATEGORIES.label}
+          </ListboxOption>
+
+           {/* Category rows */}
+          {categories.map((cat) => (
+            <ListboxOption key={cat.id} value={cat.id}>
+              <CategoryRow
+                id={cat.id}
+                title={cat.title}
+                isSelected={selectedCategory === cat.id}
+                onComplete={() => onCompleteCategory(cat.id)}
+                onEdit={() => onEditCategory(cat.id)}
+                onDelete={() => onDeleteCategory(cat.id)}
+              />
+            </ListboxOption>
+          ))}
+
+          {/* Create category option */}
+          <ListboxOption
+            value={DROPDOWN_OPTIONS.CREATE_CATEGORY.value}
+            className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
+            data-testid={DROPDOWN_OPTIONS.CREATE_CATEGORY.testId}
+          >
+            {DROPDOWN_OPTIONS.CREATE_CATEGORY.label}
+          </ListboxOption>
+        </ListboxOptions>
+      </Listbox>
+
+      {/* Create category panel (existing) */}
       {selectedCategory === DROPDOWN_OPTIONS.CREATE_CATEGORY.value && (
         <div
           className="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded shadow p-2 z-20"
@@ -118,3 +147,4 @@ const CategoryDropdown: React.FC<CategoryDropdownProps> = ({
 };
 
 export default CategoryDropdown;
+      
