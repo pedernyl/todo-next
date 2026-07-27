@@ -1,9 +1,6 @@
 import React, { useState } from "react";
-<<<<<<< HEAD
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from "@headlessui/react";
 import CategoryRow from "./CategoryRow";
-=======
->>>>>>> ea3d7f5 (Adding hasActiveTodos, completed and deleted_timestamp to interface Category and props for CategoryDropdown)
 import { CATEGORY_DROPDOWN_IDS, CATEGORY_DROPDOWN_TEXT, DROPDOWN_OPTIONS } 
   from "../constants/dropdowns/categoryDropDown";
 
