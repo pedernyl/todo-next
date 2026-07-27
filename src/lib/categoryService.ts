@@ -5,7 +5,7 @@ export interface Category {
   title: string;
   description?: string;
   owner_id: number;
-  hasActiveTodos: boolean;
+  has_active_todos: boolean;
   completed: boolean;
   deleted_timestamp?: string | null;
 }

@@ -1,10 +1,12 @@
 import React from "react";
 import { CATEGORY_DROPDOWN_IDS, CATEGORY_DROPDOWN_TEXT } from "../constants/dropdowns/categoryDropDown";
 
+//@todo add hasActiveTodos, completed, deleted
 interface CategoryRowProps {
   id: string;
   title: string;
   isSelected: boolean;
+  hasActiveTodos: boolean;
   onComplete: () => void;
   onEdit: () => void;
   onDelete: () => void;
@@ -14,6 +16,7 @@ const CategoryRow: React.FC<CategoryRowProps> = ({
   id,
   title,
   isSelected,
+  hasActiveTodos,
   onComplete,
   onEdit,
   onDelete,
@@ -67,10 +70,18 @@ const CategoryRow: React.FC<CategoryRowProps> = ({
             e.stopPropagation();
             onDelete();
           }}
-          title={CATEGORY_DROPDOWN_TEXT.DELETE}
+          disabled={hasActiveTodos}
+          title={hasActiveTodos 
+            ? CATEGORY_DROPDOWN_TEXT.HAS_ACTIVE_TODOS_TOOLTIP 
+            : CATEGORY_DROPDOWN_TEXT.DELETE
+          }
           aria-label={`${CATEGORY_DROPDOWN_TEXT.DELETE} ${title}`}
           data-testid={CATEGORY_DROPDOWN_IDS.CATEGORY_ROW_DELETE_BUTTON(id)}
-          className="text-red-500 hover:text-red-700 transition"
+          className={`transition ${
+            hasActiveTodos
+              ? "text-red-200 cursor-not-allowed"
+              : "text-red-500 hover:text-red-700"
+          }`}
         >
           🗑
         </button>
