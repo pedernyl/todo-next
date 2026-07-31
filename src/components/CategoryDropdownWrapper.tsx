@@ -56,13 +56,12 @@ const CategoryDropdownWrapper: React.FC<CategoryDropdownWrapperProps> = ({ onCat
   };
 
   //@todo create handleDeleteCategory
-
   return (
     <CategoryDropdown
       categories={categories.map(c => ({ 
         id: c.id, 
         title: c.title,
-        hasActiveTodos: c.hasActiveTodos,
+        hasActiveTodos: c.has_active_todos,
         completed: c.completed
       }))}
       selectedCategory={selectedCategory}

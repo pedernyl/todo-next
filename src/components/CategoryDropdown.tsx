@@ -78,6 +78,7 @@ const CategoryDropdown: React.FC<CategoryDropdownProps> = ({
                 id={cat.id}
                 title={cat.title}
                 isSelected={selectedCategory === cat.id}
+                hasActiveTodos={cat.hasActiveTodos}
                 onComplete={() => onCompleteCategory(cat.id)}
                 onEdit={() => onEditCategory(cat.id)}
                 onDelete={() => onDeleteCategory(cat.id)}
