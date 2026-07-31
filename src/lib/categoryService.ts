@@ -43,6 +43,8 @@ export async function createCategory(title: string, owner_id: number, descriptio
     .select()
     .single();
   if (error) throw error;
+  
+  data.has_active_todos = false; // Newly created categories won't have active todos
   return data as Category;
 }
 
