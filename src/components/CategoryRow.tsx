@@ -1,7 +1,7 @@
 import React from "react";
 import { CATEGORY_DROPDOWN_IDS, CATEGORY_DROPDOWN_TEXT } from "../constants/dropdowns/categoryDropDown";
 
-//@todo add hasActiveTodos, completed, deleted
+//@todo add completed, deleted
 interface CategoryRowProps {
   id: string;
   title: string;
