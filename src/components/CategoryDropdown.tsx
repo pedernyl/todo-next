@@ -73,7 +73,6 @@ const CategoryDropdown: React.FC<CategoryDropdownProps> = ({
 
            {/* Category rows */}
           {categories.map((cat) => (
-            console.log('Rendering CategoryRow for category:', cat),
             <ListboxOption key={cat.id} value={cat.id}>
               <CategoryRow
                 id={cat.id}
