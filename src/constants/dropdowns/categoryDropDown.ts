@@ -27,4 +27,5 @@ export const CATEGORY_DROPDOWN_TEXT = {
     COMPLETE: "Mark as completed",
     EDIT: "Edit",
     DELETE: "Delete",
+    HAS_ACTIVE_TODOS_TOOLTIP: "Cannot delete category with active todos",
 } as const;
