@@ -12,6 +12,7 @@ import TodoPageClient from "./TodoPageClient";
 import type { Metadata } from 'next';
 import { getDevTitle, isTestDbActive } from '../lib/environmentMode';
 import { ADMIN_NAV_TEXT, ADMIN_TEST_IDS } from '../constants/admin/adminNavigation';
+import { getCategories } from '@/lib/categoryService';
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +35,7 @@ export default async function Home() {
   const policy = await getTodoLoadPolicy();
   const effectiveLimit = computeEffectiveLimit(policy);
   const todos = await getTodos(true, undefined, effectiveLimit);
+  //const categories = await getCategories({ ownerId: session.user?.id, completed: false, deleted: false });
   const appSettings = await getAppSettings();
   const testDbActive = isTestDbActive();
   const titleClassName = testDbActive
