@@ -6,6 +6,7 @@ import AddTodo from "./AddTodo";
 import { API_PATHS } from "../constants/api/apiPaths";
 import { GLOBAL } from "../constants/global/global";
 import { TODO_LIST_IDS, TODO_LIST_TEXT } from "../constants/todo/TodoList";
+import { useCategoriesActions } from "../context/CategoriesContext";
 import {
   rectIntersection,
   DndContext,
@@ -604,6 +605,7 @@ export default function TodoList(
   const { runBlockingFetch } = useGlobalBlockingLoader();
   const [activeTodoId, setActiveTodoId] = React.useState<string | null>(null);
   const [overTodoId, setOverTodoId] = React.useState<string | null>(null);
+  const { refreshCategories } = useCategoriesActions();
 
   // Soft delete a todo
   const handleDelete = async (todo: Todo) => {
@@ -623,6 +625,7 @@ export default function TodoList(
       );
       if (!response.ok) throw new Error(TODO_LIST_TEXT.DELETE_TODO.failed);
       setTodos((prev: Todo[]) => prev.filter((t: Todo) => t.id !== todo.id));
+      await refreshCategories();
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") {
         return;
@@ -678,6 +681,7 @@ export default function TodoList(
 
   const handleTodoAdded = (newTodo: Todo) => {
     setTodos((prev: Todo[]) => insertTodoAtTop(prev, newTodo));
+    refreshCategories();
     setEditTodo(null);
     setParentTodo(null);
     setShowAddForm(false);

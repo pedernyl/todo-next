@@ -1,5 +1,5 @@
-"use client";
-
+ "use client";
+import { CategoriesProvider } from "../context/CategoriesContext";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import TodoList from "../components/TodoList";
 import CategoryDropdownWrapper from "../components/CategoryDropdownWrapper";
@@ -192,7 +192,7 @@ export default function TodoPageClient({ initialTodos }: { initialTodos: Todo[] 
   }, [loadMore, isRefreshing]);
 
   return (
-    <>
+    <CategoriesProvider>
       <div className="absolute right-10 top-2 z-10">
         <CategoryDropdownWrapper onCategoryChange={setSelectedCategory} />
       </div>
@@ -205,6 +205,6 @@ export default function TodoPageClient({ initialTodos }: { initialTodos: Todo[] 
       <div ref={sentinelRef} className="py-4 text-center text-sm text-gray-600">
         {isRefreshing ? GLOBAL.UI_TEXT.TODOS.LOADING_STATE : isLoadingMore ? GLOBAL.UI_TEXT.TODOS.LOADING_MORE : !hasMore ? GLOBAL.UI_TEXT.TODOS.ALL_LOADED : ""}
       </div>
-    </>
+    </CategoriesProvider>
   );
 }
