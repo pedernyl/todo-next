@@ -12,6 +12,8 @@ import TodoPageClient from "./TodoPageClient";
 import type { Metadata } from 'next';
 import { getDevTitle, isTestDbActive } from '../lib/environmentMode';
 import { ADMIN_NAV_TEXT, ADMIN_TEST_IDS } from '../constants/admin/adminNavigation';
+import { getCategories } from '@/lib/categoryService';
+import { getAuthenticatedUserId } from '@/lib/userService';
 
 export const dynamic = "force-dynamic";
 
@@ -24,16 +26,23 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function Home() {
   const session = await getServerSession(authOptions);
+  
   // Redirect if no user is logged in
   if (!session) {
     redirect("/login");
   }
 
   const canAccessAdmin = await isAdminEmail(session.user?.email);
+  const userId = await getAuthenticatedUserId();
 
   const policy = await getTodoLoadPolicy();
   const effectiveLimit = computeEffectiveLimit(policy);
   const todos = await getTodos(true, undefined, effectiveLimit);
+  const initialCategories = await getCategories({ 
+    ownerId: userId, 
+    completed: false, 
+    deleted: false 
+  });
   const appSettings = await getAppSettings();
   const testDbActive = isTestDbActive();
   const titleClassName = testDbActive
@@ -59,7 +68,10 @@ export default async function Home() {
       <div className={`sticky top-3 z-20 mb-8 mt-16 rounded border px-4 py-3 text-center shadow-sm ${titleClassName}`}>
         <h1 className="text-3xl font-bold">{getDevTitle(appSettings.appName)}</h1>
       </div>
-      <TodoPageClient initialTodos={todos} />
+      <TodoPageClient 
+        initialTodos={todos}
+        initialCategories={initialCategories} 
+       />
     </div>
   );
 }
