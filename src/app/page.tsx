@@ -13,7 +13,6 @@ import type { Metadata } from 'next';
 import { getDevTitle, isTestDbActive } from '../lib/environmentMode';
 import { ADMIN_NAV_TEXT, ADMIN_TEST_IDS } from '../constants/admin/adminNavigation';
 import { getCategories } from '@/lib/categoryService';
-import { useUserId } from '@/context/UserIdContext';
 import { getAuthenticatedUserId } from '@/lib/userService';
 
 export const dynamic = "force-dynamic";
