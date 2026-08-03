@@ -1,5 +1,5 @@
-import { authOptions } from "../lib/authOptions";
-import { getServerSession } from "next-auth";
+import { authOptions } from "./authOptions";
+import { getServerSession } from "next-auth/next";
 
 export async function fetchUserIdByEmail(email: string): Promise<number> {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
