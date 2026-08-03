@@ -1,4 +1,3 @@
-import { fetchUserIdByEmail } from '@/lib/userService';
 import { NextRequest, NextResponse } from 'next/server';
 import { createTodo, updateTodo } from '@/lib/dataService';
 import { getTodoLoadPolicy, computeEffectiveLimit } from '@/lib/todoLoadPolicy';
@@ -87,7 +86,8 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: API_MESSAGES.TODOS.USER_EMAIL_MISSING }, { status: 400 });
     }
 
-    const { reorderTodoSiblings } = await import('@/lib/dataService');
+    const { fetchUserIdByEmail } = await import('@/lib/userService');
+    const { reorderTodoSiblings } = await import('../../../lib/dataService');
 
     try {
       const userId = session.user?.id ?? await fetchUserIdByEmail(email);
