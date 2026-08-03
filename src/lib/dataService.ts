@@ -1,7 +1,7 @@
 import { supabase } from './supabaseClient';
 import { Todo } from '../../types';
-import { getAuthenticatedUserId, getAuthenticatedUserIdResponse } from './userService';
 import { renderSanitizedMarkdown } from "./markdown";
+import { getAuthenticatedUserId } from './userService';
 
 type ReorderUpdateInput = {
   id: string;

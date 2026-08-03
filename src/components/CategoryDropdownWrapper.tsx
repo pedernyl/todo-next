@@ -1,8 +1,9 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
+import { useCategoriesActions } from "../context/CategoriesContext";
 import CategoryDropdown from "./CategoryDropdown";
 import { useSession } from "next-auth/react";
-import { getCategories, createCategory, Category } from "../lib/categoryService";
+import { createCategory, Category } from "../lib/categoryService";
 import { useGlobalBlockingLoader } from "../context/GlobalBlockingLoaderContext";
 import { GLOBAL } from "../constants/global/global";
 import { DROPDOWN_OPTIONS } from "../constants/dropdowns/categoryDropDown";
@@ -17,22 +18,7 @@ const CategoryDropdownWrapper: React.FC<CategoryDropdownWrapperProps> = ({ onCat
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const { runBlocking } = useGlobalBlockingLoader();
-
-  useEffect(() => {
-    if (userId) {
-      runBlocking(
-        async () => getCategories(
-          {
-            ownerId: userId,
-            completed: false,
-            deleted: false
-          }),
-        { label: GLOBAL.LOADER_LABELS.LOADING_CATEGORIES, cancellable: false }
-      )
-        .then(setCategories)
-        .catch(() => setCategories([]));
-    }
-  }, [userId, runBlocking]);
+  const { refreshCategories } = useCategoriesActions();
 
   const handleCategorySelect = (categoryId: string) => {
     if (categoryId === DROPDOWN_OPTIONS.CREATE_CATEGORY.value) {
@@ -50,7 +36,7 @@ const CategoryDropdownWrapper: React.FC<CategoryDropdownWrapperProps> = ({ onCat
       async () => createCategory(name, userId, description),
       { label: GLOBAL.LOADER_LABELS.CREATING_CATEGORY, cancellable: false }
     );
-    setCategories(prev => [...prev, newCat]);
+    await refreshCategories();
     setSelectedCategory(newCat.id);
     onCategoryChange(newCat);
   };

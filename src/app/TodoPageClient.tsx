@@ -1,12 +1,12 @@
-"use client";
-
+ "use client";
+import { CategoriesProvider } from "../context/CategoriesContext";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import TodoList from "../components/TodoList";
 import CategoryDropdownWrapper from "../components/CategoryDropdownWrapper";
 import { API_PATHS } from "../constants/api/apiPaths";
 import { Todo } from "../../types";
-import type { Category } from "../lib/categoryService";
+import { type Category } from "../lib/categoryService";
 import { useGlobalBlockingLoader } from "../context/GlobalBlockingLoaderContext";
 import { GLOBAL } from "../constants/global/global";
 
@@ -15,7 +15,10 @@ type TodosResponse = {
   limit: number;
 };
 
-export default function TodoPageClient({ initialTodos }: { initialTodos: Todo[] }) {
+export default function TodoPageClient({ 
+  initialTodos, 
+  initialCategories 
+  }: { initialTodos: Todo[]; initialCategories: Category[] }) {
   const [todos, setTodos] = useState<Todo[]>(initialTodos);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [pageSize, setPageSize] = useState<number>(50);
@@ -38,6 +41,7 @@ export default function TodoPageClient({ initialTodos }: { initialTodos: Todo[] 
   const showCompletedRef = useRef<boolean>(showCompleted);
   const selectedCategoryIdRef = useRef<string | null>(selectedCategory?.id ?? null);
 
+  
   useEffect(() => {
     offsetRef.current = offset;
   }, [offset]);
@@ -193,9 +197,11 @@ export default function TodoPageClient({ initialTodos }: { initialTodos: Todo[] 
   }, [loadMore, isRefreshing]);
 
   return (
-    <>
+    <CategoriesProvider initialCategories={initialCategories}>
       <div className="absolute right-10 top-2 z-10">
-        <CategoryDropdownWrapper onCategoryChange={setSelectedCategory} />
+        <CategoryDropdownWrapper 
+          onCategoryChange={setSelectedCategory}
+        />
       </div>
       <TodoList 
         initialTodos={todos} 
@@ -206,6 +212,6 @@ export default function TodoPageClient({ initialTodos }: { initialTodos: Todo[] 
       <div ref={sentinelRef} className="py-4 text-center text-sm text-gray-600">
         {isRefreshing ? GLOBAL.UI_TEXT.TODOS.LOADING_STATE : isLoadingMore ? GLOBAL.UI_TEXT.TODOS.LOADING_MORE : !hasMore ? GLOBAL.UI_TEXT.TODOS.ALL_LOADED : ""}
       </div>
-    </>
+    </CategoriesProvider>
   );
 }
