@@ -6,7 +6,6 @@ import CategoryDropdownWrapper from "../components/CategoryDropdownWrapper";
 import { useUserId } from "../context/UserIdContext";
 import { API_PATHS } from "../constants/api/apiPaths";
 import { Todo } from "../../types";
-import { getCategories } from "../lib/categoryService";
 import { type Category } from "../lib/categoryService";
 import { useGlobalBlockingLoader } from "../context/GlobalBlockingLoaderContext";
 import { GLOBAL } from "../constants/global/global";
