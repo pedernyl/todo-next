@@ -5,11 +5,16 @@ import { ReactNode } from "react";
 import { UserIdProvider } from "../context/UserIdContext";
 import { GlobalBlockingLoaderProvider } from "../context/GlobalBlockingLoaderContext";
 
-export default function Providers({ children }: { children: ReactNode }) {
+export default function Providers({ 
+  children, 
+  initialUserId }: { 
+    children: ReactNode, 
+    initialUserId: number | null 
+  }) {
   return (
     <SessionProvider>
       <GlobalBlockingLoaderProvider>
-        <UserIdProvider>{children}</UserIdProvider>
+        <UserIdProvider initialUserId={initialUserId}>{children}</UserIdProvider>
       </GlobalBlockingLoaderProvider>
     </SessionProvider>
   );

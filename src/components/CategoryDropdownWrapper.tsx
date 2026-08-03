@@ -12,7 +12,9 @@ interface CategoryDropdownWrapperProps {
   onCategoryChange: (category: Category | null) => void;
 }
 
-const CategoryDropdownWrapper: React.FC<CategoryDropdownWrapperProps> = ({ onCategoryChange }) => {
+const CategoryDropdownWrapper: React.FC<CategoryDropdownWrapperProps> = ({ 
+  onCategoryChange
+}) => {
   const { userId } = useUserId();
   const categories = useCategoriesData();
   const [selectedCategory, setSelectedCategory] = useState<string>("");

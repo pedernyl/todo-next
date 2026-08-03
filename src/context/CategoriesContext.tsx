@@ -4,7 +4,6 @@ import React,
         createContext, 
         useContext, 
         useState, 
-        useEffect, 
         useCallback, 
         useMemo, 
         ReactNode 
@@ -33,12 +32,16 @@ export function useCategoriesActions() {
     return context;
 }
 
-
-
-export function CategoriesProvider({ children }: { children: ReactNode }) {
+export function CategoriesProvider({ 
+    children, 
+    initialCategories 
+  }: {
+    children: ReactNode; 
+    initialCategories: Category[]; 
+    }) {
     const { userId } = useUserId();
 
-    const [categories, setCategories] = useState<Category[]>([]);
+    const [categories, setCategories] = useState<Category[]>(initialCategories);
     const { runBlocking } = useGlobalBlockingLoader();
 
     const refreshCategories = useCallback(async () => {
@@ -59,11 +62,6 @@ export function CategoriesProvider({ children }: { children: ReactNode }) {
             setCategories([]);
         }
     }, [userId, runBlocking]);
-
-    useEffect(() => {
-        refreshCategories();
-    }, [refreshCategories]);
-
 
     const actions = useMemo(() => ({ refreshCategories }), [refreshCategories]);
 
