@@ -19,7 +19,7 @@ const CategoryDropdownWrapper: React.FC<CategoryDropdownWrapperProps> = ({
   const categories = useCategoriesData();
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const { runBlocking } = useGlobalBlockingLoader();
-  const { refreshCategories } = useCategoriesActions()!;
+  const { refreshCategories } = useCategoriesActions();
 
   const handleCategorySelect = (categoryId: string) => {
     if (categoryId === DROPDOWN_OPTIONS.CREATE_CATEGORY.value) {
