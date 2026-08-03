@@ -87,7 +87,8 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: API_MESSAGES.TODOS.USER_EMAIL_MISSING }, { status: 400 });
     }
 
-    const { fetchUserIdByEmail, reorderTodoSiblings } = await import('../../../lib/dataService');
+    const { fetchUserIdByEmail } = await import('@/lib/userService');
+    const { reorderTodoSiblings } = await import('../../../lib/dataService');
 
     try {
       const userId = await fetchUserIdByEmail(email);
