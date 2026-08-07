@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient';
+import { API_PATHS } from '../constants/api/apiPaths';
 
 export interface Category {
   id: string;
@@ -49,8 +50,19 @@ export async function createCategory(title: string, owner_id: number, descriptio
 }
 
 //Delete category  
-export async function deleteCategory(categoryId: number, owner_id: number): Promise<void> {
-  // @todo shall call a server side function to soft delete category 
-  console.log(`Deleting category with ID: ${categoryId} for owner: ${owner_id}`);
+export async function deleteCategory(categoryId: number): Promise<Response> {
+  const response = await fetch(API_PATHS.CATEGORIES, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ categoryId }),
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to delete category with ID: ${categoryId}`);
+  }
+
+  return response;
+
 
 }

@@ -1,4 +1,5 @@
 export const API_PATHS = {
+  CATEGORIES: "/api/categories",
   TODOS: "/api/todos",
   ADMIN: {
     USERS: "/api/admin/users",
