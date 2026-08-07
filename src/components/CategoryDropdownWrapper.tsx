@@ -43,10 +43,14 @@ const CategoryDropdownWrapper: React.FC<CategoryDropdownWrapperProps> = ({ onCat
 
   const handleDeleteCategory = async (id: string) => {
     if (!userId) return;
-    deleteCategory(Number(id), userId); // Call the deleteCategory function from categoryService
-    alert(`Delete category WRAPPER with ID: ${id}`); // Placeholder for delete logic
-    // Implement delete logic here, e.g., call a deleteCategory function from categoryService
-    // After deletion, refresh categories and reset selected category if needed
+    const response = await runBlocking(
+      async () => deleteCategory(Number(id)),
+      { label: GLOBAL.LOADER_LABELS.DELETING_CATEGORY, cancellable: false }
+    );
+    if(!response.ok) {
+      throw new Error(`Failed to delete category with ID: ${id}`);
+    }
+    await refreshCategories();
   };
 
   return (
