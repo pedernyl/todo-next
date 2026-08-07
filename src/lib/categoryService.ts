@@ -48,4 +48,7 @@ export async function createCategory(title: string, owner_id: number, descriptio
   return data as Category;
 }
 
-//@todo implement deleteCategory function
+//Delete category  
+export async function deleteCategory(categoryId: number, owner_id: number): Promise<void> {
+  // @todo shall call a server side function to soft delete category 
+}
