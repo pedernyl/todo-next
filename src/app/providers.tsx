@@ -7,7 +7,7 @@ import { GlobalBlockingLoaderProvider } from "../context/GlobalBlockingLoaderCon
 export default function Providers({ 
   children, 
   }: { 
-    children: ReactNode, 
+    children: ReactNode
   }) {
   return (
     <SessionProvider>
