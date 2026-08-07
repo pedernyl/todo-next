@@ -9,7 +9,7 @@ interface CategoryRowProps {
   hasActiveTodos: boolean;
   onComplete: () => void;
   onEdit: () => void;
-  onDelete: () => void;
+  onDelete: (categoryId: string) => void;
 }
 
 const CategoryRow: React.FC<CategoryRowProps> = ({
@@ -69,7 +69,7 @@ const CategoryRow: React.FC<CategoryRowProps> = ({
           type="button"
           onClick={(e) => {
             e.stopPropagation();
-            onDelete();
+            onDelete(id);
           }}
           disabled={hasActiveTodos}
           title={hasActiveTodos 
