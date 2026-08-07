@@ -41,7 +41,13 @@ const CategoryDropdownWrapper: React.FC<CategoryDropdownWrapperProps> = ({ onCat
     onCategoryChange(newCat);
   };
 
-  //@todo create handleDeleteCategory
+  const handleDeleteCategory = async (id: string) => {
+    if (!userId) return;
+    alert(`Delete category WRAPPER with ID: ${id}`); // Placeholder for delete logic
+    // Implement delete logic here, e.g., call a deleteCategory function from categoryService
+    // After deletion, refresh categories and reset selected category if needed
+  };
+
   return (
     <CategoryDropdown
       categories={categories.map(c => ({ 
@@ -53,6 +59,7 @@ const CategoryDropdownWrapper: React.FC<CategoryDropdownWrapperProps> = ({ onCat
       selectedCategory={selectedCategory}
       onCategorySelect={handleCategorySelect}
       onCreateCategory={handleCreateCategory}
+      onDeleteCategory={handleDeleteCategory}
     />
   );
 };

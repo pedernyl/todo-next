@@ -16,7 +16,7 @@ interface CategoryDropdownProps {
   onCategorySelect: (categoryId: string) => void;
   onCreateCategory: (title: string, description?: string) => void;
   selectedCategory: string;
-  onDeleteCategory?: (id: string) => void;
+  onDeleteCategory: (categoryId: string) => void;
   onEditCategory?: (id: string) => void;
   onCompleteCategory?: (id: string) => void;
 }
