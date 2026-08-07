@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { useCategoriesActions } from "../context/CategoriesContext";
 import CategoryDropdown from "./CategoryDropdown";
 import { useSession } from "next-auth/react";
-import { createCategory, Category } from "../lib/categoryService";
+import { createCategory, Category, deleteCategory } from "../lib/categoryService";
 import { useGlobalBlockingLoader } from "../context/GlobalBlockingLoaderContext";
 import { GLOBAL } from "../constants/global/global";
 import { DROPDOWN_OPTIONS } from "../constants/dropdowns/categoryDropDown";
@@ -43,6 +43,7 @@ const CategoryDropdownWrapper: React.FC<CategoryDropdownWrapperProps> = ({ onCat
 
   const handleDeleteCategory = async (id: string) => {
     if (!userId) return;
+    deleteCategory(Number(id), userId); // Call the deleteCategory function from categoryService
     alert(`Delete category WRAPPER with ID: ${id}`); // Placeholder for delete logic
     // Implement delete logic here, e.g., call a deleteCategory function from categoryService
     // After deletion, refresh categories and reset selected category if needed
