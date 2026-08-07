@@ -1,4 +1,5 @@
 export const API_PATHS = {
+  CATEGORIES: "/api/categories",
   TODOS: "/api/todos",
   USER_ID: "/api/userid",
   userIdByEmail: (email: string) => `/api/userid?email=${encodeURIComponent(email)}`,

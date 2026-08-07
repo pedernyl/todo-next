@@ -14,6 +14,7 @@ export const GLOBAL = {
       // Category operations
       LOADING_CATEGORIES: "Loading categories...",
       CREATING_CATEGORY: "Creating category...",
+      DELETING_CATEGORY: "Deleting category...",
       // Admin operations
       LOADING_ADMIN_SETTINGS: "Loading admin settings...",
       LOADING_ADMIN_USERS: "Loading admin users...",

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "../../../lib/supabaseClient";
 import { API_MESSAGES } from "../../../constants/api/apiMessages";
 
+//@todo this must be fixed - this is a security risk  
 export async function GET(req: NextRequest) {
   const email = req.nextUrl.searchParams.get("email");
   if (!email) {
