@@ -1,3 +1,4 @@
+import { fetchUserIdByEmail } from '@/lib/userService';
 // Handle fetching todos with optional completed filter
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -87,7 +88,7 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: API_MESSAGES.TODOS.USER_EMAIL_MISSING }, { status: 400 });
     }
 
-    const { fetchUserIdByEmail, reorderTodoSiblings } = await import('../../../lib/dataService');
+    const { reorderTodoSiblings } = await import('@/lib/dataService');
 
     try {
       const userId = await fetchUserIdByEmail(email);
