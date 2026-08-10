@@ -1,4 +1,9 @@
 import { fetchUserIdByEmail } from '@/lib/userService';
+import { NextRequest, NextResponse } from 'next/server';
+import { createTodo, updateTodo } from '@/lib/dataService';
+import { getTodoLoadPolicy, computeEffectiveLimit } from '@/lib/todoLoadPolicy';
+import { getAppServerSession } from '@/lib/appServerSession';
+import { API_MESSAGES } from '@/constants/api/apiMessages';
 // Handle fetching todos with optional completed filter
 export async function GET(req: NextRequest) {
   const session = await getAppServerSession();
@@ -21,15 +26,10 @@ export async function GET(req: NextRequest) {
   const requestedOffset = offsetParam !== null ? parseInt(offsetParam, 10) : 0;
   const effectiveOffset = Number.isFinite(requestedOffset) ? Math.max(requestedOffset, 0) : 0;
   // Import getTodos dynamically to avoid circular imports
-  const { getTodos } = await import('../../../lib/dataService');
+  const { getTodos } = await import('@/lib/dataService');
   const todos = await getTodos(showCompletedBool, category_id, effectiveLimit, effectiveOffset);
   return NextResponse.json({ todos, limit: effectiveLimit });
 }
-import { NextRequest, NextResponse } from 'next/server';
-import { createTodo, updateTodo } from '../../../lib/dataService';
-import { getTodoLoadPolicy, computeEffectiveLimit } from '../../../lib/todoLoadPolicy';
-import { getAppServerSession } from '@/lib/appServerSession';
-import { API_MESSAGES } from '../../../constants/api/apiMessages';
 
 // Handle creating a Todo
 export async function POST(req: NextRequest) {

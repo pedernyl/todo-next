@@ -56,8 +56,8 @@ vi.mock('../lib/supabaseClient', () => {
 });
 
 // Mock next-auth getServerSession
-vi.mock('next-auth', () => ({
-  getServerSession: async () => ({ user: { email: 'test@example.com' } })
+vi.mock('../lib/appServerSession', () => ({
+  getAppServerSession: async () => ({ user: { email: 'test@example.com' } })
 }));
 
 // Mock fetch for user id

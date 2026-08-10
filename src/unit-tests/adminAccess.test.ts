@@ -16,7 +16,7 @@ import { getAppServerSession } from "../lib/appServerSession";
 import { isAdminUserEmail } from "../lib/adminUsers";
 import { getAdminAccessCheckResult, isAdminEmail } from "../lib/adminAccess";
 
-const mockedGetServerSession = vi.mocked(getAppServerSession);
+const mockedGetAppServerSession = vi.mocked(getAppServerSession);
 const mockedIsAdminUserEmail = vi.mocked(isAdminUserEmail);
 
 describe("isAdminEmail", () => {
@@ -49,7 +49,7 @@ describe("getAdminAccessCheckResult", () => {
   });
 
   it("returns unauthenticated when there is no session", async () => {
-    mockedGetServerSession.mockResolvedValueOnce(null);
+    mockedGetAppServerSession.mockResolvedValueOnce(null);
 
     const result = await getAdminAccessCheckResult();
 
@@ -58,7 +58,7 @@ describe("getAdminAccessCheckResult", () => {
   });
 
   it("returns unauthenticated when session has no email", async () => {
-    mockedGetServerSession.mockResolvedValueOnce({ user: {} } as never);
+    mockedGetAppServerSession.mockResolvedValueOnce({ user: {} } as never);
 
     const result = await getAdminAccessCheckResult();
 
@@ -67,7 +67,7 @@ describe("getAdminAccessCheckResult", () => {
   });
 
   it("returns forbidden when email is not allowed", async () => {
-    mockedGetServerSession.mockResolvedValueOnce({ user: { email: "denied@example.com" } } as never);
+    mockedGetAppServerSession.mockResolvedValueOnce({ user: { email: "denied@example.com" } } as never);
     mockedIsAdminUserEmail.mockResolvedValueOnce(false);
 
     const result = await getAdminAccessCheckResult();
@@ -77,7 +77,7 @@ describe("getAdminAccessCheckResult", () => {
   });
 
   it("returns ok with email when user is allowed", async () => {
-    mockedGetServerSession.mockResolvedValueOnce({ user: { email: "admin@example.com" } } as never);
+    mockedGetAppServerSession.mockResolvedValueOnce({ user: { email: "admin@example.com" } } as never);
     mockedIsAdminUserEmail.mockResolvedValueOnce(true);
 
     const result = await getAdminAccessCheckResult();
