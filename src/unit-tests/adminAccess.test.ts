@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("next-auth", () => ({
-  getServerSession: vi.fn(),
+vi.mock("../lib/appServerSession", () => ({
+  getAppServerSession: vi.fn(),
 }));
 
 vi.mock("../lib/authOptions", () => ({
@@ -12,11 +12,11 @@ vi.mock("../lib/adminUsers", () => ({
   isAdminUserEmail: vi.fn(),
 }));
 
-import { getServerSession } from "next-auth";
+import { getAppServerSession } from "../lib/appServerSession";
 import { isAdminUserEmail } from "../lib/adminUsers";
 import { getAdminAccessCheckResult, isAdminEmail } from "../lib/adminAccess";
 
-const mockedGetServerSession = vi.mocked(getServerSession);
+const mockedGetServerSession = vi.mocked(getAppServerSession);
 const mockedIsAdminUserEmail = vi.mocked(isAdminUserEmail);
 
 describe("isAdminEmail", () => {

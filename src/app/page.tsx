@@ -4,8 +4,7 @@ import { getTodoLoadPolicy, computeEffectiveLimit } from '../lib/todoLoadPolicy'
 import { getAppSettings } from '../lib/appSettings';
 import AuthButtons from '../components/AuthButtons';
 import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
-import { authOptions } from "../lib/authOptions";
+import { getAppServerSession } from "../lib/appServerSession";
 import { isAdminEmail } from "../lib/adminAccess";
 import Link from "next/link";
 import TodoPageClient from "./TodoPageClient";
@@ -23,7 +22,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function Home() {
-  const session = await getServerSession(authOptions);
+  const session = await getAppServerSession();
   // Redirect if no user is logged in
   if (!session) {
     redirect("/login");

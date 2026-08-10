@@ -1,7 +1,7 @@
 import { fetchUserIdByEmail } from '@/lib/userService';
 // Handle fetching todos with optional completed filter
 export async function GET(req: NextRequest) {
-  const session = await getServerSession(authOptions);
+  const session = await getAppServerSession();
   if (!session) {
     return NextResponse.json({ error: API_MESSAGES.COMMON.UNAUTHORIZED }, { status: 401 });
   }
@@ -28,13 +28,12 @@ export async function GET(req: NextRequest) {
 import { NextRequest, NextResponse } from 'next/server';
 import { createTodo, updateTodo } from '../../../lib/dataService';
 import { getTodoLoadPolicy, computeEffectiveLimit } from '../../../lib/todoLoadPolicy';
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "../../../lib/authOptions";
+import { getAppServerSession } from '@/lib/appServerSession';
 import { API_MESSAGES } from '../../../constants/api/apiMessages';
 
 // Handle creating a Todo
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
+  const session = await getAppServerSession();
   if (!session) {
     return NextResponse.json({ error: API_MESSAGES.COMMON.UNAUTHORIZED }, { status: 401 });
   }
@@ -47,7 +46,7 @@ export async function POST(req: NextRequest) {
 
 // Handle updating a Todo (toggle completed)
 export async function PATCH(req: NextRequest) {
-  const session = await getServerSession(authOptions);
+  const session = await getAppServerSession();
   if (!session) {
     return NextResponse.json({ error: API_MESSAGES.COMMON.UNAUTHORIZED }, { status: 401 });
   }
@@ -116,7 +115,7 @@ export async function PATCH(req: NextRequest) {
 
 // Handle soft deleting a Todo
 export async function DELETE(req: NextRequest) {
-  const session = await getServerSession(authOptions);
+  const session = await getAppServerSession();
   if (!session) {
     return NextResponse.json({ error: API_MESSAGES.COMMON.UNAUTHORIZED }, { status: 401 });
   }

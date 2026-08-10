@@ -1,5 +1,4 @@
-import { authOptions } from "./authOptions";
-import { getServerSession } from "next-auth/next";
+import { getAppServerSession } from "./appServerSession";
 
 export async function fetchUserIdByEmail(email: string): Promise<number> {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
@@ -17,7 +16,7 @@ export async function fetchUserIdByEmail(email: string): Promise<number> {
 }
 
 export async function getAuthenticatedUserId(): Promise<number> {
-  const session = await getServerSession(authOptions);
+  const session = await getAppServerSession();
   if (!session) throw new Error("User not authenticated");
   const email = session.user?.email;
   if (!email) throw new Error("User email missing");
