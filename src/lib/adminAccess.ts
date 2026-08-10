@@ -1,5 +1,4 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "./authOptions";
+import { getAppServerSession } from "./appServerSession";
 import { isAdminUserEmail } from "./adminUsers";
 
 export type AdminAccessCheckResult =
@@ -11,7 +10,7 @@ export async function isAdminEmail(email?: string | null): Promise<boolean> {
 }
 
 export async function getAdminAccessCheckResult(): Promise<AdminAccessCheckResult> {
-  const session = await getServerSession(authOptions);
+  const session = await getAppServerSession();
   const email = session?.user?.email;
 
   if (!session || !email) {
