@@ -43,7 +43,23 @@ describe('getAuthenticatedUserId', () => {
     });
 
     it('returns userId when session email resolves successfully', async () => {
-        expect(1).toBe(1);
+       mockedGetAppServerSession.mockResolvedValueOnce({ 
+        user: { email: 'test@example.com' },
+        } as never);
+
+        vi.stubGlobal(
+            'fetch',
+            vi.fn(async () => ({
+                ok: true,
+                json: async () => ({ userId: 123 }),
+            }))
+        );
+        
+        await expect(getAuthenticatedUserIdResponse()).resolves.toEqual({
+            ok: true,
+            status: 200,
+            data: 123,
+        });
     });
 
     it('returns lookup-failed when user lookup fails', async () => {

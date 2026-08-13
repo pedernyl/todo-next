@@ -29,18 +29,9 @@ export async function getAuthenticatedUserIdResponse(): Promise<ApiResponse<user
   }
   try {
     const userId = await fetchUserIdByEmail(email);
-    return {
-      ok: true,
-      status: 200,
-      data: userId,
-    };
+    return userServiceResponse[200](userId);
   } catch (error) {
-    return {
-      ok: false,
-      code: "lookup-failed",
-      status: 500,
-      message: "Could not fetch user id",
-    };
+    return userServiceResponse[500];
   }
 }
 
