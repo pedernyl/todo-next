@@ -1,3 +1,4 @@
+import { ok } from "assert/strict";
 import { API_MESSAGES } from "./src/constants/api/apiMessages";
 
 
@@ -31,15 +32,21 @@ export interface ApiResponse<T> {
 // Type definition for userServiceResponse
 export type userServiceResponseData = null | number;
 
-export interface userServiceResponse{
-  [httpStatusCode:number]: ApiResponse<userServiceResponseData>;
-}
+type UserServiceResponses = {
+  200: (userId: number) => ApiResponse<number>;
+  400: ApiResponse<null>;
+  401: ApiResponse<null>;
+  403: ApiResponse<null>;
+  404: ApiResponse<null>;
+  500: ApiResponse<null>;
+};
 
-export const userServiceResponse: userServiceResponse = {
-  200: { 
-    status: 200, 
-    ok: true 
-  },
+export const userServiceResponse: UserServiceResponses = {
+  200: (userId: number) => ({
+    status: 200,
+    ok: true,
+    data: userId,
+  }),
   400: { 
     status: 400, 
     ok: false, 
