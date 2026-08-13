@@ -15,10 +15,39 @@ export async function fetchUserIdByEmail(email: string): Promise<number> {
   return userId;
 }
 
-export async function getAuthenticatedUserId(): Promise<number> {
+export async function tryGetAuthenticatedUserId(): Promise<{ ok: true; status: 200; userId: number } | { ok: false; code: string; status: number; message: string }> {
   const session = await getAppServerSession();
-  if (!session) throw new Error("User not authenticated");
+  if (!session) {
+    return {
+      ok: false,
+      code: "unauthorized",
+      status: 401,
+      message: "Unauthorized",
+    };
+  }
+
   const email = session.user?.email;
-  if (!email) throw new Error("User email missing");
-  return fetchUserIdByEmail(email);
+  if (!email) {
+    return {
+      ok: false,
+      code: "USER_EMAIL_MISSING",
+      status: 400,
+      message: "User email missing",
+    };
+  }
+  try {
+    const userId = await fetchUserIdByEmail(email);
+    return {
+      ok: true,
+      status: 200,
+      userId,
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      code: "lookup-failed",
+      status: 500,
+      message: "Could not fetch user id",
+    };
+  }
 }
