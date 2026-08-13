@@ -29,7 +29,7 @@ export interface ApiResponse<T> {
 }
 
 // Type definition for userServiceResponse
-type userServiceResponseData = null | number;
+export type userServiceResponseData = null | number;
 
 export interface userServiceResponse{
   [httpStatusCode:number]: ApiResponse<userServiceResponseData>;

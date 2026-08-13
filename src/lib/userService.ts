@@ -1,5 +1,6 @@
 import { getAppServerSession } from "./appServerSession";
-import { ApiResponse, userServiceResponse } from "../../types";
+import { ApiResponse, userServiceResponse, userServiceResponseData } from "../../types";
+import { API_MESSAGES } from "@/constants/api/apiMessages";
 
 export async function fetchUserIdByEmail(email: string): Promise<number> {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
@@ -16,7 +17,7 @@ export async function fetchUserIdByEmail(email: string): Promise<number> {
   return userId;
 }
 
-export async function tryGetAuthenticatedUserId(): Promise<ApiResponse<null | number>> {
+export async function getAuthenticatedUserIdResponse(): Promise<ApiResponse<userServiceResponseData>> {
   const session = await getAppServerSession();
   if (!session) {
     return userServiceResponse[401];
@@ -24,12 +25,7 @@ export async function tryGetAuthenticatedUserId(): Promise<ApiResponse<null | nu
 
   const email = session.user?.email;
   if (!email) {
-    return {
-      ok: false,
-      code: "USER_EMAIL_MISSING",
-      status: 400,
-      message: "User email missing",
-    };
+    return userServiceResponse[400];
   }
   try {
     const userId = await fetchUserIdByEmail(email);
@@ -46,4 +42,12 @@ export async function tryGetAuthenticatedUserId(): Promise<ApiResponse<null | nu
       message: "Could not fetch user id",
     };
   }
+}
+
+export async function getAuthenticatedUserId(): Promise<userServiceResponseData> {
+  const userIdResponse = await getAuthenticatedUserIdResponse();
+  if (!userIdResponse.ok || typeof userIdResponse.data !== 'number') {
+    throw new Error('Failed to get authenticated user id');
+  }
+  return userIdResponse.data;
 }

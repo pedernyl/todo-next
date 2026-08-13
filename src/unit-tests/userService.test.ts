@@ -6,11 +6,11 @@ vi.mock('../lib/appServerSession', () => ({
 }));
 
 import { getAppServerSession } from '../lib/appServerSession';
-import { tryGetAuthenticatedUserId } from '../lib/userService';
+import { getAuthenticatedUserIdResponse } from '../lib/userService';
 
 const mockedGetAppServerSession = vi.mocked(getAppServerSession);
 
-describe('tryGetAuthenticatedUserId', () => {
+describe('getAuthenticatedUserId', () => {
     beforeEach(() => {
         vi.clearAllMocks();
     });
@@ -18,7 +18,7 @@ describe('tryGetAuthenticatedUserId', () => {
     it('returns unauthorized when there is no session', async () => {
         mockedGetAppServerSession.mockResolvedValue(null);
 
-        const result = await tryGetAuthenticatedUserId();
+        const result = await getAuthenticatedUserIdResponse();
 
         expect(result).toEqual({
             ok: false,
@@ -29,7 +29,17 @@ describe('tryGetAuthenticatedUserId', () => {
     });
 
     it('returns missing-email when session has no email', async () => {
-        expect(1).toBe(1);
+        mockedGetAppServerSession.mockResolvedValueOnce({ user: { } } as never);
+
+        const result = await getAuthenticatedUserIdResponse();
+
+        expect(result).toEqual({
+            ok: false,
+            status: 400,
+            message: API_MESSAGES.USER.MISSING_EMAIL,
+            data: null,
+        });      
+        
     });
 
     it('returns userId when session email resolves successfully', async () => {
