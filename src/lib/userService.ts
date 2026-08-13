@@ -1,4 +1,5 @@
 import { getAppServerSession } from "./appServerSession";
+import { ApiResponse, userServiceResponse } from "../../types";
 
 export async function fetchUserIdByEmail(email: string): Promise<number> {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
@@ -15,15 +16,10 @@ export async function fetchUserIdByEmail(email: string): Promise<number> {
   return userId;
 }
 
-export async function tryGetAuthenticatedUserId(): Promise<{ ok: true; status: 200; userId: number } | { ok: false; code: string; status: number; message: string }> {
+export async function tryGetAuthenticatedUserId(): Promise<ApiResponse<null | number>> {
   const session = await getAppServerSession();
   if (!session) {
-    return {
-      ok: false,
-      code: "unauthorized",
-      status: 401,
-      message: "Unauthorized",
-    };
+    return userServiceResponse[401];
   }
 
   const email = session.user?.email;
@@ -40,7 +36,7 @@ export async function tryGetAuthenticatedUserId(): Promise<{ ok: true; status: 2
     return {
       ok: true,
       status: 200,
-      userId,
+      data: userId,
     };
   } catch (error) {
     return {

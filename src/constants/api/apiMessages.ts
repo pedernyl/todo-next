@@ -3,9 +3,12 @@ export const API_MESSAGES = {
     UNAUTHORIZED: "Unauthorized",
     FORBIDDEN: "Forbidden",
     INVALID_JSON_BODY: "Invalid JSON body",
+    BAD_REQUEST: "Bad Request",
+    NOT_FOUND: "Not Found",
+    INTERNAL_SERVER_ERROR: "Internal Server Error",
   },
-  USER_ID: {
-    MISSING_EMAIL: "Missing email",
+  USER: {
+    MISSING_EMAIL: "User email missing",
     USER_NOT_FOUND: "User not found",
   },
   TODOS: {

@@ -1,4 +1,5 @@
 import { beforeEach, describe, it, expect, vi } from 'vitest';
+import { API_MESSAGES } from '../constants/api/apiMessages';
 
 vi.mock('../lib/appServerSession', () => ({
     getAppServerSession: vi.fn(),
@@ -21,9 +22,9 @@ describe('tryGetAuthenticatedUserId', () => {
 
         expect(result).toEqual({
             ok: false,
-            code: "unauthorized",
             status: 401,
-            message: "Unauthorized",
+            message: API_MESSAGES.COMMON.UNAUTHORIZED,
+            data: null,
         });
     });
 
