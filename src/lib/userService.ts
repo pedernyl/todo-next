@@ -1,7 +1,7 @@
 "use server";
 import { getAppServerSession } from "./appServerSession";
 import { ApiResponse, userServiceResponse, userServiceResponseData } from "../../types";
-import { API_MESSAGES } from "@/constants/api/apiMessages";
+import { API_MESSAGES } from "../constants/api/apiMessages";
 
 export async function fetchUserIdByEmail(email: string): Promise<number> {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
@@ -39,7 +39,7 @@ export async function getAuthenticatedUserIdResponse(): Promise<ApiResponse<user
 export async function getAuthenticatedUserId(): Promise<userServiceResponseData> {
   const userIdResponse = await getAuthenticatedUserIdResponse();
   if (!userIdResponse.ok || typeof userIdResponse.data !== 'number') {
-    throw new Error('Failed to get authenticated user id');
+    throw new Error(API_MESSAGES.COMMON.UNAUTHORIZED);
   }
   return userIdResponse.data;
 }
