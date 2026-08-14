@@ -6,7 +6,7 @@ vi.mock('../lib/appServerSession', () => ({
 }));
 
 import { getAppServerSession } from '../lib/appServerSession';
-import { getAuthenticatedUserIdResponse } from '../lib/userService';
+import { getAuthenticatedUserIdResponse, getAuthenticatedUserId } from '../lib/userService';
 
 const mockedGetAppServerSession = vi.mocked(getAppServerSession);
 
@@ -87,12 +87,31 @@ describe('getAuthenticatedUserIdResponse', () => {
 });
 
 describe('getAuthenticatedUserId', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
     it('returns the userId on success', async () => {
-        expect(1).toBe(1);
+        mockedGetAppServerSession.mockResolvedValueOnce({
+            user: { email: 'test@example    .com' },
+        } as never);
+
+        vi.stubGlobal(
+            'fetch',
+            vi.fn(async () => ({
+                ok: true,
+                json: async () => ({ userId: 123 }),
+            }))
+        );
+
+        const result = await getAuthenticatedUserId();
+        expect(result).toBe(123);
     });
 
     it('throws on auth failure', async () => {
-        expect(1).toBe(1);
+        mockedGetAppServerSession.mockResolvedValueOnce(null);
+
+        await expect(getAuthenticatedUserId()).rejects.toThrow(API_MESSAGES.COMMON.UNAUTHORIZED);
     });
 
 });
