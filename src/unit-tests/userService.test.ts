@@ -10,7 +10,7 @@ import { getAuthenticatedUserIdResponse } from '../lib/userService';
 
 const mockedGetAppServerSession = vi.mocked(getAppServerSession);
 
-describe('getAuthenticatedUserId', () => {
+describe('getAuthenticatedUserIdResponse', () => {
     beforeEach(() => {
         vi.clearAllMocks();
     });
@@ -63,7 +63,25 @@ describe('getAuthenticatedUserId', () => {
     });
 
     it('returns lookup-failed when user lookup fails', async () => {
-        expect(1).toBe(1);
+        mockedGetAppServerSession.mockResolvedValueOnce({ 
+            user: { email: 'test@example.com' },
+        } as never);
+
+        vi.stubGlobal(
+            'fetch',
+            vi.fn(async () => ({
+                ok: false,
+            }))
+        );
+
+        const result = await getAuthenticatedUserIdResponse();
+
+        expect(result).toEqual({
+            ok: false,
+            status: 500,
+            message: API_MESSAGES.USER.USER_ID_LOOKUP_FAILED,
+            data: null,
+        });
     });
 
 });
