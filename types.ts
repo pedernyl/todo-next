@@ -74,7 +74,7 @@ export const userServiceResponse: UserServiceResponses = {
   500: { 
     status: 500, 
     ok: false, 
-    message: API_MESSAGES.COMMON.INTERNAL_SERVER_ERROR,
+    message: API_MESSAGES.USER.USER_ID_LOOKUP_FAILED,
     data: null
   },
 };

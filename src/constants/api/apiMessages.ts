@@ -10,6 +10,7 @@ export const API_MESSAGES = {
   USER: {
     MISSING_EMAIL: "User email missing",
     USER_NOT_FOUND: "User not found",
+    USER_ID_LOOKUP_FAILED: "User ID lookup failed"
   },
   TODOS: {
     INVALID_REORDER_PAYLOAD: "Invalid reorder payload",

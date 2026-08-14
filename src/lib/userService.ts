@@ -1,3 +1,4 @@
+"use server";
 import { getAppServerSession } from "./appServerSession";
 import { ApiResponse, userServiceResponse, userServiceResponseData } from "../../types";
 import { API_MESSAGES } from "@/constants/api/apiMessages";
