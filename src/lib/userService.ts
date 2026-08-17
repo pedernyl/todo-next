@@ -2,20 +2,23 @@
 import { getAppServerSession } from "./appServerSession";
 import { ApiResponse, userServiceResponse, userServiceResponseData } from "../../types";
 import { API_MESSAGES } from "../constants/api/apiMessages";
+import { supabase } from "./supabaseClient";
 
 export async function fetchUserIdByEmail(email: string): Promise<number> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
-  if (!baseUrl) {
-    throw new Error("NEXT_PUBLIC_BASE_URL environment variable is not set");
+  const { data, error } = await supabase
+    .from("Users")
+    .select("id")
+    .eq("email", email)
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
   }
-  const userIdRes = await fetch(
-    `${baseUrl}/api/userid?email=${encodeURIComponent(email)}`,
-    { cache: "no-store" }
-  );
-  if (!userIdRes.ok) throw new Error("Could not fetch user id");
-  const { userId } = await userIdRes.json();
-  if (typeof userId !== 'number') throw new Error('userId must be a number');
-  return userId;
+  if (!data) {
+    throw new Error(API_MESSAGES.USER.USER_NOT_FOUND);
+  }
+  return data.id;
+  
 }
 
 export async function getAuthenticatedUserIdResponse(): Promise<ApiResponse<userServiceResponseData>> {
