@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getAdminAccessCheckResult } from "@/lib/adminAccess";
 import { supabaseAdmin } from "@/lib/supabaseAdminClient";
 import { API_MESSAGES } from "@/constants/api/apiMessages";
+import { queryWithTableFallback } from "@/lib/tableCompatibility";
 
 type UserRow = {
   id: number;
@@ -16,11 +17,14 @@ export async function GET() {
       return NextResponse.json({ error: API_MESSAGES.COMMON.FORBIDDEN }, { status: 403 });
     }
 
-    const { data, error } = await supabaseAdmin
-      .from("Users")
-      .select("id, email, isAdmin")
-      .order("id", { ascending: true });
-
+    const { data, error } = await queryWithTableFallback(
+      (tableName) => supabaseAdmin.from(tableName)
+      .select("id, email, isAdmin").order("id", { ascending: true }
+      ),
+      "Users",
+      "User"
+    );
+  
     if (error) {
       throw new Error(error.message);
     }

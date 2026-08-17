@@ -19,9 +19,8 @@ export async function fetchUserIdByEmail(email: string): Promise<number> {
     throw new Error(API_MESSAGES.USER.USER_NOT_FOUND);
   }
  
- 
   return data.id;
-   
+  
 }
 
 export async function getAuthenticatedUserIdResponse(): Promise<ApiResponse<userServiceResponseData>> {
