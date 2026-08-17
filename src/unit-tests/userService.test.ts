@@ -5,10 +5,75 @@ vi.mock('../lib/appServerSession', () => ({
     getAppServerSession: vi.fn(),
 }));
 
+vi.mock('../lib/supabaseClient', () => ({
+    supabase: {
+        from: vi.fn(),
+    },
+}));
+
 import { getAppServerSession } from '../lib/appServerSession';
+import { supabase } from '../lib/supabaseClient';
 import { getAuthenticatedUserIdResponse, getAuthenticatedUserId } from '../lib/userService';
+import { queryWithTableFallback, shouldFallbackToLegacyTable } from '../lib/tableCompatibility';
 
 const mockedGetAppServerSession = vi.mocked(getAppServerSession);
+
+describe('tableCompatibility', () => {
+    it('detects missing-table errors for legacy fallback', () => {
+        expect(
+            shouldFallbackToLegacyTable(
+                { code: '42P01', message: 'relation "public.Users" does not exist' },
+                'User'
+            )
+        ).toBe(true);
+
+        expect(
+            shouldFallbackToLegacyTable(
+                {
+                    code: 'PGRST205',
+                    message: 'Could not read from "public."User"" due to schema cache mismatch',
+                },
+                'User'
+            )
+        ).toBe(true);
+    });
+
+    it('retries the legacy table when the preferred table does not exist', async () => {
+        const queryFactory = vi
+            .fn()
+            .mockResolvedValueOnce({
+                data: null,
+                error: { code: '42P01', message: 'relation "public.Users" does not exist' },
+            })
+            .mockResolvedValueOnce({
+                data: { id: 123 },
+                error: null,
+            });
+
+        const result = await queryWithTableFallback(
+            queryFactory,
+            'Users',
+            'User'
+        );
+
+        expect(queryFactory).toHaveBeenCalledTimes(2);
+        expect(queryFactory).toHaveBeenNthCalledWith(1, 'Users');
+        expect(queryFactory).toHaveBeenNthCalledWith(2, 'User');
+        expect(result.data).toEqual({ id: 123 });
+    });
+});
+
+const mockedSupabaseFrom = vi.mocked(supabase.from);
+
+function mockSupabaseSingleResult(data: any, error: any = null) {
+    const single = vi.fn().mockResolvedValue({ data, error });
+    mockedSupabaseFrom.mockReturnValue({
+        select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({ single }),
+        }),
+    } as any);
+    return single;
+}
 
 describe('getAuthenticatedUserIdResponse', () => {
     beforeEach(() => {
@@ -47,13 +112,7 @@ describe('getAuthenticatedUserIdResponse', () => {
         user: { email: 'test@example.com' },
         } as never);
 
-        vi.stubGlobal(
-            'fetch',
-            vi.fn(async () => ({
-                ok: true,
-                json: async () => ({ userId: 123 }),
-            }))
-        );
+        mockSupabaseSingleResult({ id: 123 }, null);
         
         await expect(getAuthenticatedUserIdResponse()).resolves.toEqual({
             ok: true,
@@ -67,12 +126,7 @@ describe('getAuthenticatedUserIdResponse', () => {
             user: { email: 'test@example.com' },
         } as never);
 
-        vi.stubGlobal(
-            'fetch',
-            vi.fn(async () => ({
-                ok: false,
-            }))
-        );
+        mockSupabaseSingleResult(null, { message: 'lookup failed' });
 
         const result = await getAuthenticatedUserIdResponse();
 
@@ -93,16 +147,10 @@ describe('getAuthenticatedUserId', () => {
 
     it('returns the userId on success', async () => {
         mockedGetAppServerSession.mockResolvedValueOnce({
-            user: { email: 'test@example    .com' },
+            user: { email: 'test@example.com' },
         } as never);
 
-        vi.stubGlobal(
-            'fetch',
-            vi.fn(async () => ({
-                ok: true,
-                json: async () => ({ userId: 123 }),
-            }))
-        );
+        mockSupabaseSingleResult({ id: 123 }, null);
 
         const result = await getAuthenticatedUserId();
         expect(result).toBe(123);
