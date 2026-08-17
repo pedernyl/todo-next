@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "../supabaseAdminClient";
+import { queryWithTableFallback } from "../tableCompatibility";
 import { loadAdminSettingsDefinitions } from "./loader";
 import type {
   AdminSettingFieldDefinition,
@@ -191,12 +192,17 @@ export async function loadAdminSettingsGrouped(): Promise<AdminSettingsTypeGroup
 
 async function getActorUserIdByEmail(email: string): Promise<number> {
   const normalizedEmail = email.trim().toLowerCase();
-  const { data, error } = await supabaseAdmin
-    .from("Users")
-    .select("id")
-    .eq("email", normalizedEmail)
-    .single();
 
+  const { data, error } = await queryWithTableFallback(
+    (tableName) => supabaseAdmin
+      .from(tableName)
+      .select("id")
+      .eq("email", normalizedEmail)
+      .single(),
+    "Users",
+    "User"
+  );
+ 
   const user = (data ?? null) as { id?: number } | null;
   if (error || !user || typeof user.id !== "number") {
     throw new Error(`Could not resolve actor user id for settings save: ${normalizedEmail}`);

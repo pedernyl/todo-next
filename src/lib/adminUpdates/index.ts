@@ -1,5 +1,6 @@
 import { isAdminUserEmail } from "../adminUsers";
 import { hasSupabaseServiceRole, supabaseAdmin } from "../supabaseAdminClient";
+import { queryWithTableFallback } from "../tableCompatibility";
 import { adminUpdateRegistry, type AdminUpdateModule } from "./updates/registry";
 
 export type AdminUpdate = {
@@ -112,11 +113,19 @@ export async function listAdminUpdates(): Promise<AdminUpdate[]> {
 }
 
 async function getUserIdByEmail(email: string): Promise<number> {
-  const result = await supabaseAdmin.from("Users").select("id").eq("email", email).single();
+  
+  const { data, error } = await queryWithTableFallback(
+    (tableName) => supabaseAdmin.from(tableName)
+    .select("id")
+    .eq("email", email)
+    .single(),
+    "Users",
+    "User"
+  );
+  
+  const userRow = data as { id?: number } | null;
 
-  const userRow = result.data as { id?: number } | null;
-
-  if (result.error || !userRow || typeof userRow.id !== "number") {
+  if (error || !userRow || typeof userRow.id !== "number") {
     throw new Error("Could not resolve actor user id for update execution");
   }
 

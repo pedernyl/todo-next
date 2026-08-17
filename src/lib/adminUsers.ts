@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "./supabaseAdminClient";
+import { queryWithTableFallback } from "./tableCompatibility";
 
 type AdminStatusRow = {
   isAdmin: boolean | null;
@@ -42,12 +43,16 @@ export async function isAdminUserEmail(email?: string | null): Promise<boolean> 
 
   const legacyAllowed = isLegacyAllowedAdminEmail(normalizedEmail);
 
-  const { data, error } = await supabaseAdmin
-    .from("Users")
-    .select("isAdmin")
-    .eq("email", normalizedEmail) 
-    .maybeSingle();
-
+  const { data, error } = await queryWithTableFallback(
+    (tableName) => supabaseAdmin
+      .from(tableName)
+      .select("isAdmin")
+      .eq("email", normalizedEmail)
+      .maybeSingle(),
+    "Users",
+    "User"
+  );
+  
   if (error) {
     // Transitional fallback while rolling out Users.isAdmin.
     if (legacyAllowed) {
