@@ -3,13 +3,14 @@ import { getAppServerSession } from "./appServerSession";
 import { ApiResponse, userServiceResponse, userServiceResponseData } from "../../types";
 import { API_MESSAGES } from "../constants/api/apiMessages";
 import { supabase } from "./supabaseClient";
+import { queryWithTableFallback } from "./tableCompatibility";
 
 export async function fetchUserIdByEmail(email: string): Promise<number> {
-  const { data, error } = await supabase
-    .from("Users")
-    .select("id")
-    .eq("email", email)
-    .single();
+  const { data, error } = await queryWithTableFallback(
+    (tableName) => supabase.from(tableName).select("id").eq("email", email).single(),
+    "Users",
+    "User"
+  );
 
   if (error) {
     throw new Error(error.message);
@@ -17,8 +18,10 @@ export async function fetchUserIdByEmail(email: string): Promise<number> {
   if (!data) {
     throw new Error(API_MESSAGES.USER.USER_NOT_FOUND);
   }
+ 
+ 
   return data.id;
-  
+   
 }
 
 export async function getAuthenticatedUserIdResponse(): Promise<ApiResponse<userServiceResponseData>> {
