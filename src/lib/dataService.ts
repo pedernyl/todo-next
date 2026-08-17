@@ -17,7 +17,7 @@ type ReorderExistingTodoRow = {
 const TODOS_TABLE_NAME = 'Todos';
 const LEGACY_TODOS_TABLE_NAME = 'todos';
 
-// TODO(remove-legacy-todos-fallback): Remove this fallback after all environments have the renamed table.
+// @TODO(remove-legacy-todos-fallback): Remove this fallback after all environments have the renamed table.
 function shouldFallbackToLegacyTodosTable(error: { code?: string; message?: string } | null | undefined): boolean {
   if (!error) return false;
   if (error.code === '42P01') return true;
