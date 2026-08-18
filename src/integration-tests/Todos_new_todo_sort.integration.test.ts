@@ -1,14 +1,20 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import { API_PATHS } from "../constants/api/apiPaths";
 import { assertIntegrationTestDbEnvIsActive } from "./assertIntegrationTestDbEnv";
-import { cleanupTestOwnerData } from "./integrationTestHelpers";
+import { cleanupTestOwnerData, createTestUser } from "./integrationTestHelpers";
 import { createTodo, getTodos } from "../lib/dataService";
 
-
+const TEST_OWNER_ID = 999002;  // Different from Todos_sort_limit test
+const TEST_OWNER_EMAIL = "integration-test@example.com";
 vi.mock("next-auth", () => ({
   getServerSession: vi.fn(async () => ({
     user: { email: "integration-test@example.com" },
+  })),
+}));
+
+vi.mock('getAppServerSession', () => ({ 
+  getAppServerSession: vi.fn(async () => ({
+    user: { email: TEST_OWNER_EMAIL },
   })),
 }));
 
@@ -18,11 +24,6 @@ type InsertedTodoRow = {
   sort_index?: number | null;
   parent_todo?: number | null;
   category_id?: string | null;
-};
-
-type MockUserIdResponse = {
-  ok: boolean;
-  json: () => Promise<{ userId: number }>;
 };
 
 function createSupabaseAdminForIntegrationTests() {
@@ -46,8 +47,6 @@ function createSupabaseAdminForIntegrationTests() {
 
 createSupabaseAdminForIntegrationTests.client = null as SupabaseClient | null;
 
-const TEST_OWNER_ID = 999002;  // Different from Todos_sort_limit test
-
 // ---------------------------------------------------------------------------
 // Test 1: New top-level todo (no parent, no category) sorts at the top
 // ---------------------------------------------------------------------------
@@ -55,7 +54,6 @@ describe("New top-level todo sorts at the top", () => {
   let insertedTodo: InsertedTodoRow | null = null;
   let fetchedTodos: InsertedTodoRow[] = [];
   let insertedTableName: "Todos" | "todos" | null = null;
-  const originalFetch = global.fetch;
 
   beforeAll(async () => {
     assertIntegrationTestDbEnvIsActive();
@@ -63,18 +61,12 @@ describe("New top-level todo sorts at the top", () => {
       process.env.NEXT_PUBLIC_BASE_URL = "http://localhost:3000";
     }
 
-    global.fetch = vi.fn(async (input: unknown, init?: RequestInit): Promise<Response | MockUserIdResponse> => {
-      if (String(input).includes(API_PATHS.USER_ID)) {
-        return { ok: true, json: async () => ({ userId: TEST_OWNER_ID }) };
-      }
-      if (!originalFetch) throw new Error(`No original fetch available for: ${String(input)}`);
-      return originalFetch(input as RequestInfo | URL, init);
-    }) as unknown as typeof global.fetch;
-
     const supabaseAdmin = createSupabaseAdminForIntegrationTests();
 
     // Clean up any leftover test data before starting
     await cleanupTestOwnerData(supabaseAdmin, TEST_OWNER_ID);
+
+    await createTestUser(supabaseAdmin, TEST_OWNER_ID, TEST_OWNER_EMAIL);
 
     const created = await createTodo("NewSort_toplevel", "");
     insertedTodo = {
@@ -84,6 +76,7 @@ describe("New top-level todo sorts at the top", () => {
       parent_todo: created.parent_todo === null ? null : Number(created.parent_todo),
     };
 
+    //@todo remove - use our fallback instead
     const detectTableName = async (id: number): Promise<"Todos" | "todos"> => {
       const fromTodos = await supabaseAdmin.from("Todos").select("id").eq("id", id).maybeSingle();
       if (!fromTodos.error && fromTodos.data) return "Todos";
@@ -105,18 +98,10 @@ describe("New top-level todo sorts at the top", () => {
   });
 
   afterAll(async () => {
-    global.fetch = originalFetch;
     if (!insertedTodo || !insertedTableName) return;
     const supabaseAdmin = createSupabaseAdminForIntegrationTests();
     
-    // Delete the inserted todo from both table names to be safe
-    for (const tableName of ['Todos', 'todos']) {
-       try {
-         await supabaseAdmin.from(tableName).delete().eq("id", insertedTodo.id);
-       } catch (e) {
-         // Ignore errors
-       }
-    }
+    await cleanupTestOwnerData(supabaseAdmin, TEST_OWNER_ID);
   });
 
   it("creates a top-level todo with the first descending gap-based sort_index", () => {
@@ -148,7 +133,6 @@ describe("New subtodo sorts at the top of the parent subtodo list", () => {
   let newSubtodo: InsertedTodoRow | null = null;
   let fetchedSubtodos: InsertedTodoRow[] = [];
   let insertedTableName: "Todos" | "todos" | null = null;
-  const originalFetch = global.fetch;
 
   beforeAll(async () => {
     assertIntegrationTestDbEnvIsActive();
@@ -156,15 +140,17 @@ describe("New subtodo sorts at the top of the parent subtodo list", () => {
       process.env.NEXT_PUBLIC_BASE_URL = "http://localhost:3000";
     }
 
-    global.fetch = vi.fn(async (input: unknown, init?: RequestInit): Promise<Response | MockUserIdResponse> => {
-      if (String(input).includes(API_PATHS.USER_ID)) {
-        return { ok: true, json: async () => ({ userId: TEST_OWNER_ID }) };
-      }
-      if (!originalFetch) throw new Error(`No original fetch available for: ${String(input)}`);
-      return originalFetch(input as RequestInfo | URL, init);
-    }) as unknown as typeof global.fetch;
+    // global.fetch = vi.fn(async (input: unknown, init?: RequestInit): Promise<Response | MockUserIdResponse> => {
+    //   if (String(input).includes(API_PATHS.USER_ID)) {
+    //     return { ok: true, json: async () => ({ userId: TEST_OWNER_ID }) };
+    //   }
+    //   if (!originalFetch) throw new Error(`No original fetch available for: ${String(input)}`);
+    //   return originalFetch(input as RequestInfo | URL, init);
+    // }) as unknown as typeof global.fetch;
 
     const supabaseAdmin = createSupabaseAdminForIntegrationTests();
+
+    await createTestUser(supabaseAdmin, TEST_OWNER_ID, TEST_OWNER_EMAIL);
 
     const created = await createTodo("NewSort_parent", "");
     parentTodo = {
@@ -216,7 +202,6 @@ describe("New subtodo sorts at the top of the parent subtodo list", () => {
   });
 
   afterAll(async () => {
-    global.fetch = originalFetch;
     if (!parentTodo || !insertedTableName) return;
     const supabaseAdmin = createSupabaseAdminForIntegrationTests();
 
@@ -236,6 +221,8 @@ describe("New subtodo sorts at the top of the parent subtodo list", () => {
          }
       }
     }
+    await cleanupTestOwnerData(supabaseAdmin, TEST_OWNER_ID);
+
   });
 
   it("creates a parent todo and five subtodos", () => {
@@ -277,7 +264,6 @@ describe("New todo in category and new subtodo each sort at the top", () => {
   let fetchedCategoryTodos: InsertedTodoRow[] = [];
   let fetchedChosenParentSubtodos: InsertedTodoRow[] = [];
   let insertedTableName: "Todos" | "todos" | null = null;
-  const originalFetch = global.fetch;
 
   beforeAll(async () => {
     assertIntegrationTestDbEnvIsActive();
@@ -285,23 +271,9 @@ describe("New todo in category and new subtodo each sort at the top", () => {
       process.env.NEXT_PUBLIC_BASE_URL = "http://localhost:3000";
     }
 
-    global.fetch = vi.fn(async (input: unknown, init?: RequestInit): Promise<Response | MockUserIdResponse> => {
-      if (String(input).includes(API_PATHS.USER_ID)) {
-        return { ok: true, json: async () => ({ userId: TEST_OWNER_ID }) };
-      }
-      if (!originalFetch) throw new Error(`No original fetch available for: ${String(input)}`);
-      return originalFetch(input as RequestInfo | URL, init);
-    }) as unknown as typeof global.fetch;
-
     const supabaseAdmin = createSupabaseAdminForIntegrationTests();
 
-    // Create test user (required because Category has foreign key to Users)
-    await supabaseAdmin
-      .from("Users")
-      .upsert(
-        { id: TEST_OWNER_ID, email: "integration-test@example.com" },
-        { onConflict: "id" }
-      );
+    await createTestUser(supabaseAdmin, TEST_OWNER_ID, TEST_OWNER_EMAIL);
 
     // Create test category directly via admin client (categoryService uses supabaseClient
     // which requires auth; use the service role client to insert directly)
@@ -408,42 +380,10 @@ describe("New todo in category and new subtodo each sort at the top", () => {
   });
 
   afterAll(async () => {
-    global.fetch = originalFetch;
     if (!insertedTableName) return;
     const supabaseAdmin = createSupabaseAdminForIntegrationTests();
 
-    const allTodoIds = [
-      ...allSubtodos.map((s) => s.id),
-      ...(newSubtodo ? [newSubtodo.id] : []),
-      ...categoryTodos.map((t) => t.id),
-      ...(newCategoryTodo ? [newCategoryTodo.id] : []),
-    ];
-    
-    // Delete from both table names to be safe
-    for (const tableName of ['Todos', 'todos']) {
-      if (allTodoIds.length > 0) {
-         try {
-           await supabaseAdmin.from(tableName).delete().in("id", allTodoIds);
-         } catch (e) {
-           // Ignore errors
-         }
-      }
-    }
-
-    if (createdCategoryId) {
-       try {
-         await supabaseAdmin.from("Category").delete().eq("id", createdCategoryId);
-       } catch (e) {
-         // Ignore errors
-       }
-    }
-
-    // Clean up test user
-     try {
-       await supabaseAdmin.from("Users").delete().eq("id", TEST_OWNER_ID);
-     } catch (e) {
-       // Ignore errors
-     }
+    await cleanupTestOwnerData(supabaseAdmin, TEST_OWNER_ID);
   });
 
   it("creates a category with 5 todos each having 5 subtodos", () => {
