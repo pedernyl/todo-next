@@ -4,7 +4,7 @@ import { assertIntegrationTestDbEnvIsActive } from "./assertIntegrationTestDbEnv
 import { cleanupTestOwnerData, createTestUser } from "./integrationTestHelpers";
 import { createTodo, getTodos, reorderTodoSiblings } from "../lib/dataService";
 
-const TEST_OWNER_EMAIL = "integration-test@example.com";
+const TEST_OWNER_EMAIL = "sort-limit-integration-test@example.com";
 const TEST_OWNER_ID = 999001;
 
 vi.mock('../lib/appServerSession', () => ({ 

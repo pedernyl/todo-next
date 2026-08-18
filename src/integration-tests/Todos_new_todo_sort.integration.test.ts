@@ -5,7 +5,7 @@ import { cleanupTestOwnerData, createTestUser } from "./integrationTestHelpers";
 import { createTodo, getTodos } from "../lib/dataService";
 
 const TEST_OWNER_ID = 999002;  // Different from Todos_sort_limit test
-const TEST_OWNER_EMAIL = "integration-test@example.com";
+const TEST_OWNER_EMAIL = "new-todo-integration-test@example.com";
 
 vi.mock('../lib/appServerSession', () => ({ 
   getAppServerSession: vi.fn(async () => ({
