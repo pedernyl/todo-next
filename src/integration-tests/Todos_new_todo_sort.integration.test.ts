@@ -6,13 +6,8 @@ import { createTodo, getTodos } from "../lib/dataService";
 
 const TEST_OWNER_ID = 999002;  // Different from Todos_sort_limit test
 const TEST_OWNER_EMAIL = "integration-test@example.com";
-vi.mock("next-auth", () => ({
-  getServerSession: vi.fn(async () => ({
-    user: { email: "integration-test@example.com" },
-  })),
-}));
 
-vi.mock('getAppServerSession', () => ({ 
+vi.mock('../lib/appServerSession', () => ({ 
   getAppServerSession: vi.fn(async () => ({
     user: { email: TEST_OWNER_EMAIL },
   })),
@@ -53,7 +48,6 @@ createSupabaseAdminForIntegrationTests.client = null as SupabaseClient | null;
 describe("New top-level todo sorts at the top", () => {
   let insertedTodo: InsertedTodoRow | null = null;
   let fetchedTodos: InsertedTodoRow[] = [];
-  let insertedTableName: "Todos" | "todos" | null = null;
 
   beforeAll(async () => {
     assertIntegrationTestDbEnvIsActive();
@@ -76,17 +70,6 @@ describe("New top-level todo sorts at the top", () => {
       parent_todo: created.parent_todo === null ? null : Number(created.parent_todo),
     };
 
-    //@todo remove - use our fallback instead
-    const detectTableName = async (id: number): Promise<"Todos" | "todos"> => {
-      const fromTodos = await supabaseAdmin.from("Todos").select("id").eq("id", id).maybeSingle();
-      if (!fromTodos.error && fromTodos.data) return "Todos";
-      const fromLower = await supabaseAdmin.from("todos").select("id").eq("id", id).maybeSingle();
-      if (!fromLower.error && fromLower.data) return "todos";
-      throw new Error("Failed to detect todos table name for cleanup");
-    };
-
-    insertedTableName = await detectTableName(insertedTodo.id);
-
     const fetched = await getTodos(true);
     fetchedTodos = fetched.map((todo) => ({
       id: Number(todo.id),
@@ -98,9 +81,7 @@ describe("New top-level todo sorts at the top", () => {
   });
 
   afterAll(async () => {
-    if (!insertedTodo || !insertedTableName) return;
     const supabaseAdmin = createSupabaseAdminForIntegrationTests();
-    
     await cleanupTestOwnerData(supabaseAdmin, TEST_OWNER_ID);
   });
 
@@ -132,7 +113,6 @@ describe("New subtodo sorts at the top of the parent subtodo list", () => {
   let existingSubtodos: InsertedTodoRow[] = [];
   let newSubtodo: InsertedTodoRow | null = null;
   let fetchedSubtodos: InsertedTodoRow[] = [];
-  let insertedTableName: "Todos" | "todos" | null = null;
 
   beforeAll(async () => {
     assertIntegrationTestDbEnvIsActive();
@@ -140,16 +120,8 @@ describe("New subtodo sorts at the top of the parent subtodo list", () => {
       process.env.NEXT_PUBLIC_BASE_URL = "http://localhost:3000";
     }
 
-    // global.fetch = vi.fn(async (input: unknown, init?: RequestInit): Promise<Response | MockUserIdResponse> => {
-    //   if (String(input).includes(API_PATHS.USER_ID)) {
-    //     return { ok: true, json: async () => ({ userId: TEST_OWNER_ID }) };
-    //   }
-    //   if (!originalFetch) throw new Error(`No original fetch available for: ${String(input)}`);
-    //   return originalFetch(input as RequestInfo | URL, init);
-    // }) as unknown as typeof global.fetch;
-
     const supabaseAdmin = createSupabaseAdminForIntegrationTests();
-
+    await cleanupTestOwnerData(supabaseAdmin, TEST_OWNER_ID);
     await createTestUser(supabaseAdmin, TEST_OWNER_ID, TEST_OWNER_EMAIL);
 
     const created = await createTodo("NewSort_parent", "");
@@ -180,16 +152,6 @@ describe("New subtodo sorts at the top of the parent subtodo list", () => {
       parent_todo: Number(createdNew.parent_todo),
     };
 
-    const detectTableName = async (id: number): Promise<"Todos" | "todos"> => {
-      const fromTodos = await supabaseAdmin.from("Todos").select("id").eq("id", id).maybeSingle();
-      if (!fromTodos.error && fromTodos.data) return "Todos";
-      const fromLower = await supabaseAdmin.from("todos").select("id").eq("id", id).maybeSingle();
-      if (!fromLower.error && fromLower.data) return "todos";
-      throw new Error("Failed to detect todos table name for cleanup");
-    };
-
-    insertedTableName = await detectTableName(parentTodo.id);
-
     const fetched = await getTodos(true);
     fetchedSubtodos = fetched
       .filter((todo) => todo.parent_todo === String(parentTodo!.id))
@@ -202,27 +164,8 @@ describe("New subtodo sorts at the top of the parent subtodo list", () => {
   });
 
   afterAll(async () => {
-    if (!parentTodo || !insertedTableName) return;
     const supabaseAdmin = createSupabaseAdminForIntegrationTests();
-
-    const allIds = [
-      ...existingSubtodos.map((s) => s.id),
-      ...(newSubtodo ? [newSubtodo.id] : []),
-      parentTodo.id,
-    ];
-    
-    // Delete from both table names to be safe
-    for (const tableName of ['Todos', 'todos']) {
-      if (allIds.length > 0) {
-         try {
-           await supabaseAdmin.from(tableName).delete().in("id", allIds);
-         } catch (e) {
-           // Ignore errors
-         }
-      }
-    }
     await cleanupTestOwnerData(supabaseAdmin, TEST_OWNER_ID);
-
   });
 
   it("creates a parent todo and five subtodos", () => {
@@ -263,8 +206,7 @@ describe("New todo in category and new subtodo each sort at the top", () => {
   let newSubtodo: InsertedTodoRow | null = null;
   let fetchedCategoryTodos: InsertedTodoRow[] = [];
   let fetchedChosenParentSubtodos: InsertedTodoRow[] = [];
-  let insertedTableName: "Todos" | "todos" | null = null;
-
+  
   beforeAll(async () => {
     assertIntegrationTestDbEnvIsActive();
     if (!process.env.NEXT_PUBLIC_BASE_URL) {
@@ -340,16 +282,6 @@ describe("New todo in category and new subtodo each sort at the top", () => {
       parent_todo: Number(createdNewSub.parent_todo),
     };
 
-    const detectTableName = async (id: number): Promise<"Todos" | "todos"> => {
-      const fromTodos = await supabaseAdmin.from("Todos").select("id").eq("id", id).maybeSingle();
-      if (!fromTodos.error && fromTodos.data) return "Todos";
-      const fromLower = await supabaseAdmin.from("todos").select("id").eq("id", id).maybeSingle();
-      if (!fromLower.error && fromLower.data) return "todos";
-      throw new Error("Failed to detect todos table name for cleanup");
-    };
-
-    insertedTableName = await detectTableName(categoryTodos[0].id);
-
     // Fetch all todos
     const allFetched = await getTodos(true);
     
@@ -380,9 +312,7 @@ describe("New todo in category and new subtodo each sort at the top", () => {
   });
 
   afterAll(async () => {
-    if (!insertedTableName) return;
     const supabaseAdmin = createSupabaseAdminForIntegrationTests();
-
     await cleanupTestOwnerData(supabaseAdmin, TEST_OWNER_ID);
   });
 

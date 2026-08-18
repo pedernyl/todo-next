@@ -11,23 +11,25 @@ export async function cleanupTestOwnerData(
   ownerId: number
 ): Promise<void> {
   try {
-    for (const tableName of ["Todos", "todos"]) {
-      await supabaseAdmin.from(tableName).delete().eq("owner_id", ownerId);
-    }
+    await deleteTestTodos(supabaseAdmin, ownerId);
     await supabaseAdmin.from("Category").delete().eq("owner_id", ownerId);
-    await queryWithTableFallback(
-      (tableName) => supabaseAdmin
-        .from(tableName)
-        .delete()
-        .eq("id", ownerId),
-      "Users",
-      "User"
-    );
+    await deleteTestUser(supabaseAdmin, ownerId);
+    
   } catch (e) {
     // Ignore cleanup errors
   }
 }
 
+export async function deleteTestTodos(
+  supabaseAdmin: SupabaseClient,
+  ownerId: number
+): Promise<void> {
+  await queryWithTableFallback(
+    (tableName) => supabaseAdmin.from(tableName).delete().eq("owner_id", ownerId),
+    "Todos",
+    "todos"
+  );
+}
 
 export async function createTestUser(
   supabaseAdmin: SupabaseClient, 
