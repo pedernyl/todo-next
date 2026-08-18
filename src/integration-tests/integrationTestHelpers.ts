@@ -27,3 +27,27 @@ export async function cleanupTestOwnerData(
     // Ignore cleanup errors
   }
 }
+
+
+export async function createTestUser(
+  supabaseAdmin: SupabaseClient, 
+  id: number,
+  email: string
+): Promise<void> {
+  await queryWithTableFallback(
+    (tableName) => supabaseAdmin.from(tableName).insert({ id, email }),
+    "Users",
+    "User"
+  );  
+}
+
+export async function deleteTestUser(
+  supabaseAdmin: SupabaseClient, 
+  id: number
+): Promise<void> {
+  await queryWithTableFallback(
+    (tableName) => supabaseAdmin.from(tableName).delete().eq("id", id),
+    "Users",
+    "User"
+  );  
+}
