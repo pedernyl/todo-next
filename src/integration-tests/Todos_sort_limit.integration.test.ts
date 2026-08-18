@@ -1,13 +1,15 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { createClient } from "@supabase/supabase-js";
-import { API_PATHS } from "../constants/api/apiPaths";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { assertIntegrationTestDbEnvIsActive } from "./assertIntegrationTestDbEnv";
-import { cleanupTestOwnerData } from "./integrationTestHelpers";
+import { cleanupTestOwnerData, createTestUser } from "./integrationTestHelpers";
 import { createTodo, getTodos, reorderTodoSiblings } from "../lib/dataService";
 
-vi.mock("next-auth", () => ({
-  getServerSession: vi.fn(async () => ({
-    user: { email: "integration-test@example.com" },
+const TEST_OWNER_EMAIL = "integration-test@example.com";
+const TEST_OWNER_ID = 999001;
+
+vi.mock('../lib/appServerSession', () => ({ 
+  getAppServerSession: vi.fn(async () => ({
+    user: { email: TEST_OWNER_EMAIL },
   })),
 }));
 
@@ -16,11 +18,6 @@ type InsertedTodoRow = {
   title: string;
   sort_index?: number | null;
   parent_todo?: number | null;
-};
-
-type MockUserIdResponse = {
-  ok: boolean;
-  json: () => Promise<{ userId: number }>;
 };
 
 function createSupabaseAdminForIntegrationTests() {
@@ -42,9 +39,7 @@ function createSupabaseAdminForIntegrationTests() {
   return createSupabaseAdminForIntegrationTests.client;
 }
 
-createSupabaseAdminForIntegrationTests.client = null as ReturnType<typeof createClient> | null;
-
-const TEST_OWNER_ID = 999001;
+createSupabaseAdminForIntegrationTests.client = null as SupabaseClient | null;
 
 describe("Todos_sort_limit", () => {
   let insertedTodo: InsertedTodoRow | null = null;
@@ -52,8 +47,6 @@ describe("Todos_sort_limit", () => {
   let orderedChildrenAfterSort: InsertedTodoRow[] = [];
   let limitedTodosFromFetch: InsertedTodoRow[] = [];
   let offsetTodosFromFetch: InsertedTodoRow[] = [];
-  let insertedTableName: "Todos" | "todos" | null = null;
-  const originalFetch = global.fetch;
 
   beforeAll(async () => {
     assertIntegrationTestDbEnvIsActive();
@@ -61,26 +54,12 @@ describe("Todos_sort_limit", () => {
       process.env.NEXT_PUBLIC_BASE_URL = "http://localhost:3000";
     }
 
-    // createTodo resolves owner id via fetchUserIdByEmail -> /api/userid.
-    global.fetch = vi.fn(async (input: unknown, init?: RequestInit): Promise<Response | MockUserIdResponse> => {
-      if (String(input).includes(API_PATHS.USER_ID)) {
-        return {
-          ok: true,
-          json: async () => ({ userId: TEST_OWNER_ID }),
-        };
-      }
-
-      if (!originalFetch) {
-        throw new Error(`No original fetch available for request: ${String(input)}`);
-      }
-
-      return originalFetch(input as RequestInfo | URL, init);
-    }) as unknown as typeof global.fetch;
-
     const supabaseAdmin = createSupabaseAdminForIntegrationTests();
 
     // Clean up any leftover test data before starting
     await cleanupTestOwnerData(supabaseAdmin, TEST_OWNER_ID);
+
+    await createTestUser(supabaseAdmin, TEST_OWNER_ID, TEST_OWNER_EMAIL);
 
     const parentTodo = await createTodo("Todo_sort_limit", "");
     insertedTodo = {
@@ -102,16 +81,6 @@ describe("Todos_sort_limit", () => {
       sort_index: todo.sort_index,
       parent_todo: todo.parent_todo === null ? null : Number(todo.parent_todo),
     }));
-
-    const detectTableNameFromId = async (id: number): Promise<"Todos" | "todos"> => {
-      const fromTodos = await supabaseAdmin.from("Todos").select("id").eq("id", id).maybeSingle();
-      if (!fromTodos.error && fromTodos.data) return "Todos";
-      const fromLowercaseTodos = await supabaseAdmin.from("todos").select("id").eq("id", id).maybeSingle();
-      if (!fromLowercaseTodos.error && fromLowercaseTodos.data) return "todos";
-      throw new Error("Failed to detect todos table name for cleanup");
-    };
-
-    insertedTableName = await detectTableNameFromId(Number(parentTodo.id));
 
     const childByTitle = new Map(insertedChildren.map((child) => [child.title, child]));
     const child1 = childByTitle.get("Todo_sort_limit_c1");
@@ -176,30 +145,8 @@ describe("Todos_sort_limit", () => {
   });
 
   afterAll(async () => {
-    global.fetch = originalFetch;
-    if (!insertedTodo || !insertedTableName) return;
-
     const supabaseAdmin = createSupabaseAdminForIntegrationTests();
-    if (insertedChildren.length > 0) {
-      const childIds = insertedChildren.map((child) => child.id);
-      const { error: childDeleteError } = await supabaseAdmin
-        .from(insertedTableName)
-        .delete()
-        .in("id", childIds);
-
-      if (childDeleteError) {
-        throw new Error(`Failed to remove Todo_sort_limit children: ${childDeleteError.message}`);
-      }
-    }
-
-    const { error: parentDeleteError } = await supabaseAdmin
-      .from(insertedTableName)
-      .delete()
-      .eq("id", insertedTodo.id);
-
-    if (parentDeleteError) {
-      throw new Error(`Failed to remove Todo_sort_limit: ${parentDeleteError.message}`);
-    }
+    await cleanupTestOwnerData(supabaseAdmin, TEST_OWNER_ID);
   });
 
   it("adds one todo named Todo_sort_limit in test database", () => {
