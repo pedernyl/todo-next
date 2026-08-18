@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { API_PATHS } from "../constants/api/apiPaths";
 import { assertIntegrationTestDbEnvIsActive } from "./assertIntegrationTestDbEnv";
 import { cleanupTestOwnerData } from "./integrationTestHelpers";
@@ -44,7 +44,7 @@ function createSupabaseAdminForIntegrationTests() {
   return createSupabaseAdminForIntegrationTests.client;
 }
 
-createSupabaseAdminForIntegrationTests.client = null as ReturnType<typeof createClient> | null;
+createSupabaseAdminForIntegrationTests.client = null as SupabaseClient | null;
 
 const TEST_OWNER_ID = 999002;  // Different from Todos_sort_limit test
 
