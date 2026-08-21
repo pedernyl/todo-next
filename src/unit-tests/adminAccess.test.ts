@@ -1,4 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { getAppServerSession } from "../lib/appServerSession";
+import { isAdminUserEmail } from "../lib/adminUsers";
+import { getAdminAccessCheckResult, isAdminEmail } from "../lib/adminAccess";
+import { ADMIN_ACCESS_MESSAGES } from "../constants/admin/adminAccess";
 
 vi.mock("../lib/appServerSession", () => ({
   getAppServerSession: vi.fn(),
@@ -11,10 +15,6 @@ vi.mock("../lib/authOptions", () => ({
 vi.mock("../lib/adminUsers", () => ({
   isAdminUserEmail: vi.fn(),
 }));
-
-import { getAppServerSession } from "../lib/appServerSession";
-import { isAdminUserEmail } from "../lib/adminUsers";
-import { getAdminAccessCheckResult, isAdminEmail } from "../lib/adminAccess";
 
 const mockedGetAppServerSession = vi.mocked(getAppServerSession);
 const mockedIsAdminUserEmail = vi.mocked(isAdminUserEmail);
@@ -53,7 +53,7 @@ describe("getAdminAccessCheckResult", () => {
 
     const result = await getAdminAccessCheckResult();
 
-    expect(result).toEqual({ ok: false, reason: "unauthenticated" });
+    expect(result).toEqual({ ok: false, reason: ADMIN_ACCESS_MESSAGES.UNAUTHENTICATED });
     expect(mockedIsAdminUserEmail).not.toHaveBeenCalled();
   });
 
@@ -62,7 +62,7 @@ describe("getAdminAccessCheckResult", () => {
 
     const result = await getAdminAccessCheckResult();
 
-    expect(result).toEqual({ ok: false, reason: "unauthenticated" });
+    expect(result).toEqual({ ok: false, reason: ADMIN_ACCESS_MESSAGES.UNAUTHENTICATED });
     expect(mockedIsAdminUserEmail).not.toHaveBeenCalled();
   });
 
@@ -72,7 +72,7 @@ describe("getAdminAccessCheckResult", () => {
 
     const result = await getAdminAccessCheckResult();
 
-    expect(result).toEqual({ ok: false, reason: "forbidden" });
+    expect(result).toEqual({ ok: false, reason: ADMIN_ACCESS_MESSAGES.FORBIDDEN });
     expect(mockedIsAdminUserEmail).toHaveBeenCalledWith("denied@example.com");
   });
 
