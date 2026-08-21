@@ -1,7 +1,5 @@
 export const API_PATHS = {
   TODOS: "/api/todos",
-  USER_ID: "/api/userid",
-  userIdByEmail: (email: string) => `/api/userid?email=${encodeURIComponent(email)}`,
   ADMIN: {
     USERS: "/api/admin/users",
     SETTINGS: "/api/admin/settings",

@@ -77,7 +77,6 @@ npm run test:coverage   # unit coverage
 
 - Supabase client is mocked at the top of each test to provide the minimal `from().insert().select().single()` and `from().update().eq().select().single()` chains used by the services.
 - `next-auth`'s `getServerSession` is mocked to return a dummy user.
-- `global.fetch` is mocked to return a fake `/api/userid` response; we use `@ts-expect-error` to override `global.fetch` in the test environment and a minimal response type instead of `as any`.
 
 If you add new tests that call additional Supabase methods, extend the mock chains accordingly.
 
