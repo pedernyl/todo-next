@@ -30,7 +30,7 @@ export interface ApiResponse<T> {
 }
 
 // Type definition for userServiceResponse
-export type userServiceResponseData = null | number;
+export type userServiceResponseData = null | number | boolean;
 
 type UserServiceResponses = {
   200: (userId: number) => ApiResponse<number>;

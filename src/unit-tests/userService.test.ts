@@ -13,7 +13,7 @@ vi.mock('../lib/supabaseClient', () => ({
 
 import { getAppServerSession } from '../lib/appServerSession';
 import { supabase } from '../lib/supabaseClient';
-import { getAuthenticatedUserIdResponse, getAuthenticatedUserId } from '../lib/userService';
+import { getAuthenticatedUserIdResponse, getAuthenticatedUserId, isAuthenticatedUserByEmail } from '../lib/userService';
 import { queryWithTableFallback, shouldFallbackToLegacyTable } from '../lib/tableCompatibility';
 
 const mockedGetAppServerSession = vi.mocked(getAppServerSession);
@@ -160,6 +160,28 @@ describe('getAuthenticatedUserId', () => {
         mockedGetAppServerSession.mockResolvedValueOnce(null);
 
         await expect(getAuthenticatedUserId()).rejects.toThrow(API_MESSAGES.COMMON.UNAUTHORIZED);
+    });
+
+});
+
+describe('isAuthenticatedUserByEmail', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockedSupabaseFrom.mockReset();
+    });
+
+     it('returns false for a missing email without querying the database', async () => {
+        await expect(isAuthenticatedUserByEmail(null)).resolves.toBe(false);
+        await expect(isAuthenticatedUserByEmail(undefined)).resolves.toBe(false);
+        await expect(isAuthenticatedUserByEmail('')).resolves.toBe(false);
+        expect(mockedSupabaseFrom).not.toHaveBeenCalled();
+    });
+
+     it('returns true when the email exists in the users table', async () => {
+        mockSupabaseSingleResult({ id: 123 }, null);
+
+        await expect(isAuthenticatedUserByEmail('test@example.com')).resolves.toBe(true);
+        expect(mockedSupabaseFrom).toHaveBeenCalledWith('Users');
     });
 
 });

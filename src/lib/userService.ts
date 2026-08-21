@@ -5,6 +5,8 @@ import { API_MESSAGES } from "../constants/api/apiMessages";
 import { supabase } from "./supabaseClient";
 import { queryWithTableFallback } from "./tableCompatibility";
 
+type email = string | null | undefined;
+
 export async function fetchUserIdByEmail(email: string): Promise<number> {
   const { data, error } = await queryWithTableFallback(
     (tableName) => supabase.from(tableName).select("id").eq("email", email).single(),
@@ -47,4 +49,19 @@ export async function getAuthenticatedUserId(): Promise<userServiceResponseData>
     throw new Error(API_MESSAGES.COMMON.UNAUTHORIZED);
   }
   return userIdResponse.data;
+}
+
+export async function isAuthenticatedUserByEmail(email: email): Promise<boolean> {
+  if (!email) {
+    return false;
+  }
+  try {
+    const userId = await fetchUserIdByEmail(email);
+    if (!userId || typeof userId !== 'number') {
+      return false;
+    }
+    return true;
+  } catch (error) {
+    return false;
+  }
 }
