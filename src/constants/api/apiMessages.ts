@@ -7,11 +7,6 @@ export const API_MESSAGES = {
     NOT_FOUND: "Not Found",
     INTERNAL_SERVER_ERROR: "Internal Server Error",
   },
-  USER: {
-    MISSING_EMAIL: "User email missing",
-    USER_NOT_FOUND: "User not found",
-    USER_ID_LOOKUP_FAILED: "User ID lookup failed",
-  },
   TODOS: {
     INVALID_REORDER_PAYLOAD: "Invalid reorder payload",
     INVALID_UPDATE_ENTRY_OBJECT: "Invalid update entry: must be an object",
