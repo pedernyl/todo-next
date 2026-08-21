@@ -1,6 +1,6 @@
 import { ok } from "assert/strict";
 import { API_MESSAGES } from "./src/constants/api/apiMessages";
-import { USER_MESSAGES } from "./src/constants/user/userAuthentication";
+import { USER_AUTHENTICATION_MESSAGES } from "./src/constants/user/userAuthentication";
 
 
 // Type definition for a Todo item
@@ -54,7 +54,7 @@ export const userServiceResponse: UserServiceResponses = {
   400: { 
     status: 400, 
     ok: false, 
-    message: USER_MESSAGES.USER.MISSING_EMAIL,
+    message: USER_AUTHENTICATION_MESSAGES.USER.MISSING_EMAIL,
     data: null
   },
   401: { 
@@ -72,13 +72,13 @@ export const userServiceResponse: UserServiceResponses = {
   404: { 
     status: 404, 
     ok: false, 
-    message: USER_MESSAGES.USER.USER_NOT_FOUND,
+    message: USER_AUTHENTICATION_MESSAGES.USER.USER_NOT_FOUND,
     data: null
   },
   500: { 
     status: 500, 
     ok: false, 
-    message: USER_MESSAGES.USER.USER_ID_LOOKUP_FAILED,
+    message: USER_AUTHENTICATION_MESSAGES.USER.USER_ID_LOOKUP_FAILED,
     data: null
   },
 };
