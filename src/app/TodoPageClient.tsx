@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useSession } from "next-auth/react";
 import TodoList from "../components/TodoList";
 import CategoryDropdownWrapper from "../components/CategoryDropdownWrapper";
-import { useUserId } from "../context/UserIdContext";
 import { API_PATHS } from "../constants/api/apiPaths";
 import { Todo } from "../../types";
 import type { Category } from "../lib/categoryService";
@@ -24,7 +24,8 @@ export default function TodoPageClient({ initialTodos }: { initialTodos: Todo[] 
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
   const [showCompleted, setShowCompleted] = useState<boolean>(true);
-  const { userId } = useUserId();
+  const { data: session } = useSession();
+  const userId = session?.user?.id; 
   const { runBlockingFetch } = useGlobalBlockingLoader();
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const isLoadingMoreRef = useRef<boolean>(false);

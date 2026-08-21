@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Todo } from '../../types';
+import type { Todo, userId } from '../../types';
 import { API_PATHS } from '../constants/api/apiPaths';
 import { GLOBAL } from '../constants/global/global';
 import { ADD_TODO_IDS, ADD_TODO_TEXT } from '../constants/todo/AddTodo';
@@ -12,7 +12,7 @@ interface AddTodoProps {
   editTodo?: Todo | null;
   onTodoUpdated?: (todo: Todo) => void;
   parentTodo?: Todo | null;
-  userId: number | null;
+  userId: userId;
   categoryId?: string;
 }
 
@@ -34,7 +34,6 @@ export default function AddTodo({ onTodoAdded, editTodo, onTodoUpdated, parentTo
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('AddTodo categoryId:', categoryId);
 
     if (editTodo && editTodo.id) {
       // Update existing todo

@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import CategoryDropdown from "./CategoryDropdown";
-import { useUserId } from "../context/UserIdContext";
+import { useSession } from "next-auth/react";
 import { getCategories, createCategory, Category } from "../lib/categoryService";
 import { useGlobalBlockingLoader } from "../context/GlobalBlockingLoaderContext";
 import { GLOBAL } from "../constants/global/global";
@@ -12,7 +12,8 @@ interface CategoryDropdownWrapperProps {
 }
 
 const CategoryDropdownWrapper: React.FC<CategoryDropdownWrapperProps> = ({ onCategoryChange }) => {
-  const { userId } = useUserId();
+  const { data: session } = useSession();
+  const userId = session?.user?.id;
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const { runBlocking } = useGlobalBlockingLoader();

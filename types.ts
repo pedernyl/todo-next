@@ -17,6 +17,9 @@ export interface Todo {
   deleted_by?: number | null;
 }
 
+export type email = string | null | undefined;
+export type userId = number | null | undefined;
+
 // API responses 
 export type httpStatusCode = 200 | 400 | 401 | 403 | 404 | 500;
 

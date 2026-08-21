@@ -4,8 +4,7 @@ import { ApiResponse, userServiceResponse, userServiceResponseData } from "../..
 import { API_MESSAGES } from "../constants/api/apiMessages";
 import { supabase } from "./supabaseClient";
 import { queryWithTableFallback } from "./tableCompatibility";
-
-type email = string | null | undefined;
+import type { email } from "../../types";
 
 export async function fetchUserIdByEmail(email: email): Promise<number> {
   if (!email) {
