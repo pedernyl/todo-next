@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
-import { useUserId } from "../context/UserIdContext";
-import { Todo } from "../../types";
+import { useSession } from "next-auth/react";
+import type { Todo, userId } from "../../types";
 import AddTodo from "./AddTodo";
 import { API_PATHS } from "../constants/api/apiPaths";
 import { GLOBAL } from "../constants/global/global";
@@ -72,7 +72,7 @@ type SortableTodoItemProps = {
   handleCreateSubTodo: (todo: Todo) => void;
   handleEdit: (todo: Todo) => void;
   handleDelete: (todo: Todo) => void;
-  userId: number | null;
+  userId: userId;
   activeTodoId: string | null;
   overTodoId: string | null;
 };
@@ -600,7 +600,8 @@ export default function TodoList(
     showCompleted, handleToggleShowCompleted 
   
   }: TodoListProps) {
-  const { userId } = useUserId();
+  const { data: session } = useSession();
+  const userId = session?.user?.id;
   const { runBlockingFetch } = useGlobalBlockingLoader();
   const [activeTodoId, setActiveTodoId] = React.useState<string | null>(null);
   const [overTodoId, setOverTodoId] = React.useState<string | null>(null);
