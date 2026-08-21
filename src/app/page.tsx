@@ -28,7 +28,7 @@ export default async function Home() {
     redirect("/login");
   }
 
-  const canAccessAdmin = await isAdminEmail(session.user?.email);
+  const canAccessAdmin = session.user?.isAdmin;
 
   const policy = await getTodoLoadPolicy();
   const effectiveLimit = computeEffectiveLimit(policy);

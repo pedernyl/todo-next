@@ -1,6 +1,8 @@
 import { AuthOptions } from "next-auth";
 import GithubProvider from "next-auth/providers/github";
 import { isAuthenticatedUserByEmail } from "./userService";
+import { isAdminUserEmail } from "./adminUsers";
+import { fetchUserIdByEmail } from "./userService";
 
 export const authOptions: AuthOptions = {
   providers: [
@@ -15,12 +17,22 @@ export const authOptions: AuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   callbacks: {
     async signIn({ user }) {
-      // Restrict access to users marked as admins in the Users table.
-      try {
-        return await isAuthenticatedUserByEmail(user.email);
-      } catch {
-        return false;
+      // Restrict access to users in the Users table.
+      return await isAuthenticatedUserByEmail(user.email);
+    },
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = await fetchUserIdByEmail(user.email);
+        token.isAdmin = await isAdminUserEmail(user.email);
       }
+      return token;
+    },
+    async session({ session, token }) {
+      if (session.user && token.id) {
+        session.user.id = token.id as number;
+        session.user.isAdmin = token.isAdmin as boolean;
+      }
+      return session;
     },
   },
 };

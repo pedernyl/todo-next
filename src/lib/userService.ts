@@ -7,9 +7,14 @@ import { queryWithTableFallback } from "./tableCompatibility";
 
 type email = string | null | undefined;
 
-export async function fetchUserIdByEmail(email: string): Promise<number> {
+export async function fetchUserIdByEmail(email: email): Promise<number> {
+  if (!email) {
+    throw new Error(API_MESSAGES.USER.MISSING_EMAIL);
+  }
+  
+  const normalizedEmail = email.trim().toLowerCase();
   const { data, error } = await queryWithTableFallback(
-    (tableName) => supabase.from(tableName).select("id").eq("email", email).single(),
+    (tableName) => supabase.from(tableName).select("id").eq("email", normalizedEmail).single(),
     "Users",
     "User"
   );
@@ -52,9 +57,6 @@ export async function getAuthenticatedUserId(): Promise<userServiceResponseData>
 }
 
 export async function isAuthenticatedUserByEmail(email: email): Promise<boolean> {
-  if (!email) {
-    return false;
-  }
   try {
     const userId = await fetchUserIdByEmail(email);
     if (!userId || typeof userId !== 'number') {
