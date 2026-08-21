@@ -1,4 +1,4 @@
-export const USER_MESSAGES = {
+export const USER_AUTHENTICATION_MESSAGES = {
     USER: {
         MISSING_EMAIL: "User email missing",
         USER_NOT_FOUND: "User not found",

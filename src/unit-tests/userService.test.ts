@@ -1,6 +1,6 @@
 import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { API_MESSAGES } from '../constants/api/apiMessages';
-import { USER_MESSAGES } from '../constants/user/userAuthentication';
+import { USER_AUTHENTICATION_MESSAGES } from '../constants/user/userAuthentication';
 
 vi.mock('../lib/appServerSession', () => ({
     getAppServerSession: vi.fn(),
@@ -102,7 +102,7 @@ describe('getAuthenticatedUserIdResponse', () => {
         expect(result).toEqual({
             ok: false,
             status: 400,
-            message: USER_MESSAGES.USER.MISSING_EMAIL,
+            message: USER_AUTHENTICATION_MESSAGES.USER.MISSING_EMAIL,
             data: null,
         });      
         
@@ -134,7 +134,7 @@ describe('getAuthenticatedUserIdResponse', () => {
         expect(result).toEqual({
             ok: false,
             status: 500,
-            message: USER_MESSAGES.USER.USER_ID_LOOKUP_FAILED,
+            message: USER_AUTHENTICATION_MESSAGES.USER.USER_ID_LOOKUP_FAILED,
             data: null,
         });
     });
