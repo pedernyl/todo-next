@@ -1,6 +1,5 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { createTodo, softDeleteTodo } from '../lib/dataService';
-import { API_PATHS } from '../constants/api/apiPaths';
 
 vi.mock('../lib/markdown', () => ({
   renderSanitizedMarkdown: vi.fn(async (input: string) =>
@@ -69,8 +68,6 @@ vi.mock('../lib/supabaseClient', () => {
 vi.mock('../lib/appServerSession', () => ({
   getAppServerSession: async () => ({ user: { email: 'test@example.com' } })
 }));
-
-
 
 describe('Todo API', () => {
   beforeEach(() => {
