@@ -2,13 +2,14 @@
 import { getAppServerSession } from "./appServerSession";
 import { ApiResponse, userServiceResponse, userServiceResponseData } from "../../types";
 import { API_MESSAGES } from "../constants/api/apiMessages";
+import { USER_AUTHENTICATION_MESSAGES } from "../constants/user/userAuthentication";
 import { supabase } from "./supabaseClient";
 import { queryWithTableFallback } from "./tableCompatibility";
 import type { email } from "../../types";
 
 export async function fetchUserIdByEmail(email: email): Promise<number> {
   if (!email) {
-    throw new Error(API_MESSAGES.USER.MISSING_EMAIL);
+    throw new Error(USER_AUTHENTICATION_MESSAGES.USER.MISSING_EMAIL);
   }
   
   const normalizedEmail = email.trim().toLowerCase();
@@ -22,7 +23,7 @@ export async function fetchUserIdByEmail(email: email): Promise<number> {
     throw new Error(error.message);
   }
   if (!data) {
-    throw new Error(API_MESSAGES.USER.USER_NOT_FOUND);
+    throw new Error(USER_AUTHENTICATION_MESSAGES.USER.USER_NOT_FOUND);
   }
  
   return data.id;
