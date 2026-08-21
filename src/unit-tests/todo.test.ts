@@ -50,6 +50,16 @@ vi.mock('../lib/supabaseClient', () => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       from: vi.fn((_table: string) => ({
         update: vi.fn(() => makeUpdateEqChain()),
+        select: vi.fn(() => ({
+          eq: vi.fn(() => ({
+            // Users lookup by email for getAuthenticatedUserId
+            single: () =>
+              Promise.resolve({
+                data: { id: 1 },
+                error: null,
+              }),
+          })),
+        })),
       })),
     }
   };
@@ -60,18 +70,7 @@ vi.mock('../lib/appServerSession', () => ({
   getAppServerSession: async () => ({ user: { email: 'test@example.com' } })
 }));
 
-// Mock fetch for user id
-type SimpleResponse = { ok: boolean; json: () => Promise<{ userId: number }> };
-// @ts-expect-error - mocking global.fetch in the test environment
-global.fetch = vi.fn(async (url: unknown): Promise<SimpleResponse> => {
-  if (String(url).includes(API_PATHS.USER_ID)) {
-    return {
-      ok: true,
-      json: async () => ({ userId: 1 })
-    };
-  }
-  throw new Error('Unknown fetch');
-});
+
 
 describe('Todo API', () => {
   beforeEach(() => {
