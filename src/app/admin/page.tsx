@@ -10,6 +10,7 @@ import AdminUsersView from "@/components/admin/AdminUsersView";
 import { getAdminAccessCheckResult } from "@/lib/adminAccess";
 import { getDevTitle, isTestDbActive } from '@/lib/environmentMode';
 import { ADMIN_NAV_TEXT, ADMIN_TEST_IDS } from "../../constants/admin/adminNavigation";
+import { ADMIN_ACCESS_MESSAGES } from "@/constants/admin/adminAccess";
 
 type AdminPageProps = {
   searchParams: Promise<{ view?: string | string[] }>;
@@ -56,7 +57,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   // Authorization boundary for all Admin views: keep checks here (and in admin APIs).
   // Proxy also enforces /admin access as an additional layer.
   const access = await getAdminAccessCheckResult();
-  if (!access.ok && access.reason === "unauthenticated") {
+  if (!access.ok && access.reason === ADMIN_ACCESS_MESSAGES.UNAUTHORIZED) {
     redirect("/login");
   }
   if (!access.ok) {
