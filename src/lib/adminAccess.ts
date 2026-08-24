@@ -1,6 +1,7 @@
 import { getAppServerSession } from "./appServerSession";
 import { isAdminUserEmail } from "./adminUsers";
 import { ADMIN_ACCESS_MESSAGES } from "../constants/admin/adminAccess";
+import { USER_AUTHENTICATION_MESSAGES } from "../constants/user/userAuthentication";
 
 export type AdminAccessCheckResult =
   | { ok: true; email: string }
@@ -15,7 +16,7 @@ export async function getAdminAccessCheckResult(): Promise<AdminAccessCheckResul
   const email = session?.user?.email;
 
   if (!session || !email) {
-    return { ok: false, reason: ADMIN_ACCESS_MESSAGES.UNAUTHENTICATED };
+    return { ok: false, reason: USER_AUTHENTICATION_MESSAGES.USER.USER_UNAUTHENTICATED };
   }
 
   if (!(await isAdminEmail(email))) {

@@ -1,4 +1,4 @@
 export const ADMIN_ACCESS_MESSAGES = {
-  unauthorized: "User is not authenticated",
-  FORBIDDEN: "User is not authorized to access this resource",
+  UNAUTHORIZED: "User is not authorized to access this resource",
+  FORBIDDEN: "User is forbidden from accessing this resource",
 } as const;
