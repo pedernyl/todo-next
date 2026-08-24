@@ -1,12 +1,20 @@
 'use client';
 
 import { useSession, signIn, signOut } from "next-auth/react";
+import { useEffect } from "react";
 import { useGlobalBlockingLoader } from "../context/GlobalBlockingLoaderContext";
 import { AUTH_IDS, AUTH_TEXT } from "../constants/auth/auth";
 
 export default function AuthButtons() {
-  const { data: session } = useSession();
+  const { data: session, update } = useSession();
   const { runBlocking } = useGlobalBlockingLoader();
+  
+  useEffect(() => {
+    if (session && !session.user?.id) {
+      // Refresh the session to get the user.id and user.isAdmin properties
+      update();
+    }
+  }, [session, update]);
 
   async function handleSignOut() {
     await runBlocking(

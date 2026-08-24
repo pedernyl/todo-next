@@ -4,8 +4,7 @@ import { getTodoLoadPolicy, computeEffectiveLimit } from '../lib/todoLoadPolicy'
 import { getAppSettings } from '../lib/appSettings';
 import AuthButtons from '../components/AuthButtons';
 import { redirect } from "next/navigation";
-import { getAppServerSession, refreshUserSession } from "../lib/appServerSession";
-import { isAdminEmail } from "../lib/adminAccess";
+import { getAppServerSession } from "../lib/appServerSession";
 import Link from "next/link";
 import TodoPageClient from "./TodoPageClient";
 import type { Metadata } from 'next';
@@ -26,13 +25,6 @@ export default async function Home() {
   // Redirect if no user is logged in
   if (!session) {
     redirect("/login");
-  }
-
-  // @deprecated - remove this on next major release; 
-  // this is temporary because user.id and user.isAdmin 
-  // are not yet available in the session object 
-  if(!session.user.id) {
-    refreshUserSession();
   }
 
   // isAdmin is a session-time snapshot; 
