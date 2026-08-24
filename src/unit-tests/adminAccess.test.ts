@@ -3,6 +3,7 @@ import { getAppServerSession } from "../lib/appServerSession";
 import { isAdminUserEmail } from "../lib/adminUsers";
 import { getAdminAccessCheckResult, isAdminEmail } from "../lib/adminAccess";
 import { ADMIN_ACCESS_MESSAGES } from "../constants/admin/adminAccess";
+import { USER_AUTHENTICATION_MESSAGES } from "../constants/user/userAuthentication";
 
 vi.mock("../lib/appServerSession", () => ({
   getAppServerSession: vi.fn(),
@@ -53,7 +54,7 @@ describe("getAdminAccessCheckResult", () => {
 
     const result = await getAdminAccessCheckResult();
 
-    expect(result).toEqual({ ok: false, reason: ADMIN_ACCESS_MESSAGES.UNAUTHENTICATED });
+    expect(result).toEqual({ ok: false, reason: USER_AUTHENTICATION_MESSAGES.USER.USER_UNAUTHENTICATED });
     expect(mockedIsAdminUserEmail).not.toHaveBeenCalled();
   });
 
@@ -62,7 +63,7 @@ describe("getAdminAccessCheckResult", () => {
 
     const result = await getAdminAccessCheckResult();
 
-    expect(result).toEqual({ ok: false, reason: ADMIN_ACCESS_MESSAGES.UNAUTHENTICATED });
+    expect(result).toEqual({ ok: false, reason: USER_AUTHENTICATION_MESSAGES.USER.USER_UNAUTHENTICATED });
     expect(mockedIsAdminUserEmail).not.toHaveBeenCalled();
   });
 
