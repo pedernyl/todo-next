@@ -20,8 +20,13 @@ export const authOptions: AuthOptions = {
       // Restrict access to users in the Users table.
       return await isAuthenticatedUserByEmail(user.email);
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       if (user) {
+        token.id = await fetchUserIdByEmail(user.email);
+        token.isAdmin = await isAdminUserEmail(user.email);
+      }
+      // explicit refresh request: re-derive from DB using existing token
+      if (trigger === "update" && token.email) {
         token.id = await fetchUserIdByEmail(user.email);
         token.isAdmin = await isAdminUserEmail(user.email);
       }
