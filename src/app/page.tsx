@@ -28,8 +28,9 @@ export default async function Home() {
     redirect("/login");
   }
 
+  // isAdmin is a session-time snapshot; 
+  // promotion/demotion requires re-login to update this link (real access is still enforced server-side).
   const canAccessAdmin = session.user?.isAdmin;
-
   const policy = await getTodoLoadPolicy();
   const effectiveLimit = computeEffectiveLimit(policy);
   const todos = await getTodos(true, undefined, effectiveLimit);
