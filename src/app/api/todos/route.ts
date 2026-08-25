@@ -90,7 +90,10 @@ export async function PATCH(req: NextRequest) {
     const { reorderTodoSiblings } = await import('@/lib/dataService');
 
     try {
-      const userId = await fetchUserIdByEmail(email);
+      const userId = session.user?.id ?? await fetchUserIdByEmail(email);
+      if (!userId || typeof userId !== 'number') {
+        return NextResponse.json({ error: API_MESSAGES.TODOS.USER_ID_MISSING }, { status: 400 });
+      }
       const reorderedTodos = await reorderTodoSiblings(userId, updates);
       return NextResponse.json({ updated: reorderedTodos });
     } catch {
