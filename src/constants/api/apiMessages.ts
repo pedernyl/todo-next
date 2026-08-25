@@ -18,6 +18,7 @@ export const API_MESSAGES = {
     REORDER_FAILED: "Failed to reorder todos",
     INVALID_PATCH_PAYLOAD: "Invalid PATCH payload",
     DELETED_BY_REQUIRED: "User id (number) required for deleted_by",
+    USER_ID_MISSING: "User id (number) missing",
   },
   ADMIN_SETTINGS: {
     LOAD_FAILED: "Failed to load settings",
