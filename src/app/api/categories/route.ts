@@ -55,9 +55,7 @@ export async function DELETE(req: NextRequest): Promise<NextResponse> {
   }
 
   return NextResponse.json(
-    { 
-      status: 200,
-      message: API_MESSAGES.CATEGORIES.DELETED_CATEGORY_SUCCESSFULLY(categoryId) 
-    }
+    { message: API_MESSAGES.CATEGORIES.DELETED_CATEGORY_SUCCESSFULLY(categoryId) },
+    { status: 200 }
   );
 }
