@@ -71,7 +71,7 @@ export async function deleteCategory(categoryId: number): Promise<DeleteCategory
   if (response.status !== 200) {
     throw new Error(
       responseBody.error ??
-      `${API_MESSAGES.CATEGORIES.COULD_NOT_DELETE_CATEGORY(String(categoryId))}`);
+      `${API_MESSAGES.CATEGORIES.COULD_NOT_DELETE_CATEGORY(categoryId)}`);
   }
   return responseBody;
 }
