@@ -11,8 +11,8 @@ export const API_MESSAGES = {
     MISSING_CATEGORY_ID_OR_OWNER_ID: "Missing categoryId or ownerId",
     CATEGORY_NOT_FOUND: "Category not found",
     FAILED_TO_DELETE_CATEGORY: "Failed to delete category",
-    COULD_NOT_DELETE_CATEGORY: (id: string) => `Could not delete category with ID: ${id}`,
-    DELETED_CATEGORY_SUCCESSFULLY: (id: string) => `Category with ID ${id} deleted successfully.`,
+    COULD_NOT_DELETE_CATEGORY: (id: string | number) => `Could not delete category with ID: ${id}`,
+    DELETED_CATEGORY_SUCCESSFULLY: (id: string | number) => `Category with ID ${id} deleted successfully.`,
   },
   TODOS: {
     INVALID_REORDER_PAYLOAD: "Invalid reorder payload",
