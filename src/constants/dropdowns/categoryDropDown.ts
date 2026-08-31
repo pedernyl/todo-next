@@ -28,4 +28,5 @@ export const CATEGORY_DROPDOWN_TEXT = {
     EDIT: "Edit",
     DELETE: "Delete",
     HAS_ACTIVE_TODOS_TOOLTIP: "Cannot delete category with active todos",
+    DELETE_CONFIRMATION: (title: string) => `Are you sure you want to delete the category "${title}"?`,
 } as const;
