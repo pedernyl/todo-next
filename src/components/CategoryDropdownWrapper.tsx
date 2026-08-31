@@ -7,6 +7,7 @@ import { createCategory, Category, deleteCategory } from "../lib/categoryService
 import { useGlobalBlockingLoader } from "../context/GlobalBlockingLoaderContext";
 import { GLOBAL } from "../constants/global/global";
 import { DROPDOWN_OPTIONS } from "../constants/dropdowns/categoryDropDown";
+import { API_MESSAGES } from "@/constants/api/apiMessages";
 
 interface CategoryDropdownWrapperProps {
   onCategoryChange: (category: Category | null) => void;
@@ -47,9 +48,7 @@ const CategoryDropdownWrapper: React.FC<CategoryDropdownWrapperProps> = ({ onCat
       async () => deleteCategory(Number(id)),
       { label: GLOBAL.LOADER_LABELS.DELETING_CATEGORY, cancellable: false }
     );
-    if(!response.ok) {
-      throw new Error(`Failed to delete category with ID: ${id}`);
-    }
+  
     await refreshCategories();
   };
 
