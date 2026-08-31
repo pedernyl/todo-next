@@ -69,7 +69,9 @@ const CategoryRow: React.FC<CategoryRowProps> = ({
           type="button"
           onClick={(e) => {
             e.stopPropagation();
-            onDelete(id);
+            if (window.confirm(`Are you sure you want to delete the category "${title}"?`)) {
+              onDelete(id);
+            }
           }}
           disabled={hasActiveTodos}
           title={hasActiveTodos 

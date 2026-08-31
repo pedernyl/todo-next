@@ -7,7 +7,6 @@ import { createCategory, Category, deleteCategory } from "../lib/categoryService
 import { useGlobalBlockingLoader } from "../context/GlobalBlockingLoaderContext";
 import { GLOBAL } from "../constants/global/global";
 import { DROPDOWN_OPTIONS } from "../constants/dropdowns/categoryDropDown";
-import { API_MESSAGES } from "@/constants/api/apiMessages";
 
 interface CategoryDropdownWrapperProps {
   onCategoryChange: (category: Category | null) => void;
