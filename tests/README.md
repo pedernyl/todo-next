@@ -32,7 +32,7 @@ npx playwright test tests/auth-setup.test.ts --headed --timeout=60000
 - When the test completes, a `storageState.json` file will be created in the project root.
 
 ## 2. Run All E2E Tests (excluding login script)
-After you have created `storageState.json`, run all other Playwright tests with:
+After you have created `storageState.json`, run all other non-api Playwright tests with:
 
 ```
 npx playwright test tests/*.spec.ts --headed
@@ -42,6 +42,11 @@ npx playwright test tests/*.spec.ts --headed
 - If you need to re-authenticate, repeat step 1.
 
 ---
+
+## 3. Run API tests
+We have seperated API tests that we test our endpoints. Run run this use:
+npx playwright test tests/api/*
+You also need to set: PLAYWRIGHT_TEST_BASE_URL in your .env file.
 
 **Note:**
 - Do not commit `storageState.json` to version control (it is in `.gitignore`).
