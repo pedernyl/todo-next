@@ -1,5 +1,6 @@
 import { supabase } from './supabaseClient';
 import { API_PATHS } from '../constants/api/apiPaths';
+import { API_MESSAGES } from '../constants/api/apiMessages';
 
 export interface Category {
   id: string;
@@ -50,19 +51,27 @@ export async function createCategory(title: string, owner_id: number, descriptio
 }
 
 //Delete category  
-export async function deleteCategory(categoryId: number): Promise<Response> {
+type DeleteCategoryResponse =
+  | { status: 200; message: string }
+  | { status: number; error: string };
+  
+export async function deleteCategory(categoryId: number): Promise<DeleteCategoryResponse> {
+  if (!categoryId) {
+    throw new Error('Category ID is required');
+  }
   const response = await fetch(API_PATHS.CATEGORIES, {
     method: 'DELETE',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ categoryId }),
+    body: JSON.stringify({ id: categoryId  }),
   });
-  if (!response.ok) {
-    throw new Error(`Failed to delete category with ID: ${categoryId}`);
+
+  const responseBody = await response.json();
+  if (response.status !== 200) {
+    throw new Error(
+      responseBody.error ??
+      `${API_MESSAGES.CATEGORIES.COULD_NOT_DELETE_CATEGORY(String(categoryId))}`);
   }
-
-  return response;
-
-
+  return responseBody;
 }

@@ -67,3 +67,8 @@ export async function isAuthenticatedUserByEmail(email: email): Promise<boolean>
     return false;
   }
 }
+
+export async function isUserAuthenticated(): Promise<boolean> {
+  const session = await getAppServerSession();
+  return !!session;
+}

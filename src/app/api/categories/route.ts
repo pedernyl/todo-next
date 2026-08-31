@@ -1,7 +1,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { API_MESSAGES } from '../../../constants/api/apiMessages';
-import { getAuthenticatedUserId } from "@/lib/userService";
+import { getAuthenticatedUserId, isUserAuthenticated } from "@/lib/userService";
 import { supabaseAdmin } from "@/lib/supabaseAdminClient";
 
 /**
@@ -19,8 +19,15 @@ import { supabaseAdmin } from "@/lib/supabaseAdminClient";
  * 500: { error: string }
  */
 export async function DELETE(req: NextRequest): Promise<NextResponse> {  
+  // Check if the user is authenticated
+  if (!await isUserAuthenticated()) {
+    return NextResponse.json(
+        { status: 401, error: API_MESSAGES.COMMON.UNAUTHORIZED }
+    );
+  }
+
   const ownerId = await getAuthenticatedUserId(); 
-  const { categoryId } = await req.json();
+  const { id: categoryId }: { id: string } = await req.json();
 
   if (!categoryId || !ownerId) {
     return NextResponse.json(
@@ -48,7 +55,9 @@ export async function DELETE(req: NextRequest): Promise<NextResponse> {
   }
 
   return NextResponse.json(
-    { message: API_MESSAGES.CATEGORIES.DELETED_CATEGORY_SUCCESSFULLY(categoryId) },
-    { status: 200 }
+    { 
+      status: 200,
+      message: API_MESSAGES.CATEGORIES.DELETED_CATEGORY_SUCCESSFULLY(categoryId) 
+    }
   );
 }
