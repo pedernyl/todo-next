@@ -38,7 +38,12 @@ export async function POST(req: NextRequest) {
   }
   const { title, description, parent_todo, category_id } = await req.json();
 
-  const todo = await createTodo(title, description, parent_todo, category_id);
+  const todo = await createTodo({
+    title: title,
+    description: description,
+    parent_todo: parent_todo,
+    category_id: category_id,
+  });
 
   return NextResponse.json(todo);
 }

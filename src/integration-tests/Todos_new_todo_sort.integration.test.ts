@@ -62,7 +62,12 @@ describe("New top-level todo sorts at the top", () => {
 
     await createTestUser(supabaseAdmin, TEST_OWNER_ID, TEST_OWNER_EMAIL);
 
-    const created = await createTodo("NewSort_toplevel", "");
+    const created = await createTodo({
+      title: "NewSort_toplevel",
+      description: "",
+      parent_todo: undefined,
+      category_id: undefined,
+    });
     insertedTodo = {
       id: Number(created.id),
       title: created.title,
@@ -124,17 +129,25 @@ describe("New subtodo sorts at the top of the parent subtodo list", () => {
     await cleanupTestOwnerData(supabaseAdmin, TEST_OWNER_ID);
     await createTestUser(supabaseAdmin, TEST_OWNER_ID, TEST_OWNER_EMAIL);
 
-    const created = await createTodo("NewSort_parent", "");
+    const created = await createTodo({
+      title: "NewSort_parent",
+      description: "",
+      parent_todo: undefined,
+    });
     parentTodo = {
       id: Number(created.id),
       title: created.title,
       sort_index: created.sort_index,
-      parent_todo: null,
+      parent_todo: undefined,
     };
 
     const subtodoResults = await Promise.all(
       Array.from({ length: 5 }, (_, i) =>
-        createTodo(`NewSort_sub${i + 1}`, "", String(parentTodo!.id))
+        createTodo({
+          title: `NewSort_sub${i + 1}`,
+          description: "",
+          parent_todo: String(parentTodo!.id),
+        })
       )
     );
     existingSubtodos = subtodoResults.map((todo) => ({
@@ -144,7 +157,11 @@ describe("New subtodo sorts at the top of the parent subtodo list", () => {
       parent_todo: Number(todo.parent_todo),
     }));
 
-    const createdNew = await createTodo("NewSort_new_sub", "", String(parentTodo.id));
+    const createdNew = await createTodo({
+      title: "NewSort_new_sub",
+      description: "",
+      parent_todo: String(parentTodo.id),
+    });
     newSubtodo = {
       id: Number(createdNew.id),
       title: createdNew.title,
@@ -230,7 +247,12 @@ describe("New todo in category and new subtodo each sort at the top", () => {
     // Create 5 todos in the category, each with 5 subtodos
     const parentResults = await Promise.all(
       Array.from({ length: 5 }, (_, i) =>
-        createTodo(`NewSort_cattodo${i + 1}`, "", undefined, createdCategoryId!)
+        createTodo({
+          title: `NewSort_cattodo${i + 1}`,
+          description: "",
+          parent_todo: undefined,
+          category_id: createdCategoryId!,
+        })
       )
     );
     categoryTodos = parentResults.map((todo) => ({
@@ -244,7 +266,11 @@ describe("New todo in category and new subtodo each sort at the top", () => {
     const subtodoResults = await Promise.all(
       categoryTodos.flatMap((parent) =>
         Array.from({ length: 5 }, (_, i) =>
-          createTodo(`NewSort_cattodo${categoryTodos.indexOf(parent) + 1}_sub${i + 1}`, "", String(parent.id))
+          createTodo({
+            title: `NewSort_cattodo${categoryTodos.indexOf(parent) + 1}_sub${i + 1}`,
+            description: "",
+            parent_todo: String(parent.id),
+          })
         )
       )
     );
@@ -257,7 +283,12 @@ describe("New todo in category and new subtodo each sort at the top", () => {
     }));
 
     // Create a new top-level todo in the category — should appear first
-    const createdNew = await createTodo("NewSort_new_cattodo", "", undefined, createdCategoryId!);
+    const createdNew = await createTodo({
+      title: "NewSort_new_cattodo",
+      description: "",
+      parent_todo: undefined,
+      category_id: createdCategoryId!,
+    });
     newCategoryTodo = {
       id: Number(createdNew.id),
       title: createdNew.title,
@@ -270,11 +301,11 @@ describe("New todo in category and new subtodo each sort at the top", () => {
     chosenParent = categoryTodos[0];
 
     // Create a new subtodo under the chosen parent — should appear first among its siblings
-    const createdNewSub = await createTodo(
-      "NewSort_new_cattodo_sub",
-      "",
-      String(chosenParent.id)
-    );
+    const createdNewSub = await createTodo({
+      title: "NewSort_new_cattodo_sub",
+      description: "",
+      parent_todo: String(chosenParent.id),
+    });
     newSubtodo = {
       id: Number(createdNewSub.id),
       title: createdNewSub.title,
