@@ -322,8 +322,20 @@ export async function getTodos(
   return mapTodosWithDescriptionHtml(pagedTodos);
 }
 
+interface CreateTodoInput {
+  title: string;
+  description: string;
+  parent_todo?: string;
+  category_id?: string;
+}
 // Create a new todo in Supabase
-export async function createTodo(title: string, description: string, parent_todo?: string, category_id?: string): Promise<Todo> {
+export async function createTodo({
+  title,
+  description,
+  parent_todo,
+  category_id,
+}: CreateTodoInput): Promise<Todo> {
+
   const userId = await getAuthenticatedUserId();
 
   // insert_todo_at_top shifts all valid sibling sort_index values up by 1 and

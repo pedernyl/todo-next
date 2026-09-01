@@ -75,14 +75,24 @@ describe('Todo API', () => {
   });
 
   it('creates a todo', async () => {
-    const todo = await createTodo('Test Todo', '', undefined, undefined);
+    const todo = await createTodo({
+      title: 'Test Todo',
+      description: '',
+      parent_todo: undefined,
+      category_id: undefined,
+    });
     expect(todo).toBeDefined();
     expect(todo.title).toBe('Test Todo');
     expect(todo.description_html).toBe('<p></p>');
   });
 
   it('returns sanitized description_html for created todos', async () => {
-    const todo = await createTodo('Test Todo', '<script>alert(1)</script>hello', undefined, undefined);
+    const todo = await createTodo({
+      title: 'Test Todo',
+      description: '<script>alert(1)</script>hello',
+      parent_todo: undefined,
+      category_id: undefined,
+    });
 
     expect(todo.description_html).toContain('hello');
     expect(todo.description_html).not.toContain('<script');
@@ -90,7 +100,12 @@ describe('Todo API', () => {
 
   it('calls insert_todo_at_top RPC with correct parameters', async () => {
     const { supabase } = await import('../lib/supabaseClient');
-    await createTodo('Test Todo', 'desc', undefined, undefined);
+    await createTodo({
+      title: 'Test Todo',
+      description: 'desc',
+      parent_todo: undefined,
+      category_id: undefined,
+    });
 
     expect(supabase.rpc).toHaveBeenCalledWith('insert_todo_at_top', {
       p_title: 'Test Todo',
