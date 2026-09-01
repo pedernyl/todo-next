@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { API_MESSAGES } from '../../../constants/api/apiMessages';
 import { getAuthenticatedUserId, isUserAuthenticated } from "@/lib/userService";
 import { supabaseAdmin } from "@/lib/supabaseAdminClient";
+import { categoryHasActiveTodos } from '@/lib/categoryService';
 
 /**
  * DELETE /api/categories
@@ -33,6 +34,13 @@ export async function DELETE(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json(
         { error: API_MESSAGES.CATEGORIES.MISSING_CATEGORY_ID_OR_OWNER_ID }, 
         { status: 400 }
+    );
+  }
+
+  if (await categoryHasActiveTodos(Number(categoryId), Number(ownerId))) {
+    return NextResponse.json(
+        { error: API_MESSAGES.CATEGORIES.CATEGORY_HAS_ACTIVE_TODOS },
+        { status: 409 }
     );
   }
 
