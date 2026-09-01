@@ -61,7 +61,12 @@ describe("Todos_sort_limit", () => {
 
     await createTestUser(supabaseAdmin, TEST_OWNER_ID, TEST_OWNER_EMAIL);
 
-    const parentTodo = await createTodo("Todo_sort_limit", "");
+    const parentTodo = await createTodo({
+      title: "Todo_sort_limit",
+      description: "",
+      parent_todo: undefined,
+      category_id: undefined,
+    });
     insertedTodo = {
       id: Number(parentTodo.id),
       title: parentTodo.title,
@@ -69,11 +74,36 @@ describe("Todos_sort_limit", () => {
       parent_todo: parentTodo.parent_todo === null ? null : Number(parentTodo.parent_todo),
     };
 
-    const c1 = await createTodo("Todo_sort_limit_c1", "", String(parentTodo.id));
-    const c2 = await createTodo("Todo_sort_limit_c2", "", String(parentTodo.id));
-    const c3 = await createTodo("Todo_sort_limit_c3", "", String(parentTodo.id));
-    const c4 = await createTodo("Todo_sort_limit_c4", "", String(parentTodo.id));
-    const c5 = await createTodo("Todo_sort_limit_c5", "", String(parentTodo.id));
+    const c1 = await createTodo({
+      title: "Todo_sort_limit_c1",
+      description: "",
+      parent_todo: String(parentTodo.id),
+      category_id: undefined,
+    });
+    const c2 = await createTodo({
+      title: "Todo_sort_limit_c2",
+      description: "",
+      parent_todo: String(parentTodo.id),
+      category_id: undefined,
+    });
+    const c3 = await createTodo({
+      title: "Todo_sort_limit_c3",
+      description: "",
+      parent_todo: String(parentTodo.id),
+      category_id: undefined,
+    });
+    const c4 = await createTodo({
+      title: "Todo_sort_limit_c4",
+      description: "",
+      parent_todo: String(parentTodo.id),
+      category_id: undefined,
+    });
+    const c5 = await createTodo({
+      title: "Todo_sort_limit_c5",
+      description: "",
+      parent_todo: String(parentTodo.id),
+      category_id: undefined,
+    });
 
     insertedChildren = [c1, c2, c3, c4, c5].map((todo) => ({
       id: Number(todo.id),
