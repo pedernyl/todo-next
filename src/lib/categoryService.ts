@@ -2,15 +2,7 @@ import { supabase } from './supabaseClient';
 import { API_PATHS } from '../constants/api/apiPaths';
 import { API_MESSAGES } from '../constants/api/apiMessages';
 
-export interface Category {
-  id: string;
-  title: string;
-  description?: string;
-  owner_id: number;
-  has_active_todos: boolean;
-  completed: boolean;
-  deleted_timestamp?: string | null;
-}
+import type { Category } from '../../types';
 
 // Fetch all categories for a user
 export async function getCategories({
@@ -48,6 +40,21 @@ export async function createCategory(title: string, owner_id: number, descriptio
   
   data.has_active_todos = false; // Newly created categories won't have active todos
   return data as Category;
+}
+
+export async function categoryHasActiveTodos(categoryId: number, ownerId: number): Promise<boolean> {
+  const { data, error } = await supabase.rpc(
+    'get_categories_with_has_active_todos',
+    {
+      p_owner_id: ownerId,
+      p_category_id: categoryId,
+      p_completed: false,
+      p_deleted: false,
+    }
+  );
+  if (error) throw error;
+
+  return data?.[0]?.has_active_todos ?? false;
 }
 
 //Delete category  

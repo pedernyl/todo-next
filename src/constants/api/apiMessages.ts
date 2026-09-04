@@ -13,6 +13,7 @@ export const API_MESSAGES = {
     FAILED_TO_DELETE_CATEGORY: "Failed to delete category",
     COULD_NOT_DELETE_CATEGORY: (id: string | number) => `Could not delete category with ID: ${id}`,
     DELETED_CATEGORY_SUCCESSFULLY: (id: string | number) => `Category with ID ${id} deleted successfully.`,
+    CATEGORY_HAS_ACTIVE_TODOS: "Category has active todos",
   },
   TODOS: {
     INVALID_REORDER_PAYLOAD: "Invalid reorder payload",

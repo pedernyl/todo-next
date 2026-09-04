@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { useSession } from "next-auth/react";
-import type { Todo, userId } from "../../types";
+import type { Todo, userId, Category } from "../../types";
 import AddTodo from "./AddTodo";
 import { API_PATHS } from "../constants/api/apiPaths";
 import { GLOBAL } from "../constants/global/global";
@@ -27,7 +27,6 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 
 
-import type { Category } from "../lib/categoryService";
 import { useGlobalBlockingLoader } from "../context/GlobalBlockingLoaderContext";
 interface TodoListProps {
   initialTodos: Todo[];

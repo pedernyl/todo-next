@@ -2,13 +2,17 @@
 -- Creates/replaces public.get_categories_with_has_active_todos(owner_id, completed, deleted)
 -- and returns category rows for the owner with an extra computed field:
 --   has_active_todos = true when the category has at least one todo in todos_compat
---   where completed = false and deleted_timestamp is null.
+--   where completed = false and deleted_timestamp is null
+--   and optionally by category ID.
 --
 -- How to add this to the database:
 -- Run this SQL directly in the Supabase SQL editor.
 -- This function is not wired to a corresponding admin update module.
 create or replace function public.get_categories_with_has_active_todos(
-  p_owner_id bigint, p_completed boolean, p_deleted boolean default null 
+  p_owner_id bigint,
+  p_completed boolean,
+  p_deleted boolean default null,
+  p_category_id bigint default null
   )
 returns table (
   id bigint,
@@ -48,6 +52,10 @@ begin
       (p_deleted = false and c.deleted_timestamp is null)
       or
       (p_deleted = true and c.deleted_timestamp is not null)
+    )
+    and (
+      p_category_id is null
+      or c.id = p_category_id
     );
 end;
 $$;

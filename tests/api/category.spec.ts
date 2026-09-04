@@ -17,4 +17,5 @@ test.describe('Category API', () => {
 
     expect(responseBody.status).toBe(401);
   });
+
 });
