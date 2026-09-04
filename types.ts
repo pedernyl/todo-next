@@ -18,6 +18,17 @@ export interface Todo {
   deleted_by?: number | null;
 }
 
+// Type definition for a Category item
+export interface Category {
+  id: string;
+  title: string;
+  description?: string;
+  owner_id: number;
+  has_active_todos: boolean;
+  completed: boolean;
+  deleted_timestamp?: string | null;
+}
+
 export type email = string | null | undefined;
 export type userId = number | null | undefined;
 
