@@ -1,7 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { assertIntegrationTestDbEnvIsActive } from "./assertIntegrationTestDbEnv";
-import { cleanupTestOwnerData, createTestUser } from "./integrationTestHelpers";
+import { cleanupTestOwnerData, createTestUser, createSupabaseAdminForIntegrationTests } from "./integrationTestHelpers";
 import { createTodo, getTodos } from "../lib/dataService";
 
 const TEST_OWNER_ID = 999002;  // Different from Todos_sort_limit test
@@ -20,27 +19,6 @@ type InsertedTodoRow = {
   parent_todo?: number | null;
   category_id?: string | null;
 };
-
-function createSupabaseAdminForIntegrationTests() {
-  if (!createSupabaseAdminForIntegrationTests.client) {
-    createSupabaseAdminForIntegrationTests.client = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_TEST_URL as string,
-      process.env.SUPABASE_TEST_SERVICE_ROLE_KEY as string,
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-          detectSessionInUrl: false,
-          storageKey: "integration-test-admin-auth-token",
-        },
-      }
-    );
-  }
-
-  return createSupabaseAdminForIntegrationTests.client;
-}
-
-createSupabaseAdminForIntegrationTests.client = null as SupabaseClient | null;
 
 // ---------------------------------------------------------------------------
 // Test 1: New top-level todo (no parent, no category) sorts at the top
