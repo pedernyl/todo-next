@@ -2,15 +2,7 @@ import { supabase } from './supabaseClient';
 import { API_PATHS } from '../constants/api/apiPaths';
 import { API_MESSAGES } from '../constants/api/apiMessages';
 
-export interface Category {
-  id: string;
-  title: string;
-  description?: string;
-  owner_id: number;
-  has_active_todos: boolean;
-  completed: boolean;
-  deleted_timestamp?: string | null;
-}
+import type { Category } from '../../types';
 
 // Fetch all categories for a user
 export async function getCategories({

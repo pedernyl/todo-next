@@ -1,9 +1,10 @@
-import type { SupabaseClient } from '@supabase/supabase-js';
+import { SupabaseClient } from '@supabase/supabase-js';
 import type { AdminSettingsDefinition, FindSettingsByKeyResult } from '@/lib/adminSettings/types';
 import { readFile } from 'fs/promises';
 import { parseAdminSettingsDefinitionYaml } from '@/lib/adminSettings/loader';
 import { API_PATHS } from '@/constants/api/apiPaths';
 import { APIRequestContext } from '@playwright/test';
+import { queryWithTableFallback } from '@/lib/tableCompatibility';
 
 /**
  * Creates a todo via the API using an authenticated Playwright request context.
@@ -30,6 +31,43 @@ export async function createTodo(
     if (!createRes.ok()) {
       throw new Error('[cleanup] createTodo POST failed: ' + createRes.status());
     }
+}
+
+
+export async function deleteTodosByIds({
+  db: db,
+  ids: ids,
+}: {
+  db: SupabaseClient;
+  ids: number[];
+}): Promise<void> {
+  if (ids.length === 0) return;
+
+  const { data, error } =await queryWithTableFallback(
+    (tableName) => db.from(tableName).delete().in('id', ids),
+    'Todos',
+    'todos'
+  );
+
+  if (error) {
+    throw new Error('[cleanup] deleteTodosByIds failed: ' + error.message);
+  }
+}
+
+export async function deleteCategoriesByIds({
+  db: db,
+  ids: ids,
+}: {
+  db: SupabaseClient;
+  ids: number[];
+}): Promise<void> {
+  if (ids.length === 0) return;
+
+  try {
+    await db.from('Category').delete().in('id', ids);
+  } catch (error) {
+    console.error('[cleanup] deleteCategoriesByIds failed:', error);
+  }
 }
 
 /**
