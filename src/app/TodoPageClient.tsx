@@ -5,8 +5,7 @@ import { useSession } from "next-auth/react";
 import TodoList from "../components/TodoList";
 import CategoryDropdownWrapper from "../components/CategoryDropdownWrapper";
 import { API_PATHS } from "../constants/api/apiPaths";
-import { Todo } from "../../types";
-import { type Category } from "../lib/categoryService";
+import type { Todo, Category } from "../../types";
 import { useGlobalBlockingLoader } from "../context/GlobalBlockingLoaderContext";
 import { GLOBAL } from "../constants/global/global";
 

@@ -8,7 +8,8 @@ import React,
         useMemo, 
         ReactNode 
     } from "react";
-import { getCategories, Category } from "../lib/categoryService";
+import type { Category } from "../../types";
+import { getCategories } from "../lib/categoryService";
 import { useGlobalBlockingLoader } from "./GlobalBlockingLoaderContext";
 import { GLOBAL } from "../constants/global/global";
 import { useSession } from "next-auth/react";
