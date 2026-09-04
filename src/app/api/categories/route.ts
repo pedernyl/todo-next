@@ -37,6 +37,13 @@ export async function DELETE(req: NextRequest): Promise<NextResponse> {
     );
   }
 
+  if (isNaN(Number(categoryId))) {
+    return NextResponse.json(
+        { error: API_MESSAGES.CATEGORIES.INVALID_CATEGORY_ID },
+        { status: 400 }
+    );
+  }
+
   if (await categoryHasActiveTodos(Number(categoryId), Number(ownerId))) {
     return NextResponse.json(
         { error: API_MESSAGES.CATEGORIES.CATEGORY_HAS_ACTIVE_TODOS },

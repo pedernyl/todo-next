@@ -41,6 +41,27 @@ describe("Category deletion integration test", () => {
         });
       
     });
+
+    it("Should return 400 when sending an non numeric category id", async () => {
+        const request = await new NextRequest(
+          process.env.NEXT_PUBLIC_BASE_URL + API_PATHS.CATEGORIES,
+          {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ id: "non-numeric-id" }) 
+          }
+        );
+
+        const response = await DELETE(request);
+        
+        expect(response.status).toBe(400);
+        const body = await response.json();
+        expect(body.error).toBe(
+            API_MESSAGES.CATEGORIES.INVALID_CATEGORY_ID
+        );
+    });
     
     it("should not allow deletion of a category with active todos", async () => {
         if (!category) throw new Error("Category not created");
