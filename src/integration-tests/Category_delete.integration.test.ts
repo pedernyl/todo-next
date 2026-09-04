@@ -34,7 +34,7 @@ describe("Category deletion integration test", () => {
         await createTestUser(supabaseAdmin, TEST_OWNER_ID, TEST_OWNER_EMAIL);
 
         category = await createCategory('categoryDeleteIntegrationTest', TEST_OWNER_ID);
-        const todo = await createTodo({ 
+        await createTodo({ 
             title: 'todoDeleteIntegrationTest', 
             description: 'Test description', 
             category_id: category.id 
