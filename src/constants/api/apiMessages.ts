@@ -14,6 +14,7 @@ export const API_MESSAGES = {
     COULD_NOT_DELETE_CATEGORY: (id: string | number) => `Could not delete category with ID: ${id}`,
     DELETED_CATEGORY_SUCCESSFULLY: (id: string | number) => `Category with ID ${id} deleted successfully.`,
     CATEGORY_HAS_ACTIVE_TODOS: "Category has active todos",
+    INVALID_CATEGORY_ID: "Invalid category id",
   },
   CATEGORIES: {
     MISSING_CATEGORY_ID_OR_OWNER_ID: "Missing categoryId or ownerId",
