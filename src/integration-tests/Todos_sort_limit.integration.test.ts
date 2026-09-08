@@ -1,7 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { assertIntegrationTestDbEnvIsActive } from "./assertIntegrationTestDbEnv";
-import { cleanupTestOwnerData, createTestUser } from "./integrationTestHelpers";
+import { cleanupTestOwnerData, createTestUser, createSupabaseAdminForIntegrationTests } from "./integrationTestHelpers";
 import { createTodo, getTodos, reorderTodoSiblings } from "../lib/dataService";
 
 const TEST_OWNER_EMAIL = "sort-limit-integration-test@example.com";
@@ -19,27 +18,6 @@ type InsertedTodoRow = {
   sort_index?: number | null;
   parent_todo?: number | null;
 };
-
-function createSupabaseAdminForIntegrationTests() {
-  if (!createSupabaseAdminForIntegrationTests.client) {
-    createSupabaseAdminForIntegrationTests.client = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL as string,
-      process.env.SUPABASE_SERVICE_ROLE_KEY as string,
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-          detectSessionInUrl: false,
-          storageKey: "integration-test-admin-auth-token",
-        },
-      }
-    );
-  }
-
-  return createSupabaseAdminForIntegrationTests.client;
-}
-
-createSupabaseAdminForIntegrationTests.client = null as SupabaseClient | null;
 
 describe("Todos_sort_limit", () => {
   let insertedTodo: InsertedTodoRow | null = null;
