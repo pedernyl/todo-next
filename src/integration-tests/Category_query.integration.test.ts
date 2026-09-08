@@ -3,11 +3,12 @@ import { assertIntegrationTestDbEnvIsActive } from "./assertIntegrationTestDbEnv
 import { cleanupTestOwnerData, createTestUser, createSupabaseAdminForIntegrationTests, doesSupabaseFunctionExist } from "./integrationTestHelpers";
 import { createCategory } from "../lib/categoryService";
 import { createTodo } from "../lib/dataService";
+import { Category } from "../../types";
 
 const TEST_OWNER_EMAIL = "category-query-integration-test@example.com";
 const TEST_OWNER_ID = 779001;
 
-let category = null;
+let category: Category | null = null;
 
 vi.mock('../lib/appServerSession', () => ({ 
   getAppServerSession: vi.fn(async () => ({
@@ -46,7 +47,23 @@ describe.skipIf(!functionExists)(
   });
 
   it("should fetch category with active todos", async () => {
-    expect(true).toBe(true);
+    if (!category) {
+      throw new Error("Category was not created successfully");
+    }
+
+    const { data, error } = await supabaseAdmin.rpc(
+      "get_categories_with_has_active_todos",
+      { 
+        p_owner_id: TEST_OWNER_ID, 
+        p_completed: false, 
+        p_deleted: false   
+      }
+    );
+    if (error) {
+      console.error('Error fetching categories with active todos:', error);
+    }
+    
+    expect(data[0].has_active_todos).toBe(true);
   });
     
   }
