@@ -1,3 +1,4 @@
+import { parseAdminSettingsDefinitionYaml } from "@/lib/adminSettings";
 import { queryWithTableFallback } from "../lib/tableCompatibility";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
@@ -75,4 +76,24 @@ export async function deleteTestUser(
     "Users",
     "User"
   );  
+}
+
+// Check if supabase function exists
+export async function doesSupabaseFunctionExist(
+  supabaseAdmin: SupabaseClient,
+  functionName: string,
+  params: Record<string, unknown> = {}
+): Promise<boolean> {
+  
+    const { data, error } = 
+      await supabaseAdmin.rpc(
+        functionName, 
+        params 
+      );
+    if (error?.code === 'PGRST202') {
+      console.log('error', error);
+      return false;
+    }
+    
+    return true;
 }
