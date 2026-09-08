@@ -56,13 +56,14 @@ describe.skipIf(!functionExists)(
       { 
         p_owner_id: TEST_OWNER_ID, 
         p_completed: false, 
-        p_deleted: false   
+        p_deleted: false,
+        p_category_id: category.id
       }
     );
     if (error) {
       console.error('Error fetching categories with active todos:', error);
     }
-    
+
     expect(data[0].has_active_todos).toBe(true);
   });
     
