@@ -1,6 +1,7 @@
 import { parseAdminSettingsDefinitionYaml } from "@/lib/adminSettings";
 import { queryWithTableFallback } from "../lib/tableCompatibility";
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { Category } from "../../types";
 
 /**
  * Deletes all test data owned by `ownerId` from the todos, Category, and Users
@@ -96,4 +97,40 @@ export async function doesSupabaseFunctionExist(
     }
     
     return true;
+}
+
+type CreateTestCategoryParams = {
+  supabaseAdmin: SupabaseClient;
+  ownerId: number;
+  title: string;
+  completed?: boolean;
+  deleted?: boolean;
+};
+// Create test category - we need to set completed and deleted with params 
+export async function createTestCategory({
+  supabaseAdmin,
+  ownerId,
+  title,
+  completed = false,
+  deleted = false
+}: CreateTestCategoryParams): Promise<Category> {
+  let deletedTimestamp: string | null = null;
+  let deletedBy: number | null = null;
+  if (deleted === true) {
+    deletedTimestamp = new Date().toISOString();
+    deletedBy = ownerId;
+  }
+  const { data, error } = await supabaseAdmin
+     .from("Category")
+     .insert({ owner_id: ownerId, title: title, completed, deleted_timestamp: deletedTimestamp, deleted_by: deletedBy })
+     .select()
+     .single();
+
+  if (error) {
+    console.error('Error creating test category:', error);
+    throw error;
+  }
+
+  data.has_active_todos = false; // Newly created categories won't have active todos
+  return data as Category;
 }
