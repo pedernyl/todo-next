@@ -46,16 +46,15 @@ begin
     ) as has_active_todos
   from "Category" c
   where c.owner_id = p_owner_id
-     and (
-      c.completed = p_completed
-      and 
-      (p_deleted = false and c.deleted_timestamp is null)
-      or
-      (p_deleted = true and c.deleted_timestamp is not null)
-    )
-    and (
-      p_category_id is null
-      or c.id = p_category_id
-    );
+      and c.completed = p_completed
+  and (
+    (p_deleted = false and c.deleted_timestamp is null)
+    or
+    (p_deleted = true and c.deleted_timestamp is not null)
+  )
+  and (
+    p_category_id is null
+    or c.id = p_category_id
+  );
 end;
 $$;
