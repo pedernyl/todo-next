@@ -86,7 +86,7 @@ export async function doesSupabaseFunctionExist(
   params: Record<string, unknown> = {}
 ): Promise<boolean> {
   
-    const { data, error } = 
+    const { error } = 
       await supabaseAdmin.rpc(
         functionName, 
         params 
