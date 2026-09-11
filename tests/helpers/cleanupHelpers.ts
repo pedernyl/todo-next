@@ -43,7 +43,7 @@ export async function deleteTodosByIds({
 }): Promise<void> {
   if (ids.length === 0) return;
 
-  const { data, error } =await queryWithTableFallback(
+  const { error } = await queryWithTableFallback(
     (tableName) => db.from(tableName).delete().in('id', ids),
     'Todos',
     'todos'
