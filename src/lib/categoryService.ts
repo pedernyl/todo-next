@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { API_PATHS } from '../constants/api/apiPaths';
 import { API_MESSAGES } from '../constants/api/apiMessages';
 
@@ -42,8 +43,12 @@ export async function createCategory(title: string, owner_id: number, descriptio
   return data as Category;
 }
 
-export async function categoryHasActiveTodos(categoryId: number, ownerId: number): Promise<boolean> {
-  const { data, error } = await supabase.rpc(
+export async function categoryHasActiveTodos(
+  client: SupabaseClient,
+  categoryId: number, 
+  ownerId: number
+): Promise<boolean> {
+  const { data, error } = await client.rpc(
     'get_categories_with_has_active_todos',
     {
       p_owner_id: ownerId,

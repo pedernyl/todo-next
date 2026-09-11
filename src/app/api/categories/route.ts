@@ -44,7 +44,7 @@ export async function DELETE(req: NextRequest): Promise<NextResponse> {
     );
   }
 
-  if (await categoryHasActiveTodos(Number(categoryId), Number(ownerId))) {
+  if (await categoryHasActiveTodos(supabaseAdmin, Number(categoryId), Number(ownerId))) {
     return NextResponse.json(
         { error: API_MESSAGES.CATEGORIES.CATEGORY_HAS_ACTIVE_TODOS },
         { status: 409 }
