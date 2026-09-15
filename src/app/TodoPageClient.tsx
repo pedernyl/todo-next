@@ -16,11 +16,12 @@ type TodosResponse = {
 
 export default function TodoPageClient({ 
   initialTodos, 
-  initialCategories 
-  }: { initialTodos: Todo[]; initialCategories: Category[] }) {
+  initialCategories,
+  defaultPageSize,
+  }: { initialTodos: Todo[]; initialCategories: Category[]; defaultPageSize: number }) {
   const [todos, setTodos] = useState<Todo[]>(initialTodos);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
-  const [pageSize, setPageSize] = useState<number>(50);
+  const [pageSize, setPageSize] = useState<number>(defaultPageSize);
   const [offset, setOffset] = useState<number>(initialTodos.length);
   const [hasMore, setHasMore] = useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
@@ -39,7 +40,7 @@ export default function TodoPageClient({
   const refreshSeqRef = useRef<number>(0);
   const showCompletedRef = useRef<boolean>(showCompleted);
   const selectedCategoryIdRef = useRef<string | null>(selectedCategory?.id ?? null);
-
+  const shouldUseInitialTodosRef  = useRef(true);
   
   useEffect(() => {
     offsetRef.current = offset;
@@ -124,6 +125,15 @@ export default function TodoPageClient({
 
   useEffect(() => {
     if (!userId) return;
+    if (shouldUseInitialTodosRef .current &&
+      selectedCategory === null &&
+      !showCompleted
+    ) {
+      shouldUseInitialTodosRef.current = false;
+      return;
+    }
+
+    shouldUseInitialTodosRef.current = false;
     const currentRefreshSeq = ++refreshSeqRef.current;
 
     inFlightRequestKeysRef.current.clear();
@@ -152,8 +162,8 @@ export default function TodoPageClient({
         if (!res.ok) {
           return { todos: [], limit: pageSizeRef.current } as TodosResponse;
         }
-        const data = (await res.json()) as TodosResponse;
-        return data;
+      
+        return (await res.json()) as TodosResponse;
       })
       .then((data) => {
         if (refreshSeqRef.current !== currentRefreshSeq) {
