@@ -4,6 +4,7 @@ import { API_PATHS } from '../constants/api/apiPaths';
 import { API_MESSAGES } from '../constants/api/apiMessages';
 
 import type { Category } from '../../types';
+import { updateTodosCompleteStatus } from './dataService';
 
 // Fetch all categories for a user
 export async function getCategories({
@@ -86,4 +87,35 @@ export async function deleteCategory(categoryId: number): Promise<DeleteCategory
       `${API_MESSAGES.CATEGORIES.COULD_NOT_DELETE_CATEGORY(String(categoryId))}`);
   }
   return responseBody;
+}
+
+// Change the completion status of a category and its todos
+export async function toogleCategoryCompletion({
+  categoryId,
+  ownerId,
+  completed
+}: {
+  categoryId: number,
+  ownerId: number,
+  completed: boolean
+}): Promise<Category> {
+  const { data, error } = await supabase
+    .from('Category')
+    .update({ completed })
+    .eq('id', categoryId)
+    .eq('owner_id', ownerId)
+    .select()
+    .single();
+  if (error) throw error;
+
+  const todosUpdated = await updateTodosCompleteStatus({
+    categoryId: categoryId,
+    completed: completed,
+    ownerId: ownerId
+  });
+
+  
+
+  return data as Category;
+
 }
