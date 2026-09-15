@@ -6,7 +6,8 @@ import React,
         useState, 
         useCallback, 
         useMemo, 
-        ReactNode 
+        ReactNode, 
+        useEffect
     } from "react";
 import type { Category } from "../../types";
 import { getCategories } from "../lib/categoryService";
@@ -33,12 +34,16 @@ export function useCategoriesActions() {
     return context;
 }
 
+// Move the useEffect inside the CategoriesProvider to ensure refreshCategories is defined
+
 export function CategoriesProvider({ 
     children, 
-    initialCategories 
+    initialCategories,
+    showCompleted 
   }: {
     children: ReactNode; 
     initialCategories: Category[]; 
+    showCompleted: boolean;
     }) {
     const { data: session } = useSession();
     const userId = session?.user?.id;
@@ -47,12 +52,13 @@ export function CategoriesProvider({
 
     const refreshCategories = useCallback(async () => {
         if (!userId) return;
+        console.log("showCompleted in refreshCategories:", showCompleted);
         try {
             const fetchedCategories = await runBlocking(
                 async () => getCategories(
                     {
                         ownerId: userId,
-                        completed: false,
+                        completed: showCompleted,
                         deleted: false
                     }),
                 { label: GLOBAL.LOADER_LABELS.LOADING_CATEGORIES, cancellable: false }
@@ -62,9 +68,13 @@ export function CategoriesProvider({
             console.error("Failed to fetch categories:", error);
             setCategories([]);
         }
-    }, [userId, runBlocking]);
+    }, [userId, runBlocking, showCompleted]);
 
     const actions = useMemo(() => ({ refreshCategories }), [refreshCategories]);
+
+    useEffect(() => {
+        refreshCategories();
+    }, [refreshCategories]);
 
     return (
         <CategoriesActionsContext.Provider value={actions}>
