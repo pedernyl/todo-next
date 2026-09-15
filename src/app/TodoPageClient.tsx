@@ -25,7 +25,7 @@ export default function TodoPageClient({
   const [hasMore, setHasMore] = useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
-  const [showCompleted, setShowCompleted] = useState<boolean>(true);
+  const [showCompleted, setShowCompleted] = useState<boolean>(false);
   const { data: session } = useSession();
   const userId = session?.user?.id; 
   const { runBlockingFetch } = useGlobalBlockingLoader();
@@ -196,7 +196,10 @@ export default function TodoPageClient({
   }, [loadMore, isRefreshing]);
 
   return (
-    <CategoriesProvider initialCategories={initialCategories}>
+    <CategoriesProvider 
+       initialCategories={initialCategories}
+       showCompleted={showCompleted}
+    >
       <div className="absolute right-10 top-2 z-10">
         <CategoryDropdownWrapper 
           onCategoryChange={setSelectedCategory}
