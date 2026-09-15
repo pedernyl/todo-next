@@ -2,6 +2,7 @@ import { supabase } from './supabaseClient';
 import { Todo } from '../../types';
 import { renderSanitizedMarkdown } from "./markdown";
 import { getAuthenticatedUserId } from './userService';
+import { error } from 'console';
 
 type ReorderUpdateInput = {
   id: string;
@@ -362,6 +363,31 @@ export async function updateTodo(id: string, completed: boolean): Promise<Todo> 
 
   if (error) throw error;
   return mapTodoWithDescriptionHtml(data as Todo);
+}
+
+type UpdateTodosCompleteStatusInput = {
+  categoryId: number;
+  completed: boolean;
+  ownerId: number;
+};
+export async function updateTodosCompleteStatus({
+  categoryId,
+  completed,
+  ownerId
+}: UpdateTodosCompleteStatusInput): Promise<boolean> {
+  const { error } = await runTodosQueryWithFallback((tableName) =>
+    supabase
+      .from(tableName)
+      .update({ completed })
+      .eq('category_id', categoryId)
+      .eq('owner_id', ownerId)
+  );
+
+  if (error) throw new Error(
+    `Failed to update todos complete status: ${error.message}`
+  );
+
+  return true;
 }
 
 // Soft delete a todo: set deleted_timestamp and deleted_by (can be user id or email)
