@@ -52,7 +52,6 @@ export function CategoriesProvider({
 
     const refreshCategories = useCallback(async () => {
         if (!userId) return;
-        console.log("showCompleted in refreshCategories:", showCompleted);
         try {
             const fetchedCategories = await runBlocking(
                 async () => getCategories(

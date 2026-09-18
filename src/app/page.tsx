@@ -37,7 +37,6 @@ export default async function Home() {
   const policy = await getTodoLoadPolicy();
   const effectiveLimit = computeEffectiveLimit(policy);
   const todos = await getTodos(false, undefined, effectiveLimit);
-  console.log('todos page.tsx', todos);
   const initialCategories = await getCategories({ 
     ownerId: userId, 
     completed: false, 

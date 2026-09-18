@@ -2,7 +2,6 @@ import { supabase } from './supabaseClient';
 import { Todo } from '../../types';
 import { renderSanitizedMarkdown } from "./markdown";
 import { getAuthenticatedUserId } from './userService';
-import { error } from 'console';
 
 type ReorderUpdateInput = {
   id: string;
@@ -19,7 +18,7 @@ const TODOS_TABLE_NAME = 'Todos';
 const LEGACY_TODOS_TABLE_NAME = 'todos';
 
 // @TODO(remove-legacy-todos-fallback): Remove this fallback after all environments have the renamed table.
-function shouldFallbackToLegacyTodosTable(error: { code?: string; message?: string } | null | undefined): boolean {
+function shouldFallbackToLegacyTodosTable(error: TodoQueryError): boolean {
   if (!error) return false;
   if (error.code === '42P01') return true;
   if (error.code === 'PGRST205') {
@@ -31,9 +30,22 @@ function shouldFallbackToLegacyTodosTable(error: { code?: string; message?: stri
   return message.includes('relation') && message.includes('todos') && message.includes('does not exist');
 }
 
+type TodoQueryError = {
+  code?: string;
+  message?: string;
+} | null;
+
 async function runTodosQueryWithFallback(
-  queryFactory: (tableName: string) => PromiseLike<{ data: any; error: any }>
-): Promise<{ data: any; error: any }> {
+  queryFactory: (
+    tableName: string
+  ) => PromiseLike<{ 
+    data: unknown; 
+    error: TodoQueryError
+  }>
+): Promise<{ 
+  data: unknown; 
+  error: TodoQueryError 
+}> {
   const primaryResult = await queryFactory(TODOS_TABLE_NAME);
 
   if (!shouldFallbackToLegacyTodosTable(primaryResult.error)) {
@@ -221,8 +233,21 @@ export async function getTodos(
   const ROOT_BATCH_SIZE = 100;
   const FRONTIER_CHUNK_SIZE = 200;
 
-  const applySharedTodoFilters = (query: any) => {
-    let nextQuery = query
+  type TodoQuery = {
+  eq: (column: string, value: unknown) => TodoQuery;
+  is: (column: string, value: null) => TodoQuery;
+  range: (from: number, to: number) => TodoQuery;
+  order: (
+    column: string,
+    options: { ascending: boolean }
+  ) => TodoQuery;
+} & PromiseLike<{
+  data: unknown;
+  error: TodoQueryError;
+}>;
+
+  const applySharedTodoFilters = (query: TodoQuery): TodoQuery => {
+     let nextQuery = query
       .eq('owner_id', userId)
       .is('deleted_timestamp', null)
       .order('completed', { ascending: true })
