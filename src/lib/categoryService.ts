@@ -30,6 +30,31 @@ export async function getCategories({
   return data as Category[];
 }
 
+export async function getCategoryById({
+  categoryId,
+  ownerId,
+  completed,
+  deleted
+}: {
+  categoryId: number,
+  ownerId: number,
+  completed?: boolean,
+  deleted?: boolean
+}): Promise<Category | null> {
+  const { data, error } = await supabase.rpc(
+    'get_categories_with_has_active_todos',
+    {
+      p_owner_id: ownerId,
+      p_category_id: categoryId,
+      p_completed: completed ?? false,
+      p_deleted: deleted ?? false,
+    }
+  );
+  if (error) throw error;
+
+  return data?.[0] ?? null;
+}
+
 
 // Create a new category
 export async function createCategory(title: string, owner_id: number, description?: string): Promise<Category> {
@@ -108,13 +133,15 @@ export async function toogleCategoryCompletion({
     .single();
   if (error) throw error;
 
-  const todosUpdated = await updateTodosCompleteStatus({
+  const todosUpdatedSuccess: boolean = await updateTodosCompleteStatus({
     categoryId: categoryId,
     completed: completed,
     ownerId: ownerId
   });
 
-  
+  if (!todosUpdatedSuccess) {
+    console.warn(`Failed to update todos completion status for category ${categoryId}`);
+  }
 
   return data as Category;
 
