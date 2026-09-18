@@ -16,7 +16,7 @@ export async function cleanupTestOwnerData(
     await supabaseAdmin.from("Category").delete().eq("owner_id", ownerId);
     await deleteTestUser(supabaseAdmin, ownerId);
     
-  } finally {
+  } catch {
     // Ignore cleanup errors
   }
 }
@@ -144,7 +144,7 @@ export async function getTodosByCategoryId({
    const { data, error } = await queryWithTableFallback(
      (tableName) => supabaseAdmin.from(tableName).select("*").eq("category_id", categoryId),
      "Todos",
-     "Todos"
+     "todos"
    );
 
    if (error) {
