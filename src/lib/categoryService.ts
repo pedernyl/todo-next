@@ -1,10 +1,12 @@
+"use server"
 import { supabase } from './supabaseClient';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { supabaseAdmin } from './supabaseAdminClient';
 import { API_PATHS } from '../constants/api/apiPaths';
 import { API_MESSAGES } from '../constants/api/apiMessages';
 
 import type { Category } from '../../types';
-import { updateTodosCompleteStatus } from './dataService';
+import { getAuthenticatedUserId } from './userService';
 
 // Fetch all categories for a user
 export async function getCategories({
@@ -16,12 +18,15 @@ export async function getCategories({
   completed: boolean;
   deleted?: boolean;
 }): Promise<Category[]> {
+
+  const userId = await getAuthenticatedUserId();
+
   const { data, error } = 
     await supabase.rpc
       (
         'get_categories_with_has_active_todos', 
         { 
-          p_owner_id: ownerId, 
+          p_owner_id: userId, 
           p_completed: completed,
           p_deleted: deleted || false
         }
@@ -117,31 +122,21 @@ export async function deleteCategory(categoryId: number): Promise<DeleteCategory
 // Change the completion status of a category and its todos
 export async function toggleCategoryCompletion({
   categoryId,
-  ownerId,
   completed
 }: {
   categoryId: number,
-  ownerId: number,
   completed: boolean
 }): Promise<Category> {
-  const { data, error } = await supabase
-    .from('Category')
-    .update({ completed })
-    .eq('id', categoryId)
-    .eq('owner_id', ownerId)
-    .select()
-    .single();
-  if (error) throw error;
 
-  const todosUpdatedSuccess: boolean = await updateTodosCompleteStatus({
-    categoryId: categoryId,
-    completed: completed,
-    ownerId: ownerId
+  const userId = await getAuthenticatedUserId();
+  
+  const { data, error } = await supabaseAdmin.rpc('toggle_category_completion', {
+    p_category_id: categoryId,
+    p_owner_id: userId,
+    p_completed: completed,
   });
 
-  if (!todosUpdatedSuccess) {
-    console.warn(`Failed to update todos completion status for category ${categoryId}`);
-  }
+  if (error) throw error;
 
   return data as Category;
 
