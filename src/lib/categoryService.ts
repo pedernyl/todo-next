@@ -115,7 +115,7 @@ export async function deleteCategory(categoryId: number): Promise<DeleteCategory
 }
 
 // Change the completion status of a category and its todos
-export async function toogleCategoryCompletion({
+export async function toggleCategoryCompletion({
   categoryId,
   ownerId,
   completed
