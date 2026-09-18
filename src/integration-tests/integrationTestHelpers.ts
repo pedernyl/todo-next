@@ -1,7 +1,6 @@
-import { parseAdminSettingsDefinitionYaml } from "@/lib/adminSettings";
 import { queryWithTableFallback } from "../lib/tableCompatibility";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import { Category } from "../../types";
+import { Category, Todo } from "../../types";
 
 /**
  * Deletes all test data owned by `ownerId` from the todos, Category, and Users
@@ -133,4 +132,25 @@ export async function createTestCategory({
 
   data.has_active_todos = false; // Newly created categories won't have active todos
   return data as Category;
+}
+
+export async function getTodosByCategoryId({
+  supabaseAdmin,
+  categoryId
+  }: {
+  supabaseAdmin: SupabaseClient,
+  categoryId: number
+}): Promise<Todo[]> {
+   const { data, error } = await queryWithTableFallback(
+     (tableName) => supabaseAdmin.from(tableName).select("*").eq("category_id", categoryId),
+     "Todos",
+     "Todos"
+   );
+
+   if (error) {
+     console.error('Error fetching todos by category ID:', error);
+     throw error;
+   }
+
+   return data as Todo[];
 }
