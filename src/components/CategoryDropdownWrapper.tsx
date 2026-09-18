@@ -44,7 +44,7 @@ const CategoryDropdownWrapper: React.FC<CategoryDropdownWrapperProps> = ({ onCat
 
   const handleDeleteCategory = async (id: string) => {
     if (!userId) return;
-    const response = await runBlocking(
+    await runBlocking(
       async () => deleteCategory(Number(id)),
       { label: GLOBAL.LOADER_LABELS.DELETING_CATEGORY, cancellable: false }
     );
@@ -54,7 +54,7 @@ const CategoryDropdownWrapper: React.FC<CategoryDropdownWrapperProps> = ({ onCat
 
   const handleToggleCompleted = async (id: string, completed: boolean) => {
     if (!userId) return;
-     const response = await runBlocking(
+    await runBlocking(
       async () => toggleCategoryCompletion({ 
         categoryId: Number(id), 
         ownerId: Number(userId), 
