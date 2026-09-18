@@ -16,8 +16,8 @@ export async function cleanupTestOwnerData(
     await supabaseAdmin.from("Category").delete().eq("owner_id", ownerId);
     await deleteTestUser(supabaseAdmin, ownerId);
     
-  } catch {
-    // Ignore cleanup errors
+  } catch(e) {
+      console.warn('Error cleaning up test owner data:', e);
   }
 }
 
