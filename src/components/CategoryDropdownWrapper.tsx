@@ -57,7 +57,6 @@ const CategoryDropdownWrapper: React.FC<CategoryDropdownWrapperProps> = ({ onCat
     await runBlocking(
       async () => toggleCategoryCompletion({ 
         categoryId: Number(id), 
-        ownerId: Number(userId), 
         completed: !completed
       }),
       { label: GLOBAL.LOADER_LABELS.UPDATING_CATEGORY, cancellable: false }
