@@ -97,6 +97,7 @@ describe("Category toggle complete integration test", () => {
         expect(todosAfterToggle.every(
             todo => todo.completed === completed))
             .toBe(true);
+            
         expect(todosAfterToggle.length).toBe(todos.length);
     });
 });
