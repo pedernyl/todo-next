@@ -7,7 +7,7 @@ import {
     getTodosByCategoryId,
  } from "./integrationTestHelpers";
  import { createTodo } from "../lib/dataService";
-import { createCategory, getCategoryById, toogleCategoryCompletion } from "../lib/categoryService";
+import { createCategory, getCategoryById, toggleCategoryCompletion } from "../lib/categoryService";
 import type { Category, Todo } from '../../types';
 
 
@@ -74,7 +74,7 @@ describe("Category toggle complete integration test", () => {
         { completed: false }
     ])
     ('category completion status should be reflected correctly when completed=$completed', async ({ completed }) => {
-        await toogleCategoryCompletion({
+        await toggleCategoryCompletion({
             categoryId: Number(category.id),
             ownerId: TEST_OWNER_ID,
             completed
