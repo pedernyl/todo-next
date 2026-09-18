@@ -26,7 +26,7 @@ export const CATEGORY_DROPDOWN_TEXT = {
     CREATE: "Create",
     COMPLETE: "Mark as completed",
     INCOMPLETE: "Mark as incomplete",
-    COMPLETE_CONFIRMATION: (complete: string) => `Marking this category as ${complete} will also change completed status to its todos`,
+    COMPLETE_CONFIRMATION: (complete: string) => `Changing this category to ${complete} will also change completed status for all belonging todos`,
     EDIT: "Edit",
     DELETE: "Delete",
     HAS_ACTIVE_TODOS_TOOLTIP: "Cannot delete category with active todos",
