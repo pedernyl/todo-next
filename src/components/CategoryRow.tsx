@@ -42,10 +42,11 @@ const CategoryRow: React.FC<CategoryRowProps> = ({
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            window.confirm(`${CATEGORY_DROPDOWN_TEXT.COMPLETE_CONFIRMATION(
+            if (window.confirm(`${CATEGORY_DROPDOWN_TEXT.COMPLETE_CONFIRMATION(
               isCompleted ? "incomplete" : "complete")}`
-            );
-            onComplete();
+            )) {
+              onComplete();
+            }
           }}
           title={isCompleted ? 
             CATEGORY_DROPDOWN_TEXT.INCOMPLETE : 
