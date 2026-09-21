@@ -1,12 +1,13 @@
 import React from "react";
 import { CATEGORY_DROPDOWN_IDS, CATEGORY_DROPDOWN_TEXT } from "../constants/dropdowns/categoryDropDown";
 
-//@todo add completed, deleted
+//@todo add completed
 interface CategoryRowProps {
   id: string;
   title: string;
   isSelected: boolean;
   hasActiveTodos: boolean;
+  isCompleted: boolean;
   onComplete: () => void;
   onEdit: () => void;
   onDelete: (categoryId: string) => void;
@@ -18,9 +19,10 @@ const CategoryRow: React.FC<CategoryRowProps> = ({
   isSelected,
   hasActiveTodos,
   onComplete,
+  isCompleted,
   onEdit,
   onDelete,
-}) => {
+}: CategoryRowProps) => {
 
   return (
     <div
@@ -29,7 +31,13 @@ const CategoryRow: React.FC<CategoryRowProps> = ({
       }`}
       data-testid={CATEGORY_DROPDOWN_IDS.CATEGORY_OPTION(id)}
     >
-      <span className={isSelected ? "font-semibold text-blue-600" : ""}>
+      <span className={`${
+        isSelected ? "font-semibold text-blue-600" : ""
+      } ${isCompleted ? 
+          "line-through text-gray-500" : 
+          ""
+          }`
+        }>
         {title}
       </span>
 
@@ -38,11 +46,22 @@ const CategoryRow: React.FC<CategoryRowProps> = ({
         <button
           type="button"
           onClick={(e) => {
+            e.preventDefault();
             e.stopPropagation();
-            onComplete();
+            if (window.confirm(`${CATEGORY_DROPDOWN_TEXT.COMPLETE_CONFIRMATION(
+              isCompleted ? "incomplete" : "complete")}`
+            )) {
+              onComplete();
+            }
           }}
-          title={CATEGORY_DROPDOWN_TEXT.COMPLETE}
-          aria-label={`${CATEGORY_DROPDOWN_TEXT.COMPLETE} ${title}`}
+          title={isCompleted ? 
+            CATEGORY_DROPDOWN_TEXT.INCOMPLETE : 
+            CATEGORY_DROPDOWN_TEXT.COMPLETE
+          }
+          aria-label={`${isCompleted ? 
+            CATEGORY_DROPDOWN_TEXT.INCOMPLETE : 
+            CATEGORY_DROPDOWN_TEXT.COMPLETE} ${title}`
+          }
           data-testid={CATEGORY_DROPDOWN_IDS.CATEGORY_ROW_COMPLETE_BUTTON(id)}
           className="text-green-500 hover:text-green-700 transition"
         >
@@ -68,8 +87,9 @@ const CategoryRow: React.FC<CategoryRowProps> = ({
         <button
           type="button"
           onClick={(e) => {
+            e.preventDefault();
             e.stopPropagation();
-            if (window.confirm(`Are you sure you want to delete the category "${title}"?`)) {
+            if (window.confirm(`${CATEGORY_DROPDOWN_TEXT.DELETE_CONFIRMATION(title)}`)) {
               onDelete(id);
             }
           }}

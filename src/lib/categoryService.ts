@@ -1,9 +1,12 @@
+"use server"
 import { supabase } from './supabaseClient';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { supabaseAdmin } from './supabaseAdminClient';
 import { API_PATHS } from '../constants/api/apiPaths';
 import { API_MESSAGES } from '../constants/api/apiMessages';
 
 import type { Category } from '../../types';
+import { getAuthenticatedUserId } from './userService';
 
 // Fetch all categories for a user
 export async function getCategories({
@@ -15,6 +18,8 @@ export async function getCategories({
   completed: boolean;
   deleted?: boolean;
 }): Promise<Category[]> {
+
+
   const { data, error } = 
     await supabase.rpc
       (
@@ -27,6 +32,31 @@ export async function getCategories({
       );
   if (error) throw error;
   return data as Category[];
+}
+
+export async function getCategoryById({
+  categoryId,
+  ownerId,
+  completed,
+  deleted
+}: {
+  categoryId: number,
+  ownerId: number,
+  completed?: boolean,
+  deleted?: boolean
+}): Promise<Category | null> {
+  const { data, error } = await supabase.rpc(
+    'get_categories_with_has_active_todos',
+    {
+      p_owner_id: ownerId,
+      p_category_id: categoryId,
+      p_completed: completed ?? false,
+      p_deleted: deleted ?? false,
+    }
+  );
+  if (error) throw error;
+
+  return data?.[0] ?? null;
 }
 
 
@@ -86,4 +116,27 @@ export async function deleteCategory(categoryId: number): Promise<DeleteCategory
       `${API_MESSAGES.CATEGORIES.COULD_NOT_DELETE_CATEGORY(categoryId)}`);
   }
   return responseBody;
+}
+
+// Change the completion status of a category and its todos
+// @todo shall this really returns a category - it sounds strange
+export async function updateCategoryCompletion({
+  categoryId,
+  completed
+}: {
+  categoryId: number,
+  completed: boolean
+}): Promise<void> {
+
+  const userId = await getAuthenticatedUserId();
+  
+  const { error } = await supabaseAdmin.rpc('update_category_completion', {
+    p_category_id: categoryId,
+    p_owner_id: userId,
+    p_completed: completed,
+  });
+
+  if (error) throw error;
+
+
 }

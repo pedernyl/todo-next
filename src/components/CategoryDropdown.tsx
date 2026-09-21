@@ -18,7 +18,7 @@ interface CategoryDropdownProps {
   selectedCategory: string;
   onDeleteCategory: (categoryId: string) => void;
   onEditCategory?: (id: string) => void;
-  onCompleteCategory?: (id: string) => void;
+  onToggleCompleted?: (id: string, completed: boolean) => void;
 }
 
 const CategoryDropdown: React.FC<CategoryDropdownProps> = ({
@@ -28,7 +28,7 @@ const CategoryDropdown: React.FC<CategoryDropdownProps> = ({
   selectedCategory,
   onDeleteCategory = () => {},
   onEditCategory = () => {},
-  onCompleteCategory = () => {},
+  onToggleCompleted = () => {},
 }) => {
   const [newCategory, setNewCategory] = useState("");
   const [newDescription, setNewDescription] = useState("");
@@ -79,7 +79,8 @@ const CategoryDropdown: React.FC<CategoryDropdownProps> = ({
                 title={cat.title}
                 isSelected={selectedCategory === cat.id}
                 hasActiveTodos={cat.hasActiveTodos}
-                onComplete={() => onCompleteCategory(cat.id)}
+                isCompleted={cat.completed}
+                onComplete={() => onToggleCompleted(cat.id, cat.completed)}
                 onEdit={() => onEditCategory(cat.id)}
                 onDelete={() => onDeleteCategory(cat.id)}
               />

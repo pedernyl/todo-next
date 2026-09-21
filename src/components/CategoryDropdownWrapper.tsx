@@ -4,7 +4,7 @@ import type { Category } from "../../types";
 import { useCategoriesActions, useCategoriesData } from "../context/CategoriesContext";
 import CategoryDropdown from "./CategoryDropdown";
 import { useSession } from "next-auth/react";
-import { createCategory, deleteCategory } from "../lib/categoryService";
+import { createCategory, deleteCategory, updateCategoryCompletion } from "../lib/categoryService";
 import { useGlobalBlockingLoader } from "../context/GlobalBlockingLoaderContext";
 import { GLOBAL } from "../constants/global/global";
 import { DROPDOWN_OPTIONS } from "../constants/dropdowns/categoryDropDown";
@@ -44,12 +44,25 @@ const CategoryDropdownWrapper: React.FC<CategoryDropdownWrapperProps> = ({ onCat
 
   const handleDeleteCategory = async (id: string) => {
     if (!userId) return;
-    const response = await runBlocking(
+    await runBlocking(
       async () => deleteCategory(Number(id)),
       { label: GLOBAL.LOADER_LABELS.DELETING_CATEGORY, cancellable: false }
     );
   
     await refreshCategories();
+  };
+
+  const handleToggleCompleted = async (id: string, completed: boolean) => {
+    if (!userId) return;
+    await runBlocking(
+      async () => updateCategoryCompletion({ 
+        categoryId: Number(id), 
+        completed: !completed
+      }),
+      { label: GLOBAL.LOADER_LABELS.UPDATING_CATEGORY, cancellable: false }
+    );
+    await refreshCategories();
+    onCategoryChange(null);
   };
 
   return (
@@ -64,6 +77,7 @@ const CategoryDropdownWrapper: React.FC<CategoryDropdownWrapperProps> = ({ onCat
       onCategorySelect={handleCategorySelect}
       onCreateCategory={handleCreateCategory}
       onDeleteCategory={handleDeleteCategory}
+      onToggleCompleted={handleToggleCompleted}
     />
   );
 };
