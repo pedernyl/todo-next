@@ -31,7 +31,13 @@ const CategoryRow: React.FC<CategoryRowProps> = ({
       }`}
       data-testid={CATEGORY_DROPDOWN_IDS.CATEGORY_OPTION(id)}
     >
-      <span className={isSelected ? "font-semibold text-blue-600" : ""}>
+      <span className={`${
+        isSelected ? "font-semibold text-blue-600" : ""
+      } ${isCompleted ? 
+          "line-through text-gray-500" : 
+          ""
+          }`
+        }>
         {title}
       </span>
 
