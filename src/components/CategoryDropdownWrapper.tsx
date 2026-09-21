@@ -4,7 +4,7 @@ import type { Category } from "../../types";
 import { useCategoriesActions, useCategoriesData } from "../context/CategoriesContext";
 import CategoryDropdown from "./CategoryDropdown";
 import { useSession } from "next-auth/react";
-import { createCategory, deleteCategory, toggleCategoryCompletion } from "../lib/categoryService";
+import { createCategory, deleteCategory, updateCategoryCompletion } from "../lib/categoryService";
 import { useGlobalBlockingLoader } from "../context/GlobalBlockingLoaderContext";
 import { GLOBAL } from "../constants/global/global";
 import { DROPDOWN_OPTIONS } from "../constants/dropdowns/categoryDropDown";
@@ -55,7 +55,7 @@ const CategoryDropdownWrapper: React.FC<CategoryDropdownWrapperProps> = ({ onCat
   const handleToggleCompleted = async (id: string, completed: boolean) => {
     if (!userId) return;
     await runBlocking(
-      async () => toggleCategoryCompletion({ 
+      async () => updateCategoryCompletion({ 
         categoryId: Number(id), 
         completed: !completed
       }),
