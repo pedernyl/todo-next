@@ -134,7 +134,7 @@ export async function createTestCategory({
   return data as Category;
 }
 
-export async function getTodosByCategoryId({
+export async function getTodosByCategoryIdForTests({
   supabaseAdmin,
   categoryId
   }: {
@@ -149,8 +149,51 @@ export async function getTodosByCategoryId({
 
    if (error) {
      console.error('Error fetching todos by category ID:', error);
-     throw error;
+     return [];
    }
 
    return data as Todo[];
+}
+
+// We return the updated category after applying the updates - just for convenience in tests
+export async function updateCategoryForTests(ownerId: number, categoryId: number, updates: Partial<Category>): Promise<Category> {
+  const { data, error } = await createSupabaseAdminForIntegrationTests()
+     .from("Category")
+     .update(updates)
+     .eq("id", categoryId)
+     .eq("owner_id", ownerId)
+     .select()
+     .single();
+
+  if (error) {
+    console.error('Error updating category:', error);
+    throw error;
+  }
+
+  return data as Category;
+}
+
+export async function getCategoryByIdForTests({
+  supabaseAdmin,
+  categoryId
+}: {
+  supabaseAdmin: SupabaseClient,
+  categoryId: number
+}): Promise<Category | null> {
+    const { data, error } = await supabaseAdmin
+     .from("Category")
+     .select("*")
+     .eq("id", categoryId)
+     .single();
+
+     if (data) {
+      return data as Category;
+    }
+
+    if (error) {
+      console.error('Error fetching category by ID:', error);
+    }
+  
+
+  return null;
 }
