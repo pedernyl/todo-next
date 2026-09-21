@@ -19,14 +19,13 @@ export async function getCategories({
   deleted?: boolean;
 }): Promise<Category[]> {
 
-  const userId = await getAuthenticatedUserId();
 
   const { data, error } = 
     await supabase.rpc
       (
         'get_categories_with_has_active_todos', 
         { 
-          p_owner_id: userId, 
+          p_owner_id: ownerId, 
           p_completed: completed,
           p_deleted: deleted || false
         }
@@ -120,17 +119,18 @@ export async function deleteCategory(categoryId: number): Promise<DeleteCategory
 }
 
 // Change the completion status of a category and its todos
-export async function toggleCategoryCompletion({
+// @todo shall this really returns a category - it sounds strange
+export async function updateCategoryCompletion({
   categoryId,
   completed
 }: {
   categoryId: number,
   completed: boolean
-}): Promise<Category> {
+}): Promise<void> {
 
   const userId = await getAuthenticatedUserId();
   
-  const { data, error } = await supabaseAdmin.rpc('toggle_category_completion', {
+  const { error } = await supabaseAdmin.rpc('update_category_completion', {
     p_category_id: categoryId,
     p_owner_id: userId,
     p_completed: completed,
@@ -138,6 +138,5 @@ export async function toggleCategoryCompletion({
 
   if (error) throw error;
 
-  return data as Category;
 
 }
