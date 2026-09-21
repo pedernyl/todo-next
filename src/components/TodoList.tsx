@@ -316,7 +316,7 @@ function computeSiblingReorder(
     return currentSortIndex === null ? 0 : Math.max(currentSortIndex, 0);
   }
 
-  let sortIndexById = new Map<string, number | null>(
+  const sortIndexById = new Map<string, number | null>(
     globalOrder.map((todo) => [normalizeTodoId(todo.id), getNormalizedSortIndex(todo)])
   );
 
