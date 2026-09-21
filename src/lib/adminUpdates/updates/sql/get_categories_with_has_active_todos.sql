@@ -1,9 +1,12 @@
 -- Purpose:
 -- Creates/replaces public.get_categories_with_has_active_todos(owner_id, completed, deleted)
 -- and returns category rows for the owner with an extra computed field:
---   has_active_todos = true when the category has at least one todo in todos_compat
---   where completed = false and deleted_timestamp is null
+--   has_active_todos = true when the category has at least one active todo in todos_compat.
+--   A todo is active when it is not completed and not deleted
+--   (completed = false and deleted_timestamp is null).
 --   and optionally by category ID.
+-- When the user selects "Show completed" (p_completed = true), both completed
+-- and incomplete categories are returned.
 --
 -- How to add this to the database:
 -- Run this SQL directly in the Supabase SQL editor.
