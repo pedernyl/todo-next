@@ -10,7 +10,7 @@
 -- This function is not wired to a corresponding admin update module.
 create or replace function public.get_categories_with_has_active_todos(
   p_owner_id bigint,
-  p_completed boolean,
+  p_completed boolean default null,
   p_deleted boolean default null,
   p_category_id bigint default null
   )
@@ -41,12 +41,15 @@ begin
       select 1
       from todos_compat t
       where t.category_id = c.id
-        and t.completed = false
+        and (t.completed = false
         and t.deleted_timestamp is null
     ) as has_active_todos
   from "Category" c
   where c.owner_id = p_owner_id
-      and c.completed = p_completed
+      and (
+        p_completed is not false 
+        or c.completed = false
+      )
   and (
     (p_deleted = false and c.deleted_timestamp is null)
     or
