@@ -121,6 +121,10 @@ export default function TodoPageClient({
    // Toggle show/hide completed todos
     const handleToggleShowCompleted = () => { 
       setShowCompleted((prev) => !prev);
+      // Handle the case where the selected category is completed and showCompleted is false
+      if (selectedCategory && !showCompleted === false && selectedCategory.completed === true) {
+        setSelectedCategory(null);
+      }
     };
 
   useEffect(() => {

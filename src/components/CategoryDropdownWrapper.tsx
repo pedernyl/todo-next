@@ -62,7 +62,8 @@ const CategoryDropdownWrapper: React.FC<CategoryDropdownWrapperProps> = ({ onCat
       { label: GLOBAL.LOADER_LABELS.UPDATING_CATEGORY, cancellable: false }
     );
     await refreshCategories();
-    onCategoryChange(null);
+    onCategoryChange(selectedCategory ? 
+      categories.find(c => String(c.id) === String(selectedCategory)) || null : null);
   };
 
   return (
