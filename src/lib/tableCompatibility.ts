@@ -1,3 +1,10 @@
+import type { PostgrestError } from "@supabase/supabase-js";
+
+type TableQueryResult<T> = {
+  data: T | null;
+  error: PostgrestError | null;
+};
+
 
 /**
  * Decide whether a query should retry against the legacy table name during a
@@ -8,7 +15,7 @@
  * be using the legacy table while others have already moved to the new name.
  */
 export function shouldFallbackToLegacyTable(
-  error: { code?: string; message?: string } | null | undefined,
+  error: PostgrestError | null,
   legacyTableName: string
 ): boolean {
   if (!error) return false;
@@ -46,11 +53,11 @@ export function shouldFallbackToLegacyTable(
  * Run a query against the preferred table name and retry once against the legacy
  * name if the database indicates the table was renamed.
  */
-export async function queryWithTableFallback(
-  queryFactory: (tableName: string) => PromiseLike<{ data: any; error: any }>,
+export async function queryWithTableFallback<T>(
+  queryFactory: (tableName: string) => PromiseLike<TableQueryResult<T>>,
   preferredTable: string,
   legacyTable: string
-): Promise<{ data: any; error: any }> {
+): Promise<TableQueryResult<T>> {
   const primaryResult = await queryFactory(preferredTable);
 
   if (!shouldFallbackToLegacyTable(primaryResult.error, legacyTable)) {
