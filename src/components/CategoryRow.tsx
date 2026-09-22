@@ -1,7 +1,6 @@
 import React from "react";
 import { CATEGORY_DROPDOWN_IDS, CATEGORY_DROPDOWN_TEXT } from "../constants/dropdowns/categoryDropDown";
 
-//@todo add completed
 interface CategoryRowProps {
   id: string;
   title: string;
