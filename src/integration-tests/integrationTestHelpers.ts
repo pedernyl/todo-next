@@ -25,11 +25,15 @@ export async function deleteTestTodos(
   supabaseAdmin: SupabaseClient,
   ownerId: number
 ): Promise<void> {
-  await queryWithTableFallback(
+  const { error } = await queryWithTableFallback(
     (tableName) => supabaseAdmin.from(tableName).delete().eq("owner_id", ownerId),
     "Todos",
     "todos"
   );
+  if (error) {
+    console.error('Error deleting test todos:', error);
+    throw error;
+  }
 }
 
 /** Creates and caches an admin Supabase client for integration tests. */
@@ -59,11 +63,15 @@ export async function createTestUser(
   id: number,
   email: string
 ): Promise<void> {
-  await queryWithTableFallback(
+  const { error } = await queryWithTableFallback(
     (tableName) => supabaseAdmin.from(tableName).insert({ id, email }),
     "Users",
     "User"
-  );  
+  );
+  if (error) {
+    console.error('Error creating test user:', error);
+    throw error;
+  }
 }
 
 /** Removes a test user from the available user table. */
@@ -71,11 +79,15 @@ export async function deleteTestUser(
   supabaseAdmin: SupabaseClient, 
   id: number
 ): Promise<void> {
-  await queryWithTableFallback(
+  const { error } = await queryWithTableFallback(
     (tableName) => supabaseAdmin.from(tableName).delete().eq("id", id),
     "Users",
     "User"
-  );  
+  );
+  if (error) {
+    console.error('Error deleting test user:', error);
+    throw error;
+  }
 }
 
 // Check if supabase function exists
@@ -149,7 +161,7 @@ export async function getTodosByCategoryIdForTests({
 
    if (error) {
      console.error('Error fetching todos by category ID:', error);
-     return [];
+     throw error;
    }
 
    return data as Todo[];
