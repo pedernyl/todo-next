@@ -120,6 +120,7 @@ describe("Category toggle complete integration test", () => {
         
         const newCompleteStatus = !categoryUpdatedWithNewOwnerId.completed;
         const originalCompleteStatus = categoryUpdatedWithNewOwnerId.completed;
+        const nrOfTodosBefore = todos.length;
 
         // Execute the toggleCategoryCompletion function with wrong ownership
         await expect(
@@ -146,6 +147,8 @@ describe("Category toggle complete integration test", () => {
         expect(todosAfterFailedToggle.every(
             todo => todo.completed === originalCompleteStatus)) 
             .toBe(true);
+
+        expect(todosAfterFailedToggle.length).toBe(nrOfTodosBefore);
     });
 
     
