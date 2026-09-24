@@ -25,7 +25,8 @@ Primary folders:
 - Use branch prefixes exactly as defined in `CONTRIBUTING.md`:
   - `feature/` for new functionality
   - `fix/` for bug fixes
-  - `chore/` for maintenance/docs/refactors
+  - `refactor/` for code restructuring or internal improvements that preserve behavior
+  - `chore/` for maintenance, dependency updates, and documentation
 - Use hyphens (`-`), not underscores (`_`), in branch names.
 - PRs are merged with **Squash and merge** (no merge commits).
 
