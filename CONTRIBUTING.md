@@ -11,14 +11,16 @@ All work happens in short-lived branches that are merged via pull requests.
 ```
 feature/sort-index-for-todos
 fix/csp-header-bug
+refactor/todo-data-service
 chore/update-dependencies
 ```
 
-Use one of three prefixes:
+Use one of four prefixes:
 
 - `feature/` — new functionality
 - `fix/` — bug fix
-- `chore/` — maintenance that does not affect functionality (dependency updates, refactoring, docs)
+- `refactor/` — code restructuring or internal improvements that preserve behavior
+- `chore/` — maintenance that does not affect functionality (dependency updates, docs)
 
 Use hyphens, not underscores.
 
