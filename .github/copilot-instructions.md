@@ -10,6 +10,10 @@ Follow these standing instructions for all changes in this repository.
 - Testing: Vitest (unit/integration) and Playwright (E2E)
 - Deployment target: Vercel
 
+When working with Next.js APIs, configuration, or version-specific behavior, consult the documentation shipped with the installed Next.js version in `node_modules/next/dist/docs` before relying on memory or external documentation. Treat the installed package version as the source of truth.
+
+When writing pull requests, suggesting code changes, answering questions about best practices, or planning implementation, consult the local Next.js documentation and the TypeScript documentation, then search the internet for current official guidance. Match all recommendations to the resolved Next.js and TypeScript versions in `package-lock.json`; do not rely on guidance for a different major version.
+
 Primary folders:
 
 - `src/app` — routes and API handlers
