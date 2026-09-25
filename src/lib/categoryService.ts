@@ -2,11 +2,10 @@
 import { supabase } from './supabaseClient';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { supabaseAdmin } from './supabaseAdminClient';
-import { API_PATHS } from '../constants/api/apiPaths';
-import { API_MESSAGES } from '../constants/api/apiMessages';
 
 import type { Category } from '../../types';
 import { getAuthenticatedUserId } from './userService';
+import { deleteCategory as deleteCategoryAction } from '../app/actions/category'; 
 
 // Fetch all categories for a user
 export async function getCategories({
@@ -93,29 +92,24 @@ export async function categoryHasActiveTodos(
 }
 
 //Delete category  
-type DeleteCategoryResponse =
-  | { status: 200; message: string }
-  | { status: number; error: string };
+type DeleteCategoryResponse = 
+  | { success: boolean; message?: string }
+  | { success: boolean; error: string };
   
 export async function deleteCategory(categoryId: number): Promise<DeleteCategoryResponse> {
   if (!categoryId) {
     throw new Error('Category ID is required');
   }
-  const response = await fetch(API_PATHS.CATEGORIES, {
-    method: 'DELETE',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ id: categoryId  }),
-  });
 
-  const responseBody = await response.json();
-  if (response.status !== 200) {
-    throw new Error(
-      responseBody.error ??
-      `${API_MESSAGES.CATEGORIES.COULD_NOT_DELETE_CATEGORY(String(categoryId))}`);
+  const deleteActionResponse = await deleteCategoryAction(categoryId);
+
+  if (!deleteActionResponse.success) {
+    return { success: false, error: deleteActionResponse.error ?? 'Failed to delete category' };
   }
-  return responseBody;
+
+  return deleteActionResponse;
+
+  
 }
 
 // Change the completion status of a category and its todos
