@@ -1,7 +1,7 @@
-"use server"
-import { supabase } from './supabaseClient';
+"use server";
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { supabaseAdmin } from './supabaseAdminClient';
+import { supabase } from './supabaseClient';
 
 import type { Category } from '../../types';
 import { getAuthenticatedUserId } from './userService';
@@ -113,7 +113,6 @@ export async function deleteCategory(categoryId: number): Promise<DeleteCategory
 }
 
 // Change the completion status of a category and its todos
-// @todo shall this really returns a category - it sounds strange
 export async function updateCategoryCompletion({
   categoryId,
   completed
@@ -132,5 +131,14 @@ export async function updateCategoryCompletion({
 
   if (error) throw error;
 
+}
 
+export async function updateCategoryQuery(categoryId: number, ownerId: number, updateValues: object): Promise<void> {
+  const { error } = await supabase
+    .from('Category')
+    .update(updateValues)
+    .eq('id', categoryId)
+    .eq('owner_id', ownerId);
+
+  if (error) throw error;
 }
