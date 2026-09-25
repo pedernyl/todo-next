@@ -16,6 +16,7 @@ Primary folders:
 - `src/actions` — Server Actions invoked by the React UI
 - `src/components` — UI components
 - `src/lib` — shared server/client logic (including `adminSettings` and `adminUpdates`)
+- `src/lib/queries` — reusable read-only data access grouped by domain
 - `src/unit-tests` and `src/integration-tests` — Vitest suites
 - `tests` — Playwright E2E tests
 
@@ -44,6 +45,14 @@ Primary folders:
 - Name exports for their operation, such as `deleteCategory`.
 - Action modules validate input, authenticate and authorize the current user, and return only what the UI needs.
 - Keep reusable database access in `src/lib`; see `src/actions/README.md` for the complete convention.
+
+## Queries
+
+- Place reusable read-only data access in `src/lib/queries/` and group files by lowercase, singular domain name: `category.ts`, `todo.ts`, or `user.ts`.
+- Do not use redundant file suffixes such as `categoryQuery.ts`.
+- Name exports for the data they retrieve, such as `getCategoriesForUser`.
+- Queries must scope data by owner and enforce authorization when they accept user-controlled input.
+- See `src/lib/queries/README.md` for the complete convention.
 
 ## Versioning and releases
 

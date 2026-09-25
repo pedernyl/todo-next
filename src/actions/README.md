@@ -21,5 +21,5 @@ Name exported functions for the operation they perform, such as `deleteCategory`
 - Start each action module with `"use server"` when Client Components import its actions.
 - Actions must validate input and authenticate and authorize the current user before changing data.
 - Return only the data required by the UI.
-- Keep reusable database queries and lower-level Supabase logic in `src/lib`; actions coordinate a UI mutation rather than replacing the data-access layer.
+- Keep reusable read-only queries in [src/lib/queries/](../lib/queries/README.md) and lower-level Supabase logic in `src/lib`; actions coordinate UI mutations rather than replacing the data-access layer.
 - Keep actions grouped by domain. Split a file only when the domain itself has a clear subdomain.

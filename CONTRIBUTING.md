@@ -173,6 +173,17 @@ Place UI-triggered Server Actions in `src/actions/` and group them by domain.
 
 For the complete convention, see [src/actions/README.md](src/actions/README.md).
 
+## Queries
+
+Place reusable read-only data access in `src/lib/queries/` and group files by domain.
+
+- Name files with the lowercase, singular domain name: `category.ts`, `todo.ts`, or `user.ts`.
+- Do not add a redundant `Query` suffix: use `category.ts`, not `categoryQuery.ts`.
+- Name exports for the data they retrieve, such as `getCategoriesForUser`.
+- Queries must scope data by owner and enforce authorization when they accept user-controlled input.
+
+For the complete convention, see [src/lib/queries/README.md](src/lib/queries/README.md).
+
 ## Admin Settings YAML
 
 Admin settings schemas live in `src/app/admin/settings`.
