@@ -13,7 +13,7 @@ export async function fetchUserIdByEmail(email: email): Promise<number> {
   }
   
   const normalizedEmail = email.trim().toLowerCase();
-  const { data, error } = await queryWithTableFallback(
+  const { data, error } = await queryWithTableFallback<{ id: number }>(
     (tableName) => supabase.from(tableName).select("id").eq("email", normalizedEmail).single(),
     "Users",
     "User"

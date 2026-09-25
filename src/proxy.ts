@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import { isAdminUserEmail } from './lib/adminUsers';
+import path from 'path';
 
 function buildBaseCsp(): string {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -48,27 +49,39 @@ function buildCsp(mode: string, nonce: string) {
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (pathname === '/admin' || pathname.startsWith('/admin/')) {
+  const isProtectedRoute = 
+    pathname === '/' || 
+    pathname === '/admin' || 
+    pathname.startsWith('/admin/');
+  
+
+  if (isProtectedRoute) {
     const token = await getToken({
       req: request,
       secret: process.env.NEXTAUTH_SECRET,
     });
 
-    const email = typeof token?.email === 'string' ? token.email : null;
-
-    if (!email) {
+    if (!token) {
       return NextResponse.redirect(new URL('/login', request.url));
     }
 
-    let canAccessAdmin = false;
-    try {
-      canAccessAdmin = await isAdminUserEmail(email);
-    } catch {
-      canAccessAdmin = false;
-    }
+    if (pathname === '/admin' || pathname.startsWith('/admin/')) {
+      const email = typeof token?.email === 'string' ? token.email : null;
 
-    if (!canAccessAdmin) {
-      return NextResponse.redirect(new URL('/', request.url));
+      if (!email) {
+        return NextResponse.redirect(new URL('/login', request.url));
+      }
+
+      let canAccessAdmin = false;
+      try {
+        canAccessAdmin = await isAdminUserEmail(email);
+      } catch {
+        canAccessAdmin = false;
+      }
+
+      if (!canAccessAdmin) {
+        return NextResponse.redirect(new URL('/', request.url));
+      }
     }
   }
 
