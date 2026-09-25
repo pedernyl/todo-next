@@ -13,6 +13,7 @@ Follow these standing instructions for all changes in this repository.
 Primary folders:
 
 - `src/app` — routes and API handlers
+- `src/actions` — Server Actions invoked by the React UI
 - `src/components` — UI components
 - `src/lib` — shared server/client logic (including `adminSettings` and `adminUpdates`)
 - `src/unit-tests` and `src/integration-tests` — Vitest suites
@@ -35,6 +36,14 @@ Primary folders:
 - Write commit messages in the imperative mood (for example: `Add sort index for todos`).
 - Keep PR titles descriptive because squash merge uses the PR title as the commit message on `main`.
 - Keep changes focused and minimal to the requested task.
+
+## Server Actions
+
+- Place UI-triggered Server Actions in `src/actions/` and group files by lowercase, singular domain name: `category.ts`, `todo.ts`, or `admin/settings.ts`.
+- Do not use redundant file suffixes such as `categoryAction.ts`.
+- Name exports for their operation, such as `deleteCategory`.
+- Action modules validate input, authenticate and authorize the current user, and return only what the UI needs.
+- Keep reusable database access in `src/lib`; see `src/actions/README.md` for the complete convention.
 
 ## Versioning and releases
 

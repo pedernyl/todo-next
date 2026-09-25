@@ -164,6 +164,8 @@ Constants policy (domain separation, IDs vs text, and text reuse rule) is docume
 For Admin Settings YAML format and conventions, see [src/app/admin/settings/README.md](src/app/admin/settings/README.md).
 Reference-only settings examples can be placed in files prefixed with `example.` (for example `src/app/admin/settings/example.app.yaml`); these are ignored by the runtime loader.
 
+For Server Action naming and module conventions, see [src/actions/README.md](src/actions/README.md).
+
 ## Admin SQL-Style Updates
 
 Admin-triggered database updates are implemented as TypeScript update files (not runtime SQL files) and loaded from an **auto-generated, build-time registry** in `src/lib/adminUpdates/updates/registry.generated.ts`. This approach ensures updates are always bundled and loadable in production, even in serverless deployments where the source tree may not exist at runtime.

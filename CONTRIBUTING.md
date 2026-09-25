@@ -162,6 +162,17 @@ Add `data-testid` to meaningful/interactive UI elements (inputs, buttons, links,
 - Avoid hardcoded selectors when a constants-backed id exists.
 - Reuse constants for known user-visible message assertions where practical.
 
+## Server Actions
+
+Place UI-triggered Server Actions in `src/actions/` and group them by domain.
+
+- Name files with the lowercase, singular domain name: `category.ts`, `todo.ts`, or `admin/settings.ts`.
+- Do not add a redundant `Action` suffix: use `category.ts`, not `categoryAction.ts`.
+- Name exports for their operation, such as `deleteCategory`.
+- Keep reusable data access in `src/lib`; actions validate input, authenticate and authorize the user, and coordinate UI mutations.
+
+For the complete convention, see [src/actions/README.md](src/actions/README.md).
+
 ## Admin Settings YAML
 
 Admin settings schemas live in `src/app/admin/settings`.
