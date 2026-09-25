@@ -166,6 +166,8 @@ Reference-only settings examples can be placed in files prefixed with `example.`
 
 For Server Action naming and module conventions, see [src/actions/README.md](src/actions/README.md).
 
+For reusable query naming and data-access conventions, see [src/lib/queries/README.md](src/lib/queries/README.md).
+
 ## Admin SQL-Style Updates
 
 Admin-triggered database updates are implemented as TypeScript update files (not runtime SQL files) and loaded from an **auto-generated, build-time registry** in `src/lib/adminUpdates/updates/registry.generated.ts`. This approach ensures updates are always bundled and loadable in production, even in serverless deployments where the source tree may not exist at runtime.
