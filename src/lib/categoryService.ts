@@ -1,11 +1,13 @@
-"use server";
+
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { supabaseAdmin } from './supabaseAdminClient';
 import { supabase } from './supabaseClient';
 
 import type { Category } from '../../types';
-import { getAuthenticatedUserId } from './userService';
-import { deleteCategory as deleteCategoryAction } from '../app/actions/category'; 
+import { 
+  createCategory as createCategoryAction,
+  deleteCategory as deleteCategoryAction,
+  updateCategoryCompletion as updateCategoryCompletionAction
+} from '../app/actions/category'; 
 
 // Fetch all categories for a user
 export async function getCategories({
@@ -60,16 +62,8 @@ export async function getCategoryById({
 
 
 // Create a new category
-export async function createCategory(title: string, owner_id: number, description?: string): Promise<Category> {
-  const { data, error } = await supabase
-    .from('Category')
-    .insert([{ title, owner_id, description }])
-    .select()
-    .single();
-  if (error) throw error;
-  
-  data.has_active_todos = false; // Newly created categories won't have active todos
-  return data as Category;
+export async function createCategory(title: string, description?: string): Promise<Category> {
+  return await createCategoryAction(title, description);
 }
 
 export async function categoryHasActiveTodos(
@@ -121,14 +115,9 @@ export async function updateCategoryCompletion({
   completed: boolean
 }): Promise<void> {
 
-  const userId = await getAuthenticatedUserId();
-  
-  const { error } = await supabaseAdmin.rpc('update_category_completion', {
-    p_category_id: categoryId,
-    p_owner_id: userId,
-    p_completed: completed,
-  });
-
-  if (error) throw error;
+  const result = await updateCategoryCompletionAction({ categoryId, completed });
+  if (!result.success) {
+    throw new Error(result.error ?? 'Failed to update category completion');
+  }
 
 }

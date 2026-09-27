@@ -34,9 +34,11 @@ const CategoryDropdownWrapper: React.FC<CategoryDropdownWrapperProps> = ({ onCat
   const handleCreateCategory = async (name: string, description?: string) => {
     if (!userId) return;
     const newCat = await runBlocking(
-      async () => createCategory(name, userId, description),
+      async () => createCategory(name, description),
       { label: GLOBAL.LOADER_LABELS.CREATING_CATEGORY, cancellable: false }
     );
+
+    if (!newCat) return;
     await refreshCategories();
     setSelectedCategory(newCat.id);
     onCategoryChange(newCat);
