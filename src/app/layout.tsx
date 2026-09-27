@@ -2,7 +2,6 @@ import "./globals.css";
 import Providers from './providers';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../lib/authOptions";
-import { fetchUserIdByEmail } from "@/lib/userService";
 import type { ReactNode } from "react";
 import { cookies } from 'next/headers';
 import { CspNonceProvider } from '../context/CspNonceContext';
