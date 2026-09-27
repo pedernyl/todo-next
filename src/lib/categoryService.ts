@@ -87,8 +87,8 @@ export async function categoryHasActiveTodos(
 
 //Delete category  
 type DeleteCategoryResponse = 
-  | { success: boolean; message?: string }
-  | { success: boolean; error: string };
+  | { success: true; message?: string }
+  | { success: false; error?: string };
   
 export async function deleteCategory(categoryId: number): Promise<DeleteCategoryResponse> {
   if (!categoryId) {
