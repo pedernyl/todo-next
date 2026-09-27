@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import { isAdminUserEmail } from './lib/adminUsers';
-import path from 'path';
 
 function buildBaseCsp(): string {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
