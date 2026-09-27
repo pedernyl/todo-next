@@ -1,7 +1,8 @@
 "use server"
 
-import { categoryHasActiveTodos, updateCategoryQuery } from "@/lib/categoryService";
+import { categoryHasActiveTodos } from "@/lib/categoryService";
 import { supabaseAdmin } from "@/lib/supabaseAdminClient";
+import { supabase } from "@/lib/supabaseClient";
 import { isUserAuthenticated, getAuthenticatedUserId } from "@/lib/userService";
 
 type CategoryActionResult = { success: boolean; error?: string };
@@ -30,4 +31,18 @@ export async function deleteCategory(categoryId: string | number): Promise<Categ
 
     return { success: true };
 
+}
+
+async function updateCategoryQuery(categoryId: number, ownerId: number, updateValues: object): Promise<void> {
+  if (!isUserAuthenticated()) {
+      throw new Error('User not authenticated');
+  }
+  
+  const { error } = await supabase
+    .from('Category')
+    .update(updateValues)
+    .eq('id', categoryId)
+    .eq('owner_id', ownerId);
+
+  if (error) throw error;
 }

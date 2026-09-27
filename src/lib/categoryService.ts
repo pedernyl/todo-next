@@ -132,13 +132,3 @@ export async function updateCategoryCompletion({
   if (error) throw error;
 
 }
-
-export async function updateCategoryQuery(categoryId: number, ownerId: number, updateValues: object): Promise<void> {
-  const { error } = await supabase
-    .from('Category')
-    .update(updateValues)
-    .eq('id', categoryId)
-    .eq('owner_id', ownerId);
-
-  if (error) throw error;
-}
