@@ -32,7 +32,7 @@ npx playwright test tests/auth-setup.test.ts --headed --timeout=60000
 - When the test completes, a `storageState.json` file will be created in the project root.
 
 ## 2. Run All E2E Tests (excluding login script)
-After you have created `storageState.json`, run all other non-api Playwright tests with:
+After you have created `storageState.json`, run all other Playwright tests with:
 
 ```
 npx playwright test tests/*.spec.ts --headed
@@ -42,11 +42,6 @@ npx playwright test tests/*.spec.ts --headed
 - If you need to re-authenticate, repeat step 1.
 
 ---
-
-## 3. Run API tests
-We have seperated API tests that we test our endpoints. Run run this use:
-npx playwright test tests/api/*
-You also need to set: PLAYWRIGHT_TEST_BASE_URL in your .env file.
 
 **Note:**
 - Do not commit `storageState.json` to version control (it is in `.gitignore`).
@@ -64,6 +59,5 @@ When creating or updating Playwright tests in this folder:
 	- IDs from `..._IDS` constants
 	- Visible copy from `..._TEXT` / `GLOBAL.UI_TEXT` / `GLOBAL.LOADER_LABELS` when reused
 - If a text value is used more than once in tests or app code, extract it to a constant.
-- Reuse shared API route constants (`API_PATHS`) for response matching and route checks.
 
 See the full policy in the "Constants Policy" section in [CONTRIBUTING.md](../CONTRIBUTING.md).

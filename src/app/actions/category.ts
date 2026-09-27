@@ -8,9 +8,13 @@ import type { Category } from '../../../types';
 
 type CategoryActionResult = { success: boolean; error?: string };
 
-export async function deleteCategory(categoryId: string | number): Promise<CategoryActionResult> {
+export async function deleteCategory(categoryId: number): Promise<CategoryActionResult> {
     if (!isUserAuthenticated()) {
       return { success: false, error: 'User not authenticated' };
+    }
+
+    if (typeof categoryId !== 'number' || isNaN(categoryId)) {
+      return { success: false, error: 'Invalid category ID' };
     }
 
     const ownerId = await getAuthenticatedUserId(); 

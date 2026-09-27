@@ -2,19 +2,18 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { assertIntegrationTestDbEnvIsActive } from "./assertIntegrationTestDbEnv";
 import { cleanupTestOwnerData, createSupabaseAdminForIntegrationTests, createTestUser } from "./integrationTestHelpers";
 import { createTodo } from "../lib/dataService";
-import { createCategory } from "../lib/categoryService";
-import { NextRequest } from "next/server";
-import { DELETE } from "../app/api/categories/route";
+import { createCategory, deleteCategory } from "../lib/categoryService";
 import type { Category } from '../../types';
-import { API_MESSAGES } from "@/constants/api/apiMessages";
-import { API_PATHS } from "@/constants/api/apiPaths";
 
 const TEST_OWNER_ID = 999003;
 const TEST_OWNER_EMAIL = "category-delete-integration-test@example.com";
 
 vi.mock('../lib/appServerSession', () => ({ 
   getAppServerSession: vi.fn(async () => ({
-    user: { email: TEST_OWNER_EMAIL },
+    user: { 
+      email: TEST_OWNER_EMAIL,
+      id: TEST_OWNER_ID,
+    },
   })),
 }));
 
@@ -33,7 +32,9 @@ describe("Category deletion integration test", () => {
 
         await createTestUser(supabaseAdmin, TEST_OWNER_ID, TEST_OWNER_EMAIL);
 
-        category = await createCategory('categoryDeleteIntegrationTest', TEST_OWNER_ID);
+        // we need to mock the app server session to simulate the logged-in user
+
+        category = await createCategory('categoryDeleteIntegrationTest');
         await createTodo({ 
             title: 'todoDeleteIntegrationTest', 
             description: 'Test description', 
@@ -42,48 +43,28 @@ describe("Category deletion integration test", () => {
       
     });
 
-    it("Should return 400 when sending an non numeric category id", async () => {
-        const request = await new NextRequest(
-          process.env.NEXT_PUBLIC_BASE_URL + API_PATHS.CATEGORIES,
-          {
-            method: 'DELETE',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ id: "non-numeric-id" }) 
-          }
-        );
-
-        const response = await DELETE(request);
+    it("Should return error when sending an non numeric category id", async () => {
+        //@ts-expect-error TS is complaining because deleteCategory expects a number, but we're intentionally passing a string to test error handling.
+        const result = await deleteCategory("non-numeric-id");
         
-        expect(response.status).toBe(400);
-        const body = await response.json();
-        expect(body.error).toBe(
-            API_MESSAGES.CATEGORIES.INVALID_CATEGORY_ID
-        );
+        if (result.success) {
+          throw new Error("Expected deletion to fail for non-numeric category ID");
+        }
+
+        
+        expect(result.error).toBe('Invalid category ID');
     });
     
     it("should not allow deletion of a category with active todos", async () => {
         if (!category) throw new Error("Category not created");
 
-        const request = await new NextRequest(
-          process.env.NEXT_PUBLIC_BASE_URL + API_PATHS.CATEGORIES,
-          {
-            method: 'DELETE',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ id: category.id }) 
-          }
-        );
-
-        const response = await DELETE(request);
+        const result = await deleteCategory(Number(category.id));
         
-        expect(response.status).toBe(409);
-        const body = await response.json();
-        expect(body.error).toBe(
-            API_MESSAGES.CATEGORIES.CATEGORY_HAS_ACTIVE_TODOS
-        );
+        if (result.success) {
+          throw new Error("Expected deletion to fail for category with active todos");
+        }
+
+        expect(result.error).toBe('Category has active todos');
     });
 
     afterAll(async () => {
