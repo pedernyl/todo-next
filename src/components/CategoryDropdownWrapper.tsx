@@ -73,6 +73,9 @@ const CategoryDropdownWrapper: React.FC<CategoryDropdownWrapperProps> = ({ onCat
       if (!showCompleted && !cat.completed) {
         setSelectedCategory("");
         onCategoryChange(null);
+      } else {
+        setSelectedCategory(String(cat.id));
+        onCategoryChange(cat);
       }
     }
   };
