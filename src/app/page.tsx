@@ -45,7 +45,7 @@ export default async function Home() {
   const appSettings = await getAppSettings();
   const testDbActive = isTestDbActive();
   const titleClassName = testDbActive
-    ? 'bg-emerald-600 text-white border-emerald-700'
+    ? 'bg-transparent max-w-6xl border-emerald-700'
     : 'bg-transparent text-slate-800 border-transparent';
 
   return (
