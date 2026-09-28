@@ -217,6 +217,7 @@ export default function TodoPageClient({
       <div className="absolute right-10 top-2 z-10">
         <CategoryDropdownWrapper 
           onCategoryChange={setSelectedCategory}
+          showCompleted={showCompleted}
         />
       </div>
       <TodoList 
