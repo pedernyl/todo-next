@@ -11,9 +11,10 @@ import { DROPDOWN_OPTIONS } from "../constants/dropdowns/categoryDropDown";
 
 interface CategoryDropdownWrapperProps {
   onCategoryChange: (category: Category | null) => void;
+  showCompleted: boolean;
 }
 
-const CategoryDropdownWrapper: React.FC<CategoryDropdownWrapperProps> = ({ onCategoryChange }) => {
+const CategoryDropdownWrapper: React.FC<CategoryDropdownWrapperProps> = ({ onCategoryChange, showCompleted }) => {
   const { data: session } = useSession();
   const userId = session?.user?.id;
   const categories = useCategoriesData();
@@ -64,8 +65,16 @@ const CategoryDropdownWrapper: React.FC<CategoryDropdownWrapperProps> = ({ onCat
       { label: GLOBAL.LOADER_LABELS.UPDATING_CATEGORY, cancellable: false }
     );
     await refreshCategories();
-    onCategoryChange(selectedCategory ? 
-      categories.find(c => String(c.id) === String(selectedCategory)) || null : null);
+    // check if the selected category shall be removed or not
+    const cat = categories.find(c => String(c.id) === String(selectedCategory)) || null;
+    // We need to have a check to see if the selected category should be removed based on the showCompleted flag and its completion status.
+    // Here cat.completed has earlier value because it hasn't been updated yet after the toggle.
+    if (cat) {
+      if (!showCompleted && !cat.completed) {
+        setSelectedCategory("");
+        onCategoryChange(null);
+      }
+    }
   };
 
   return (
