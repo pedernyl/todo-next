@@ -65,6 +65,7 @@ const CategoryDropdownWrapper: React.FC<CategoryDropdownWrapperProps> = ({ onCat
       { label: GLOBAL.LOADER_LABELS.UPDATING_CATEGORY, cancellable: false }
     );
     await refreshCategories();
+    if (id != selectedCategory) return;
     // check if the selected category shall be removed or not
     const cat = categories.find(c => String(c.id) === String(selectedCategory)) || null;
     // We need to have a check to see if the selected category should be removed based on the showCompleted flag and its completion status.
