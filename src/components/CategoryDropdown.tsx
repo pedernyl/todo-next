@@ -3,7 +3,6 @@ import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from "@headless
 import CategoryRow from "./CategoryRow";
 import { CATEGORY_DROPDOWN_IDS, CATEGORY_DROPDOWN_TEXT, DROPDOWN_OPTIONS } 
   from "../constants/dropdowns/categoryDropDown";
-import type { Category } from "../../types";
 
 interface CategoryDropdownProps {
   categories: { 
