@@ -3,6 +3,7 @@ import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from "@headless
 import CategoryRow from "./CategoryRow";
 import { CATEGORY_DROPDOWN_IDS, CATEGORY_DROPDOWN_TEXT, DROPDOWN_OPTIONS } 
   from "../constants/dropdowns/categoryDropDown";
+import type { Category } from "../../types";
 
 interface CategoryDropdownProps {
   categories: { 
@@ -25,7 +26,7 @@ const CategoryDropdown: React.FC<CategoryDropdownProps> = ({
   categories,
   onCategorySelect,
   onCreateCategory,
-  selectedCategory,
+  selectedCategory: selectedCategoryId,
   isCreatePanelOpenProp,
   onDeleteCategory = () => {},
   onEditCategory = () => {},
@@ -34,6 +35,8 @@ const CategoryDropdown: React.FC<CategoryDropdownProps> = ({
   const [newCategory, setNewCategory] = useState("");
   const [newDescription, setNewDescription] = useState("");
   const [isCreatePanelOpen, setIsCreatePanelOpen] = useState(isCreatePanelOpenProp);
+
+  const selectedCategory = categories.find(c => String(c.id) === String(selectedCategoryId));
 
   const handleCreate = () => {
     if (newCategory.trim()) {
@@ -53,19 +56,21 @@ const CategoryDropdown: React.FC<CategoryDropdownProps> = ({
     }
   };
 
+  const completedClass = selectedCategory?.completed ? "line-through text-gray-500" : "";
+
   return (
     <div className="relative inline-block text-left" data-testid={CATEGORY_DROPDOWN_IDS.ROOT}>
       <Listbox
-        value={selectedCategory}
+        value={selectedCategoryId}
         onChange={handleCategorySelect}
       >
         <ListboxButton
-          className="px-4 py-2 rounded-lg border border-gray-300 bg-white shadow text-sm focus:outline-none hover:bg-gray-50"
+          className={`px-4 py-2 rounded-lg border border-gray-300 bg-white shadow text-sm focus:outline-none hover:bg-gray-50 ${completedClass}`}
           data-testid={CATEGORY_DROPDOWN_IDS.TRIGGER_BUTTON}
         >
-          {selectedCategory === DROPDOWN_OPTIONS.ALL_CATEGORIES.value
+          {selectedCategoryId === DROPDOWN_OPTIONS.ALL_CATEGORIES.value
             ? DROPDOWN_OPTIONS.ALL_CATEGORIES.label
-            : categories.find(c => String(c.id) === String(selectedCategory))?.title 
+            : selectedCategory?.title
               || DROPDOWN_OPTIONS.ALL_CATEGORIES.label}
         </ListboxButton>
         <ListboxOptions
@@ -87,7 +92,7 @@ const CategoryDropdown: React.FC<CategoryDropdownProps> = ({
               <CategoryRow
                 id={cat.id}
                 title={cat.title}
-                isSelected={selectedCategory === cat.id}
+                isSelected={selectedCategoryId === cat.id}
                 hasActiveTodos={cat.hasActiveTodos}
                 isCompleted={cat.completed}
                 onComplete={() => onToggleCompleted(cat.id, cat.completed)}
