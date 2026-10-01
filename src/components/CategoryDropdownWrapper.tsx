@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React from "react";
 import type { Category } from "../../types";
 import { useCategoriesActions, useCategoriesData } from "../context/CategoriesContext";
 import CategoryDropdown from "./CategoryDropdown";
@@ -14,6 +14,7 @@ interface CategoryDropdownWrapperProps {
   selectedCategory: Category | string | null;
   selectedCategoryId: string | null;
   showCompleted: boolean;
+  setUpdateTodos: (updateTodos: boolean) => void;
 }
 
 const CategoryDropdownWrapper: React.FC<CategoryDropdownWrapperProps> = (
@@ -21,7 +22,8 @@ const CategoryDropdownWrapper: React.FC<CategoryDropdownWrapperProps> = (
     onCategoryChange,
     selectedCategory,
     selectedCategoryId,
-    showCompleted 
+    showCompleted,
+    setUpdateTodos
 
   }) => {
   const { data: session } = useSession();
@@ -74,21 +76,26 @@ const CategoryDropdownWrapper: React.FC<CategoryDropdownWrapperProps> = (
       { label: GLOBAL.LOADER_LABELS.UPDATING_CATEGORY, cancellable: false }
     );
     await refreshCategories();
-    
-    if (Number(id) != Number(selectedCategory)) {
-      return;
-    }
-    // check if the selected category shall be removed or not
-    const cat = categories.find(c => String(c.id) === String(selectedCategory)) || null;
-    // We need to have a check to see if the selected category should be removed based on the showCompleted flag and its completion status.
-    // Here cat.completed has earlier value because it hasn't been updated yet after the toggle.
-    if (cat) {
-      if (!showCompleted && !cat.completed) {
-        onCategoryChange(null);
-      } else {
-        onCategoryChange(cat);
+
+    // Check if the selected category should be deselected based on its completion status and the showCompleted flag.
+    if (selectedCategory && typeof selectedCategory === "object") {
+      if (selectedCategory.id !== id) {
+         return; 
       }
+      // Because it is a toggle action, selectedCategory.completed still holds the previous value. That is not completed yet.
+       if (!showCompleted && !selectedCategory.completed) {
+        onCategoryChange(null);
+        return;
+        // If the category is now completed and showCompleted is true, we should update the todos.
+      } else if(showCompleted && selectedCategory.completed) {
+        setUpdateTodos(true);
+        return;
+      }
+
     }
+
+    onCategoryChange(selectedCategory);
+  
   };
 
 
