@@ -20,13 +20,13 @@ export default function TodoPageClient({
   defaultPageSize,
   }: { initialTodos: Todo[]; initialCategories: Category[]; defaultPageSize: number }) {
   const [todos, setTodos] = useState<Todo[]>(initialTodos);
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [pageSize, setPageSize] = useState<number>(defaultPageSize);
   const [offset, setOffset] = useState<number>(initialTodos.length);
   const [hasMore, setHasMore] = useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
   const [showCompleted, setShowCompleted] = useState<boolean>(false);
+  const [updateTodos, setUpdateTodos] = useState<boolean>(false);
   const { data: session } = useSession();
   const userId = session?.user?.id; 
   const { runBlockingFetch } = useGlobalBlockingLoader();
@@ -39,7 +39,11 @@ export default function TodoPageClient({
   const isRefreshingRef = useRef<boolean>(false);
   const refreshSeqRef = useRef<number>(0);
   const showCompletedRef = useRef<boolean>(showCompleted);
-  const selectedCategoryIdRef = useRef<string | null>(selectedCategory?.id ?? null);
+  const [selectedCategory, setSelectedCategory] = useState<Category |string |null>(null);
+  const selectedCategoryIdRef = useRef<string | null>(
+    typeof selectedCategory === "string" ? 
+    selectedCategory : selectedCategory?.id ?? null
+  );
   const shouldUseInitialTodosRef  = useRef(true);
   
   useEffect(() => {
@@ -59,9 +63,17 @@ export default function TodoPageClient({
   }, [isRefreshing]);
 
   useEffect(() => {
-    selectedCategoryIdRef.current = selectedCategory?.id ?? null;
+    selectedCategoryIdRef.current = typeof selectedCategory === "string" ? 
+      selectedCategory : selectedCategory?.id ?? null;
   }, [selectedCategory]);
 
+  useEffect(() => {
+    if (updateTodos) {
+      setUpdateTodos(false);
+    }
+  }, [updateTodos]);
+
+ 
   const loadMore = useCallback(async () => {
     if (!userId || isRefreshingRef.current || !hasMoreRef.current || isLoadingMoreRef.current) return;
 
@@ -122,7 +134,9 @@ export default function TodoPageClient({
     const handleToggleShowCompleted = () => { 
       setShowCompleted((prev) => !prev);
       // Handle the case where the selected category is completed and showCompleted is false
-      if (selectedCategory && !showCompleted === false && selectedCategory.completed === true) {
+      if (selectedCategory && !showCompleted === false && 
+        (typeof selectedCategory === "object" && selectedCategory.completed === true)) {
+
         setSelectedCategory(null);
       }
     };
@@ -130,9 +144,9 @@ export default function TodoPageClient({
   useEffect(() => {
     if (!userId) return;
     if (shouldUseInitialTodosRef .current &&
-      selectedCategory === null &&
+      (selectedCategory === null &&
       !showCompleted
-    ) {
+    )) {
       shouldUseInitialTodosRef.current = false;
       return;
     }
@@ -152,8 +166,10 @@ export default function TodoPageClient({
       showCompleted: String(showCompletedRef.current),
     });
 
-    if (selectedCategory && selectedCategory.id) {
+    if (selectedCategory && (typeof selectedCategory === "object" && selectedCategory.id)) {
       params.set("category_id", selectedCategory.id);
+    } else if (typeof selectedCategory === "string") {
+      params.set("category_id", selectedCategory);
     }
 
     const url = `${API_PATHS.TODOS}?${params.toString()}`;
@@ -188,7 +204,7 @@ export default function TodoPageClient({
           setIsRefreshing(false);
         }
       });
-  }, [selectedCategory, userId, showCompleted, runBlockingFetch]);
+  }, [selectedCategory, userId, showCompleted, runBlockingFetch, updateTodos]);
 
   useEffect(() => {
     if (isRefreshing) return;
@@ -217,7 +233,10 @@ export default function TodoPageClient({
       <div className="absolute right-10 top-2 z-10">
         <CategoryDropdownWrapper 
           onCategoryChange={setSelectedCategory}
+          selectedCategory={selectedCategory}
+          selectedCategoryId={selectedCategoryIdRef.current}
           showCompleted={showCompleted}
+          setUpdateTodos={setUpdateTodos}
         />
       </div>
       <TodoList 

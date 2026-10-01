@@ -30,7 +30,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { useGlobalBlockingLoader } from "../context/GlobalBlockingLoaderContext";
 interface TodoListProps {
   initialTodos: Todo[];
-  selectedCategory?: Category | null;
+  selectedCategory?: Category | string | null;
   showCompleted: boolean;
   handleToggleShowCompleted: () => void;
 }
@@ -660,8 +660,10 @@ export default function TodoList(
   const fetchTodos = async (showCompleted: boolean) => {
     try {
       const params = new URLSearchParams({ showCompleted: String(showCompleted) });
-      if (selectedCategory?.id) {
+      if (typeof selectedCategory === "object" && selectedCategory?.id) {
         params.set("category_id", selectedCategory.id);
+      } else if (typeof selectedCategory === "string") {
+        params.set("category_id", selectedCategory);
       }
       const response = await runBlockingFetch(
         `${API_PATHS.TODOS}?${params.toString()}`,
@@ -738,7 +740,7 @@ export default function TodoList(
   const handleReorder = async (movedId: string, targetId: string, dropPosition: DropPosition) => {
     if (!movedId || !targetId) return;
 
-    const categoryScope = selectedCategory?.id;
+    const categoryScope = typeof selectedCategory === "object" ? selectedCategory?.id : selectedCategory;
     // Rebuild tree from current todos to avoid stale closure issues
     const currentTree = buildTodoTree([...todos]);
     const result = computeSiblingReorder(todos, movedId, targetId, dropPosition, currentTree, categoryScope);
@@ -880,7 +882,7 @@ export default function TodoList(
           editTodo={editTodo}
           parentTodo={parentTodo}
           userId={userId}
-          categoryId={selectedCategory?.id}
+          categoryId={typeof selectedCategory === "object" ? selectedCategory?.id : selectedCategory}
           onTodoUpdated={async () => {
             await fetchTodos(showCompleted);
             setEditTodo(null);

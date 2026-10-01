@@ -4,7 +4,6 @@ import CategoryRow from "./CategoryRow";
 import { CATEGORY_DROPDOWN_IDS, CATEGORY_DROPDOWN_TEXT, DROPDOWN_OPTIONS } 
   from "../constants/dropdowns/categoryDropDown";
 
-//@todo add hasActiveTodos, completed, deleted
 interface CategoryDropdownProps {
   categories: { 
     id: string; 
@@ -16,6 +15,7 @@ interface CategoryDropdownProps {
   onCategorySelect: (categoryId: string) => void;
   onCreateCategory: (title: string, description?: string) => void;
   selectedCategory: string;
+  isCreatePanelOpenProp: boolean;
   onDeleteCategory: (categoryId: string) => void;
   onEditCategory?: (id: string) => void;
   onToggleCompleted?: (id: string, completed: boolean) => void;
@@ -25,37 +25,51 @@ const CategoryDropdown: React.FC<CategoryDropdownProps> = ({
   categories,
   onCategorySelect,
   onCreateCategory,
-  selectedCategory,
+  selectedCategory: selectedCategoryId,
+  isCreatePanelOpenProp,
   onDeleteCategory = () => {},
   onEditCategory = () => {},
   onToggleCompleted = () => {},
 }) => {
   const [newCategory, setNewCategory] = useState("");
   const [newDescription, setNewDescription] = useState("");
+  const [isCreatePanelOpen, setIsCreatePanelOpen] = useState(isCreatePanelOpenProp);
+
+  const selectedCategory = categories.find(c => String(c.id) === String(selectedCategoryId));
 
   const handleCreate = () => {
     if (newCategory.trim()) {
       onCreateCategory(newCategory.trim(), newDescription.trim());
       setNewCategory("");
       setNewDescription("");
+      setIsCreatePanelOpen(false);
     }
   };
 
-  //@todo create handeDelete 
+  const handleCategorySelect = (categoryId: string) => {
+    if (categoryId === DROPDOWN_OPTIONS.CREATE_CATEGORY.value) {
+      setIsCreatePanelOpen(true);
+    } else {
+      setIsCreatePanelOpen(false);
+      onCategorySelect(categoryId);
+    }
+  };
+
+  const completedClass = selectedCategory?.completed ? "line-through text-gray-500" : "";
 
   return (
     <div className="relative inline-block text-left" data-testid={CATEGORY_DROPDOWN_IDS.ROOT}>
       <Listbox
-        value={selectedCategory}
-        onChange={onCategorySelect}
+        value={selectedCategoryId}
+        onChange={handleCategorySelect}
       >
         <ListboxButton
-          className="px-4 py-2 rounded-lg border border-gray-300 bg-white shadow text-sm focus:outline-none hover:bg-gray-50"
+          className={`px-4 py-2 rounded-lg border border-gray-300 bg-white shadow text-sm focus:outline-none hover:bg-gray-50 ${completedClass}`}
           data-testid={CATEGORY_DROPDOWN_IDS.TRIGGER_BUTTON}
         >
-          {selectedCategory === DROPDOWN_OPTIONS.ALL_CATEGORIES.value
+          {selectedCategoryId === DROPDOWN_OPTIONS.ALL_CATEGORIES.value
             ? DROPDOWN_OPTIONS.ALL_CATEGORIES.label
-            : categories.find(c => String(c.id) === String(selectedCategory))?.title 
+            : selectedCategory?.title
               || DROPDOWN_OPTIONS.ALL_CATEGORIES.label}
         </ListboxButton>
         <ListboxOptions
@@ -77,7 +91,7 @@ const CategoryDropdown: React.FC<CategoryDropdownProps> = ({
               <CategoryRow
                 id={cat.id}
                 title={cat.title}
-                isSelected={selectedCategory === cat.id}
+                isSelected={selectedCategoryId === cat.id}
                 hasActiveTodos={cat.hasActiveTodos}
                 isCompleted={cat.completed}
                 onComplete={() => onToggleCompleted(cat.id, cat.completed)}
@@ -99,7 +113,7 @@ const CategoryDropdown: React.FC<CategoryDropdownProps> = ({
       </Listbox>
 
       {/* Create category panel (existing) */}
-      {selectedCategory === DROPDOWN_OPTIONS.CREATE_CATEGORY.value && (
+      {isCreatePanelOpen && (
         <div
           className="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded shadow p-2 z-20"
           data-testid={CATEGORY_DROPDOWN_IDS.CREATE_CATEGORY_PANEL}
