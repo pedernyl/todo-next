@@ -8,7 +8,6 @@ import { API_PATHS } from "../constants/api/apiPaths";
 import type { Todo, Category } from "../../types";
 import { useGlobalBlockingLoader } from "../context/GlobalBlockingLoaderContext";
 import { GLOBAL } from "../constants/global/global";
-import { DROPDOWN_OPTIONS } from "@/constants/dropdowns/categoryDropDown";
 
 type TodosResponse = {
   todos: Todo[];
@@ -21,13 +20,13 @@ export default function TodoPageClient({
   defaultPageSize,
   }: { initialTodos: Todo[]; initialCategories: Category[]; defaultPageSize: number }) {
   const [todos, setTodos] = useState<Todo[]>(initialTodos);
-  const [selectedCategory, setSelectedCategory] = useState<Category |string |null>(null);
   const [pageSize, setPageSize] = useState<number>(defaultPageSize);
   const [offset, setOffset] = useState<number>(initialTodos.length);
   const [hasMore, setHasMore] = useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
   const [showCompleted, setShowCompleted] = useState<boolean>(false);
+  const [updateTodos, setUpdateTodos] = useState<boolean>(false);
   const { data: session } = useSession();
   const userId = session?.user?.id; 
   const { runBlockingFetch } = useGlobalBlockingLoader();
@@ -40,6 +39,7 @@ export default function TodoPageClient({
   const isRefreshingRef = useRef<boolean>(false);
   const refreshSeqRef = useRef<number>(0);
   const showCompletedRef = useRef<boolean>(showCompleted);
+  const [selectedCategory, setSelectedCategory] = useState<Category |string |null>(null);
   const selectedCategoryIdRef = useRef<string | null>(
     typeof selectedCategory === "string" ? 
     selectedCategory : selectedCategory?.id ?? null
@@ -67,6 +67,13 @@ export default function TodoPageClient({
       selectedCategory : selectedCategory?.id ?? null;
   }, [selectedCategory]);
 
+  useEffect(() => {
+    if (updateTodos) {
+      setUpdateTodos(false);
+    }
+  }, [updateTodos]);
+
+ 
   const loadMore = useCallback(async () => {
     if (!userId || isRefreshingRef.current || !hasMoreRef.current || isLoadingMoreRef.current) return;
 
@@ -197,7 +204,7 @@ export default function TodoPageClient({
           setIsRefreshing(false);
         }
       });
-  }, [selectedCategory, userId, showCompleted, runBlockingFetch]);
+  }, [selectedCategory, userId, showCompleted, runBlockingFetch, updateTodos]);
 
   useEffect(() => {
     if (isRefreshing) return;
@@ -229,6 +236,7 @@ export default function TodoPageClient({
           selectedCategory={selectedCategory}
           selectedCategoryId={selectedCategoryIdRef.current}
           showCompleted={showCompleted}
+          setUpdateTodos={setUpdateTodos}
         />
       </div>
       <TodoList 

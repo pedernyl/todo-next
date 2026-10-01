@@ -53,7 +53,6 @@ const CategoryDropdown: React.FC<CategoryDropdownProps> = ({
     }
   };
 
-  console.log('selected on categoryDropDown: ', selectedCategory);
   return (
     <div className="relative inline-block text-left" data-testid={CATEGORY_DROPDOWN_IDS.ROOT}>
       <Listbox
