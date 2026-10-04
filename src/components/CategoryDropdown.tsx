@@ -13,7 +13,7 @@ interface CategoryDropdownProps {
     deleted_timestamp?: string | null;
   }[];
   onCategorySelect: (categoryId: string) => void;
-  onCreateCategory: (title: string, description?: string) => void;
+  onCreateCategory: (title: string, description?: string) => boolean | void | Promise<boolean | void>;
   selectedCategory: string;
   isCreatePanelOpenProp: boolean;
   onDeleteCategory: (categoryId: string) => void;
@@ -34,12 +34,18 @@ const CategoryDropdown: React.FC<CategoryDropdownProps> = ({
   const [newCategory, setNewCategory] = useState("");
   const [newDescription, setNewDescription] = useState("");
   const [isCreatePanelOpen, setIsCreatePanelOpen] = useState(isCreatePanelOpenProp);
-
+  
   const selectedCategory = categories.find(c => String(c.id) === String(selectedCategoryId));
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (newCategory.trim()) {
-      onCreateCategory(newCategory.trim(), newDescription.trim());
+      let succeeded: boolean | void;
+      try {
+        succeeded = await onCreateCategory(newCategory.trim(), newDescription.trim());
+      } catch {
+        return;
+      }
+      if (succeeded === false) return;
       setNewCategory("");
       setNewDescription("");
       setIsCreatePanelOpen(false);

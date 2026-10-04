@@ -43,16 +43,21 @@ const CategoryDropdownWrapper: React.FC<CategoryDropdownWrapperProps> = (
     }
   };
 
-  const handleCreateCategory = async (name: string, description?: string) => {
-    if (!userId) return;
-    const newCat = await runBlocking(
-      async () => createCategory(name, description),
-      { label: GLOBAL.LOADER_LABELS.CREATING_CATEGORY, cancellable: false }
-    );
+  const handleCreateCategory = async (name: string, description?: string): Promise<boolean> => {
+    if (!userId) return false;
+    try {
+      const newCat = await runBlocking(
+        async () => createCategory(name, description),
+        { label: GLOBAL.LOADER_LABELS.CREATING_CATEGORY, cancellable: false }
+      );
 
-    if (!newCat) return;
-    await refreshCategories();
-    onCategoryChange(newCat);
+      if (!newCat) return false;
+      await refreshCategories();
+      onCategoryChange(newCat);
+      return true;
+    } catch {
+      return false;
+    }
   };
 
   const handleDeleteCategory = async (id: string) => {
