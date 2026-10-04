@@ -26,7 +26,8 @@ export default function TodoPageClient({
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
   const [showCompleted, setShowCompleted] = useState<boolean>(false);
-  const [updateTodos, setUpdateTodos] = useState<boolean>(false);
+  // Only used to trigger a refresh of the todos list when it changes.
+  const [refreshCounter, setRefreshCounter] = useState<number>(0);
   const { data: session } = useSession();
   const userId = session?.user?.id; 
   const { runBlockingFetch } = useGlobalBlockingLoader();
@@ -67,13 +68,8 @@ export default function TodoPageClient({
       selectedCategory : selectedCategory?.id ?? null;
   }, [selectedCategory]);
 
-  useEffect(() => {
-    if (updateTodos) {
-      setUpdateTodos(false);
-    }
-  }, [updateTodos]);
+  const refreshTodos = useCallback(() => setRefreshCounter((prev) => prev + 1), []);
 
- 
   const loadMore = useCallback(async () => {
     if (!userId || isRefreshingRef.current || !hasMoreRef.current || isLoadingMoreRef.current) return;
 
@@ -204,7 +200,7 @@ export default function TodoPageClient({
           setIsRefreshing(false);
         }
       });
-  }, [selectedCategory, userId, showCompleted, runBlockingFetch, updateTodos]);
+  }, [selectedCategory, userId, showCompleted, refreshCounter, runBlockingFetch]);
 
   useEffect(() => {
     if (isRefreshing) return;
@@ -236,7 +232,7 @@ export default function TodoPageClient({
           selectedCategory={selectedCategory}
           selectedCategoryId={selectedCategoryIdRef.current}
           showCompleted={showCompleted}
-          setUpdateTodos={setUpdateTodos}
+          refreshTodos={refreshTodos}
         />
       </div>
       <TodoList 

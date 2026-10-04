@@ -14,7 +14,7 @@ interface CategoryDropdownWrapperProps {
   selectedCategory: Category | string | null;
   selectedCategoryId: string | null;
   showCompleted: boolean;
-  setUpdateTodos: (updateTodos: boolean) => void;
+  refreshTodos: () => void;
 }
 
 const CategoryDropdownWrapper: React.FC<CategoryDropdownWrapperProps> = (
@@ -23,8 +23,7 @@ const CategoryDropdownWrapper: React.FC<CategoryDropdownWrapperProps> = (
     selectedCategory,
     selectedCategoryId,
     showCompleted,
-    setUpdateTodos
-
+    refreshTodos,
   }) => {
   const { data: session } = useSession();
   const userId = session?.user?.id;
@@ -86,9 +85,9 @@ const CategoryDropdownWrapper: React.FC<CategoryDropdownWrapperProps> = (
        if (!showCompleted && !selectedCategory.completed) {
         onCategoryChange(null);
         return;
-        // If the category is now completed and showCompleted is true, we should update the todos.
+        // If the category is now completed and showCompleted is true, we should refresh the todos.
       } else if(showCompleted && selectedCategory.completed) {
-        setUpdateTodos(true);
+        refreshTodos();
         return;
       }
 
