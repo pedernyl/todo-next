@@ -66,8 +66,9 @@ const CategoryDropdownWrapper: React.FC<CategoryDropdownWrapperProps> = (
       async () => deleteCategory(Number(id)),
       { label: GLOBAL.LOADER_LABELS.DELETING_CATEGORY, cancellable: false }
     );
-  
     await refreshCategories();
+    onCategoryChange(null);
+    refreshTodos();
   };
 
   const handleToggleCompleted = async (id: string, completed: boolean) => {
