@@ -3,21 +3,17 @@ import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from "@headless
 import CategoryRow from "./CategoryRow";
 import { CATEGORY_DROPDOWN_IDS, CATEGORY_DROPDOWN_TEXT, DROPDOWN_OPTIONS } 
   from "../constants/dropdowns/categoryDropDown";
+import { isNumericId } from "@/lib/utils/isNumericId";
+import { Category } from "../../types";
 
 interface CategoryDropdownProps {
-  categories: { 
-    id: string; 
-    title: string;
-    hasActiveTodos: boolean;
-    completed: boolean;
-    deleted_timestamp?: string | null;
-  }[];
+  categories: Omit<Category, "owner_id">[];
   onCategorySelect: (categoryId: string) => void;
   onCreateCategory: (title: string, description?: string) => boolean | void | Promise<boolean | void>;
   selectedCategory: string;
   isCreatePanelOpenProp: boolean;
   onDeleteCategory: (categoryId: string) => void;
-  onEditCategory?: (id: string) => void;
+  onEditCategory: (id: number, title: string, description?: string) => void;
   onToggleCompleted?: (id: string, completed: boolean) => void;
 }
 
@@ -28,12 +24,14 @@ const CategoryDropdown: React.FC<CategoryDropdownProps> = ({
   selectedCategory: selectedCategoryId,
   isCreatePanelOpenProp,
   onDeleteCategory = () => {},
-  onEditCategory = () => {},
+  onEditCategory,
   onToggleCompleted = () => {},
 }) => {
   const [newCategory, setNewCategory] = useState("");
   const [newDescription, setNewDescription] = useState("");
   const [isCreatePanelOpen, setIsCreatePanelOpen] = useState(isCreatePanelOpenProp);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editId, setEditId] = useState<number | null>(null);
   
   const selectedCategory = categories.find(c => String(c.id) === String(selectedCategoryId));
 
@@ -50,6 +48,28 @@ const CategoryDropdown: React.FC<CategoryDropdownProps> = ({
       setNewDescription("");
       setIsCreatePanelOpen(false);
     }
+  };
+
+  const openEditForm = async (id: number | string) => {
+      if (!id || !isNumericId(id)) return;
+      const category = categories.find(c => String(c.id) === String(id));
+      if (!category) return;
+      setNewCategory(category.title);
+      setNewDescription(category.description || "");
+      setEditId(Number(id));
+      setIsCreatePanelOpen(true);
+      setIsEditMode(true);
+      return;
+  };
+
+  const handleUpdate = async () => {
+    if (editId === null || !isNumericId(editId)) return;
+    setIsEditMode(false);
+    setIsCreatePanelOpen(false);
+    onEditCategory(editId, newCategory.trim(), newDescription.trim());
+    setNewCategory("");
+    setNewDescription("");
+    setEditId(null);
   };
 
   const handleCategorySelect = (categoryId: string) => {
@@ -98,10 +118,10 @@ const CategoryDropdown: React.FC<CategoryDropdownProps> = ({
                 id={cat.id}
                 title={cat.title}
                 isSelected={selectedCategoryId === cat.id}
-                hasActiveTodos={cat.hasActiveTodos}
+                hasActiveTodos={cat.has_active_todos}
                 isCompleted={cat.completed}
                 onComplete={() => onToggleCompleted(cat.id, cat.completed)}
-                onEdit={() => onEditCategory(cat.id)}
+                onEdit={() => openEditForm(cat.id)}
                 onDelete={() => onDeleteCategory(cat.id)}
               />
             </ListboxOption>
@@ -134,6 +154,8 @@ const CategoryDropdown: React.FC<CategoryDropdownProps> = ({
                 setNewCategory("");
                 setNewDescription("");
                 onCategorySelect(DROPDOWN_OPTIONS.ALL_CATEGORIES.value);
+                setIsEditMode(false);
+                setIsCreatePanelOpen(false);
               }}
             >
               &times;
@@ -157,10 +179,12 @@ const CategoryDropdown: React.FC<CategoryDropdownProps> = ({
           />
           <button
             className="w-full bg-blue-500 text-white px-2 py-1 rounded text-sm hover:bg-blue-600"
-            onClick={handleCreate}
+            onClick={isEditMode ? handleUpdate : handleCreate}
             data-testid={CATEGORY_DROPDOWN_IDS.CREATE_BUTTON}
           >
-            {CATEGORY_DROPDOWN_TEXT.CREATE}
+            {
+              isEditMode ? CATEGORY_DROPDOWN_TEXT.UPDATE : CATEGORY_DROPDOWN_TEXT.CREATE
+            }
           </button>
         </div>
       )}

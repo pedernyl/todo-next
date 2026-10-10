@@ -3,6 +3,7 @@ import React from "react";
 import type { Category } from "../../types";
 import { useCategoriesActions, useCategoriesData } from "../context/CategoriesContext";
 import CategoryDropdown from "./CategoryDropdown";
+import { updateCategoryQuery } from "../app/actions/category";
 import { useSession } from "next-auth/react";
 import { createCategory, deleteCategory, updateCategoryCompletion } from "../lib/categoryService";
 import { useGlobalBlockingLoader } from "../context/GlobalBlockingLoaderContext";
@@ -60,6 +61,22 @@ const CategoryDropdownWrapper: React.FC<CategoryDropdownWrapperProps> = (
     }
   };
 
+  const handleUpdateCategory = async (id: number, title: string, description?: string): Promise<boolean> => {
+    if (!userId) return false;
+    try {
+      const updateValues = { title, description };
+      await runBlocking(
+        async () => updateCategoryQuery(Number(id), Number(userId), updateValues),
+        { label: GLOBAL.LOADER_LABELS.UPDATING_CATEGORY, cancellable: false }
+      );
+     
+      await refreshCategories();
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
   const handleDeleteCategory = async (id: string) => {
     if (!userId) return;
     await runBlocking(
@@ -109,10 +126,12 @@ const CategoryDropdownWrapper: React.FC<CategoryDropdownWrapperProps> = (
       categories={categories.map(c => ({ 
         id: c.id, 
         title: c.title,
-        hasActiveTodos: c.has_active_todos,
+        description: c.description,
+        has_active_todos: c.has_active_todos,
         completed: c.completed
       }))}
       onCreateCategory={handleCreateCategory}
+      onEditCategory={handleUpdateCategory}
       onCategorySelect ={handleCategorySelect}
       selectedCategory={selectedCategoryId ?? ""}
       isCreatePanelOpenProp={isCreatePanelOpen}
