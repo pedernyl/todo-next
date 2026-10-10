@@ -116,7 +116,7 @@ export async function createCategory(
  * @param updateValues - The category fields to update.
  * @throws If the user is unauthenticated or the database update fails.
  */
-async function updateCategoryQuery(
+export async function updateCategoryQuery(
   categoryId: number, 
   ownerId: number, 
   updateValues: object): Promise<void> {
