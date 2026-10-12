@@ -73,6 +73,7 @@ const CategoryDropdown: React.FC<CategoryDropdownProps> = ({
   };
 
   const handleCategorySelect = (categoryId: string) => {
+    setIsEditMode(false);
     if (categoryId === DROPDOWN_OPTIONS.CREATE_CATEGORY.value) {
       setIsCreatePanelOpen(true);
     } else {
