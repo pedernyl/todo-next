@@ -43,7 +43,7 @@ export async function getAuthenticatedUserIdResponse(): Promise<ApiResponse<user
   try {
     const userId = await fetchUserIdByEmail(email);
     return userServiceResponse[200](userId);
-  } catch (error) {
+  } catch {
     return userServiceResponse[500];
   }
 }
@@ -63,7 +63,7 @@ export async function isAuthenticatedUserByEmail(email: email): Promise<boolean>
       return false;
     }
     return true;
-  } catch (error) {
+  } catch {
     return false;
   }
 }
