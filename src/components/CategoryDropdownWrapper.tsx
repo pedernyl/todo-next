@@ -3,7 +3,7 @@ import React from "react";
 import type { Category } from "../../types";
 import { useCategoriesActions, useCategoriesData } from "../context/CategoriesContext";
 import CategoryDropdown from "./CategoryDropdown";
-import { updateCategoryQuery } from "../app/actions/category";
+import { updateCategory } from "../app/actions/category";
 import { useSession } from "next-auth/react";
 import { createCategory, deleteCategory, updateCategoryCompletion } from "../lib/categoryService";
 import { useGlobalBlockingLoader } from "../context/GlobalBlockingLoaderContext";
@@ -64,9 +64,8 @@ const CategoryDropdownWrapper: React.FC<CategoryDropdownWrapperProps> = (
   const handleUpdateCategory = async (id: number, title: string, description?: string): Promise<boolean> => {
     if (!userId) return false;
     try {
-      const updateValues = { title, description };
       await runBlocking(
-        async () => updateCategoryQuery(Number(id), Number(userId), updateValues),
+        async () => updateCategory({ categoryId: Number(id), title: title, description: description }),
         { label: GLOBAL.LOADER_LABELS.UPDATING_CATEGORY, cancellable: false }
       );
      

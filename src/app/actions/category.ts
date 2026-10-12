@@ -9,7 +9,7 @@ import type { Category } from '../../../types';
 type CategoryActionResult = { success: boolean; error?: string };
 
 export async function deleteCategory(categoryId: number): Promise<CategoryActionResult> {
-    if (!isUserAuthenticated()) {
+    if (!await isUserAuthenticated()) {
       return { success: false, error: 'User not authenticated' };
     }
 
@@ -51,7 +51,7 @@ export async function updateCategoryCompletion(
     completed: boolean
   }
 ): Promise<CategoryActionResult> {
-  if (!isUserAuthenticated()) {
+  if (!await isUserAuthenticated()) {
     return { success: false, error: 'User not authenticated' };
   }
 
@@ -108,6 +108,30 @@ export async function createCategory(
   return data as Category;
 }
 
+interface UpdateCategoryParams {
+  categoryId: number;
+  title?: string;
+  description?: string;
+}
+
+/**
+ * Updates the title and/or description of a category owned by the authenticated user.
+ *
+ * @param params - The category ID and fields to update.
+ * @throws If the user is unauthenticated or the database update fails.
+ */
+export async function updateCategory(
+  { categoryId, title, description }: UpdateCategoryParams
+): Promise<void> {
+  const ownerId = await getAuthenticatedUserId();
+  if (typeof ownerId !== 'number') {
+    throw new Error('User not authenticated');
+  }
+
+  await updateCategoryQuery(categoryId, ownerId, { title: title, description: description });
+
+}
+
 /**
  * Updates a category's fields, scoped to its owner.
  *
@@ -116,11 +140,11 @@ export async function createCategory(
  * @param updateValues - The category fields to update.
  * @throws If the user is unauthenticated or the database update fails.
  */
-export async function updateCategoryQuery(
+async function updateCategoryQuery(
   categoryId: number, 
   ownerId: number, 
   updateValues: object): Promise<void> {
-  if (!isUserAuthenticated()) {
+  if (!await isUserAuthenticated()) {
       throw new Error('User not authenticated');
   }
 
