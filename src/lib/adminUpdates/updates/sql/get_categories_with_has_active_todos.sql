@@ -44,7 +44,7 @@ begin
       select 1
       from todos_compat t
       where t.category_id = c.id
-        and (t.completed = false
+        and t.completed = false
         and t.deleted_timestamp is null
     ) as has_active_todos
   from "Category" c
