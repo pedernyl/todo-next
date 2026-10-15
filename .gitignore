@@ -58,3 +58,4 @@ planning/
 error
 data.sql
 schema.sql
+backup-test-db.sh
