@@ -100,7 +100,13 @@ const CategoryDropdown: React.FC<CategoryDropdownProps> = ({
               || DROPDOWN_OPTIONS.ALL_CATEGORIES.label}
         </ListboxButton>
         <ListboxOptions
-          className="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded shadow z-20"
+          className="
+            absolute right-0 mt-2 w-64 bg-white 
+            border border-gray-200 rounded shadow 
+            z-20
+            max-h-[calc(100vh-4rem)]
+            overflow-y-auto
+            "
           data-testid={CATEGORY_DROPDOWN_IDS.MENU_PANEL}
         >
           {/* All Categories option */}
